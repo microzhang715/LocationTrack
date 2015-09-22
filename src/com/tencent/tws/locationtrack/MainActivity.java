@@ -86,9 +86,6 @@ public class MainActivity extends MapActivity implements
 	private Polyline drawPolyline() {
 //		final LatLng latLng1 = new LatLng(22.540552, 113.935446);
 //		final LatLng latLng2 = new LatLng(22.540549, 113.935044);
-//		final LatLng latLng3 = new LatLng(22.540891, 113.935004);
-//		final LatLng latLng4 = new LatLng(22.540257, 113.935251);
-//		final LatLng latLng5 = new LatLng(22.540366, 113.935335);
 
 		// 如果要修改颜色，请直接使用4字节颜色或定义的变量
 		PolylineOptions lineOpt = new PolylineOptions();
@@ -98,9 +95,9 @@ public class MainActivity extends MapActivity implements
 			int index = strLocation.indexOf(",");
 			if(index !=-1)
 			{
-				String strLongitude = strLocation.substring(0, index);
-				String strLatitude = strLocation.substring(index+1, strLocation.length());
-				double long_la[] = LocationUtil.GaussProjInvCal(Double.parseDouble(strLongitude), Double.parseDouble(strLatitude));
+				String strX = strLocation.substring(0, index);
+				String strY = strLocation.substring(index+1, strLocation.length());
+				double long_la[] = LocationUtil.GaussProjInvCal(Double.parseDouble(strY), Double.parseDouble(strX));
 				final LatLng latLng = new LatLng(long_la[1], long_la[0]);
 				lineOpt.add(latLng);
 				
@@ -108,13 +105,9 @@ public class MainActivity extends MapActivity implements
 			}
 
 		}
-//		final LatLng latLng1 = new LatLng(22.541366, 113.934335);
-//  	    lineOpt.add(latLng1);
+//  	lineOpt.add(latLng1);
 //		lineOpt.add(latLng2);
-//		lineOpt.add(latLng3);
-//		lineOpt.add(latLng4);
-//		lineOpt.add(latLng5);
-//		lineOpt.add(latLng1);
+
 		
 		Polyline line = mMapView.getMap().addPolyline(lineOpt);
 		return line;
@@ -187,11 +180,12 @@ public class MainActivity extends MapActivity implements
 			
 			double long_laNum[] = LocationUtil.GaussProjCal(location.getLongitude(), location.getLatitude());
 			
-			double locationX = Double.parseDouble((int)long_laNum[2] + ""+ (int)long_laNum[0]);
+			double locationY = Double.parseDouble((int)long_laNum[2] + ""+ long_laNum[0]);
+			double locationX = long_laNum[1];
 			
-			LocationUtil.setStartLocation(new DoublePoint(locationX,(int)long_laNum[1]));
-			LocationUtil.getBreadCrumbs().add(new DoublePoint(locationX,(int)long_laNum[1]));
-			LocationUtil.getListLocation().add(locationX + "," +(int)long_laNum[1]);
+			LocationUtil.setStartLocation(new DoublePoint(locationX,locationY));
+			LocationUtil.getBreadCrumbs().add(new DoublePoint(locationX,locationY));
+			LocationUtil.getListLocation().add(locationX + "," +locationY);
 			
 			// 更新 status
 			mStatus.setText(sb.toString());

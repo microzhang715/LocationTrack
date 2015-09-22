@@ -47,8 +47,6 @@ public class LocationUtil {
 	//crumb trail
 	//*************************************************************************
 	private static Deque<DoublePoint> mBreadCrumbs;
-	private static FloatBuffer crumbBuffer;
-	private static float crumbCoords[] = new float[MAX_POINTS * 3];
 	
 	//averaging
 	//*************************************************************************
@@ -77,11 +75,6 @@ public class LocationUtil {
 		//mBreadCrumbs.add(new DoublePoint(0,0));
 		mTotalDistance = 0;
 		
-		ByteBuffer cbb = ByteBuffer.allocateDirect(crumbCoords.length * 4);
-		cbb.order(ByteOrder.nativeOrder());
-		crumbBuffer = cbb.asFloatBuffer();
-		crumbBuffer.put(crumbCoords);
-		crumbBuffer.position(0);
 	}
 	
 	//rotationUpdate
@@ -165,17 +158,7 @@ public class LocationUtil {
 				mLocation.getY())
 				);
 			
-			Listlocation.add(mLocation.getX() +"," +mLocation.getY());
-			
-//			int i=0;
-//			for( DoublePoint p : mBreadCrumbs) {
-//				crumbCoords[i++] = p.getX();
-//				crumbCoords[i++] = p.getY();
-//				crumbCoords[i++] = 0;
-//			}
-			
-			crumbBuffer.put(crumbCoords);
-			crumbBuffer.position(0);
+			Listlocation.add(mLocation.getX() +"," +mLocation.getY());		
 		}
 	}
 	
@@ -187,8 +170,6 @@ public class LocationUtil {
         double a,f, e2,ee, NN, T,C,A, M, iPI;
         iPI = 0.0174532925199433; ////3.1415926535898/180.0;
         ZoneWide = 6; ////6度带宽
-//        a=6378245.0; f=1.0/298.3; //54年北京坐标系参数
-//        a=6378140.0; f=1/298.257; //80年西安坐标系参数
         a=m_a;f=m_f;
         if(longitude % ZoneWide==0)
             ProjNo = (int)(longitude / ZoneWide)-1;
@@ -219,21 +200,18 @@ public class LocationUtil {
         double long_laNum[]=new double[3];
         long_laNum[0]=(X);//经度
         long_laNum[1]=(Y);//纬度
-        long_laNum[2]=ProjNo+1;//纬度
+        long_laNum[2]=ProjNo+1;//经度
         return long_laNum;
     }
     
-
+	//平面坐标转换经纬度
     public static double[] GaussProjInvCal(double X, double Y)
     {
         int ProjNo; int ZoneWide; ////带宽
         double longitude1,latitude1, longitude0,latitude0, X0,Y0, xval,yval;
         double e1,e2,f,a, ee, NN, T,C, M, D,R,u,fai, iPI;
         iPI = 0.0174532925199433; ////3.1415926535898/180.0;
-//      a = 6378245.0; 
-//      f = 1.0/298.3; //54年北京坐标系参数
         a=m_a;f=m_f;
-        ////a=6378140.0; f=1/298.257; //80年西安坐标系参数
         ZoneWide = 6; ////6度带宽
         ProjNo = (int)(X/1000000L) ; //查找带号
         longitude0 = (ProjNo-1) * ZoneWide + ZoneWide / 2;
