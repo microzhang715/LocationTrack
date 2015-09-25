@@ -1,5 +1,6 @@
 package com.tencent.tws.locationtrack;
 
+import com.tencent.tws.qdozemanager.QDozeManager;
 import com.tencent.tws.widget.BaseActivity;
 
 import android.app.Activity;
@@ -14,6 +15,7 @@ public class MainActivity extends BaseActivity {
     private static final String MYMAP = "com.tencent.tws.locationtrack.MyMapActivity";
 	private static final String TRACKMODE = "com.tencent.tws.locationtrack.TrackModeActivity";
 
+	private static final String TAG_PKG = "com.tencent.tws.locationtrack.MainActivity";
 	
 	/** Called when the activity is first created. */
     public void onCreate(Bundle savedInstanceState) {
@@ -22,6 +24,8 @@ public class MainActivity extends BaseActivity {
 		setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.mainmenu);
         
+        
+    	QDozeManager.getInstance(this).ensureScreenOn(TAG_PKG, true);
         //associates buttons with IDs
         
         ImageButton mapMenu = (ImageButton) findViewById(R.id.mapButton);
@@ -31,8 +35,8 @@ public class MainActivity extends BaseActivity {
         mapMenu.setOnClickListener(new View.OnClickListener(){
 
 			public void onClick(View v) {
-		      Intent i = new Intent(MYMAP);
-              startActivity(i);
+//		      Intent i = new Intent(MYMAP);
+//              startActivity(i);
 			}
         });
         
