@@ -19,8 +19,6 @@ import com.tencent.tws.locationtrack.util.DoublePoint;
 import com.tencent.tws.locationtrack.util.LocationUtil;
 import com.tencent.tws.locationtrack.util.SensorUtil;
 
-import android.support.v7.app.ActionBarActivity;
-import android.support.v7.app.ActionBar;
 import android.support.v4.app.Fragment;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;

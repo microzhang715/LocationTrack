@@ -1,5 +1,7 @@
 package com.tencent.tws.locationtrack;
 
+import com.tencent.tws.widget.BaseActivity;
+
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
@@ -7,7 +9,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageButton;
 
-public class MainActivity extends Activity {
+public class MainActivity extends BaseActivity {
 	
     private static final String MYMAP = "com.tencent.tws.locationtrack.MyMapActivity";
 	private static final String TRACKMODE = "com.tencent.tws.locationtrack.TrackModeActivity";

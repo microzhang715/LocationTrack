@@ -4,6 +4,7 @@ import com.tencent.tws.locationtrack.util.DoublePoint;
 import com.tencent.tws.locationtrack.util.LocationUtil;
 import com.tencent.tws.locationtrack.util.MySurfaceRenderer;
 import com.tencent.tws.locationtrack.util.SensorUtil;
+import com.tencent.tws.widget.BaseActivity;
 
 import android.app.Activity;
 import android.content.Context;
@@ -20,7 +21,7 @@ import android.view.Window;
 import android.widget.Button;
 
 
-public class TrackModeActivity extends Activity implements SensorEventListener{
+public class TrackModeActivity extends BaseActivity implements SensorEventListener{
 	private MySurfaceView GLView;
 	private boolean sysOk;
 	private SensorUtil SU;

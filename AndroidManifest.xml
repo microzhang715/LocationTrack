@@ -6,7 +6,7 @@
 
     <uses-sdk
         android:minSdkVersion="10"
-        android:targetSdkVersion="19" />
+        android:targetSdkVersion="21" />
     
       <!-- 腾讯定位 sdk 要求的权限  (开始) -->
     <!-- 通过GPS得到精确位置 -->
