@@ -4,6 +4,9 @@ import android.hardware.SensorEvent;
 
 public class AccelerationHandler implements EventHandler {
 	public void service(SensorEvent e) {
-		LocationUtil.accelerationUpdate(e);
+		//if(!LocationUtil.getEndTrack())
+		{
+			LocationUtil.accelerationUpdate(e);
+		}
 	}
 }
