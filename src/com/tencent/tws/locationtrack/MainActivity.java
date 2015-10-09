@@ -1,5 +1,10 @@
 package com.tencent.tws.locationtrack;
 
+import android.bluetooth.BluetoothDevice;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.IntentFilter;
+import com.tencent.tws.framework.global.GlobalObj;
 import com.tencent.tws.qdozemanager.QDozeManager;
 import com.tencent.tws.widget.BaseActivity;
 
@@ -21,6 +26,7 @@ public class MainActivity extends BaseActivity {
     public void onCreate(Bundle savedInstanceState) {
     	//calls super, sets GUI
         super.onCreate(savedInstanceState);
+		GlobalObj.g_appContext = this;
 		setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.mainmenu);
         
@@ -49,7 +55,12 @@ public class MainActivity extends BaseActivity {
 				
 			}
 		});
-        
-        
+
+
+
+
     }
+
+
+
 }

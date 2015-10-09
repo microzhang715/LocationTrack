@@ -12,6 +12,8 @@ import java.util.List;
 import android.hardware.SensorEvent;
 import android.hardware.SensorManager;
 import android.util.Log;
+import com.tencent.tws.framework.global.GlobalObj;
+import com.tencent.tws.util.NotifyUtil;
 
 
 public class LocationUtil {
@@ -48,6 +50,8 @@ public class LocationUtil {
 	private static List<String>  Listlocation = new ArrayList<String>();
 	
 	private static boolean mEndTrack;
+
+	private static SensorUtil mSU;
 	
 	//crumb trail
 	//*************************************************************************
@@ -67,8 +71,8 @@ public class LocationUtil {
 	private static boolean averageReady = false;
 	private static float samples[] = new float[NUM_ACCEL_SAMPLES];
 	
-	 private static double m_a=6378245.0, m_f=1.0/298.3; //54Äê±±¾©×ø±êÏµ²ÎÊı
-	// private static double m_a=6378140.0, m_f=1/298.257; //80ÄêÎ÷°²×ø±êÏµ²ÎÊı
+	 private static double m_a=6378245.0, m_f=1.0/298.3; //54å¹´åŒ—äº¬åæ ‡ç³»å‚æ•°
+	// private static double m_a=6378140.0, m_f=1/298.257; //80å¹´è¥¿å®‰åæ ‡ç³»å‚æ•°
 	
 	//member functions
 	//*************************************************************************
@@ -186,16 +190,17 @@ public class LocationUtil {
 		float dy = (float)Math.sin(getCurrentAzimuth()) * getCurrentSpeed();
 				
 		mLocation.offset(dx, dy);
-		Log.d(TAG, "dx = " +dx +",dy = " +dy);
-		Log.d(TAG, "X = " +mLocation.getX() +",Y = " +mLocation.getY());
+		//Log.d(TAG, "dx = " +dx +",dy = " +dy);
+		//Log.d(TAG, "X = " +mLocation.getX() +",Y = " +mLocation.getY());
 		speedDecay();
 		
 		DoublePoint last = mBreadCrumbs.getLast();
 		float dist = mLocation.distanceFrom(last);
 		float dd = (float)Math.sqrt(Math.pow(dx,2) + Math.pow(dy,2));
-		Log.d(TAG, "last point x = " +last.getX() +",y = " +last.getY());
-		Log.d(TAG, "dist = " + dist);
+		//Log.d(TAG, "last point x = " +last.getX() +",y = " +last.getY());
+
 		mTotalDistance += dd;
+		//Log.d(TAG, "mTotalDistance = " + dd);
 		
 		if ( dist >= CRUMB_RADIUS) {
 			
@@ -219,18 +224,28 @@ public class LocationUtil {
 			crumbBuffer.put(crumbCoords);
 			crumbBuffer.position(0);
 		}
+
+//		if(mTotalDistance>=100)
+//		{
+//			if(mSU!=null)
+//			{
+//				mSU.unregisterListeners();
+//				mEndTrack = true;
+//				NotifyUtil.vibrate(GlobalObj.g_appContext, 50);
+//			}
+//		}
 	}
 	
-	//¾­Î³¶È×ª»»Æ½Ãæ×ø±ê
+	//ç»çº¬åº¦è½¬æ¢å¹³é¢åæ ‡
 	public static double[] GaussProjCal(double longitude, double latitude) 
     {
-        int ProjNo=0; int ZoneWide; ////´ø¿í
+        int ProjNo=0; int ZoneWide; ////å¸¦å®½
         double longitude1,latitude1, longitude0,latitude0, X0,Y0, xval,yval;
         double a,f, e2,ee, NN, T,C,A, M, iPI;
         iPI = 0.0174532925199433; ////3.1415926535898/180.0;
-        ZoneWide = 6; ////6¶È´ø¿í
-//        a=6378245.0; f=1.0/298.3; //54Äê±±¾©×ø±êÏµ²ÎÊı
-//        a=6378140.0; f=1/298.257; //80ÄêÎ÷°²×ø±êÏµ²ÎÊı
+        ZoneWide = 6; ////6åº¦å¸¦å®½
+//        a=6378245.0; f=1.0/298.3; //54å¹´åŒ—äº¬åæ ‡ç³»å‚æ•°
+//        a=6378140.0; f=1/298.257; //80å¹´è¥¿å®‰åæ ‡ç³»å‚æ•°
         a=m_a;f=m_f;
         if(longitude % ZoneWide==0)
             ProjNo = (int)(longitude / ZoneWide)-1;
@@ -239,8 +254,8 @@ public class LocationUtil {
         longitude0 = ProjNo * ZoneWide + ZoneWide / 2;
         longitude0 = longitude0 * iPI ;
         latitude0=0;
-        longitude1 = longitude * iPI ; //¾­¶È×ª»»Îª»¡¶È
-        latitude1 = latitude * iPI ; //Î³¶È×ª»»Îª»¡¶È
+        longitude1 = longitude * iPI ; //ç»åº¦è½¬æ¢ä¸ºå¼§åº¦
+        latitude1 = latitude * iPI ; //çº¬åº¦è½¬æ¢ä¸ºå¼§åº¦
         e2=2*f-f*f;
         ee=e2*(1.0-e2);
         NN=a/Math.sqrt(1.0-e2*Math.sin(latitude1)*Math.sin(latitude1));
@@ -259,30 +274,30 @@ public class LocationUtil {
         double X = xval;
         double Y = yval;
         double long_laNum[]=new double[3];
-        long_laNum[0]=(X);//¾­¶È
-        long_laNum[1]=(Y);//Î³¶È
-        long_laNum[2]=ProjNo+1;//¾­¶È
+        long_laNum[0]=(X);//ç»åº¦
+        long_laNum[1]=(Y);//çº¬åº¦
+        long_laNum[2]=ProjNo+1;//ç»åº¦
         return long_laNum;
     }
     
 
     public static double[] GaussProjInvCal(double X, double Y)
     {
-        int ProjNo; int ZoneWide; ////´ø¿í
+        int ProjNo; int ZoneWide; ////å¸¦å®½
         double longitude1,latitude1, longitude0,latitude0, X0,Y0, xval,yval;
         double e1,e2,f,a, ee, NN, T,C, M, D,R,u,fai, iPI;
         iPI = 0.0174532925199433; ////3.1415926535898/180.0;
 //      a = 6378245.0; 
-//      f = 1.0/298.3; //54Äê±±¾©×ø±êÏµ²ÎÊı
+//      f = 1.0/298.3; //54å¹´åŒ—äº¬åæ ‡ç³»å‚æ•°
         a=m_a;f=m_f;
-        ////a=6378140.0; f=1/298.257; //80ÄêÎ÷°²×ø±êÏµ²ÎÊı
-        ZoneWide = 6; ////6¶È´ø¿í
-        ProjNo = (int)(X/1000000L) ; //²éÕÒ´øºÅ
+        ////a=6378140.0; f=1/298.257; //80å¹´è¥¿å®‰åæ ‡ç³»å‚æ•°
+        ZoneWide = 6; ////6åº¦å¸¦å®½
+        ProjNo = (int)(X/1000000L) ; //æŸ¥æ‰¾å¸¦å·
         longitude0 = (ProjNo-1) * ZoneWide + ZoneWide / 2;
-        longitude0 = longitude0 * iPI ; //ÖĞÑë¾­Ïß
+        longitude0 = longitude0 * iPI ; //ä¸­å¤®ç»çº¿
         X0 = ProjNo*1000000L+500000L;
         Y0 = 0;
-        xval = X-X0; yval = Y-Y0; //´øÄÚ´óµØ×ø±ê
+        xval = X-X0; yval = Y-Y0; //å¸¦å†…å¤§åœ°åæ ‡
         e2 = 2*f-f*f;
         e1 = (1.0-Math.sqrt(1-e2))/(1.0+Math.sqrt(1-e2));
         ee = e2/(1-e2);
@@ -297,12 +312,12 @@ public class LocationUtil {
         R = a*(1-e2)/Math.sqrt((1-e2*Math.sin(fai)*Math.sin(fai))*(1-e2*Math.sin(fai)*Math.sin(fai))*(1-e2*Math.sin
         (fai)*Math.sin(fai)));
         D = xval/NN;
-        //¼ÆËã¾­¶È(Longitude) Î³¶È(Latitude)
+        //è®¡ç®—ç»åº¦(Longitude) çº¬åº¦(Latitude)
         longitude1 = longitude0+(D-(1+2*T+C)*D*D*D/6+(5-2*C+28*T-3*C*C+8*ee+24*T*T)*D
         *D*D*D*D/120)/Math.cos(fai);
         latitude1 = fai -(NN*Math.tan(fai)/R)*(D*D/2-(5+3*T+10*C-4*C*C-9*ee)*D*D*D*D/24
         +(61+90*T+298*C+45*T*T-256*ee-3*C*C)*D*D*D*D*D*D/720);
-        //×ª»»Îª¶È DD
+        //è½¬æ¢ä¸ºåº¦ DD
         double longitude = longitude1 / iPI;
         double latitude = latitude1 / iPI;
         double long_la[]=new double[2];
@@ -396,5 +411,10 @@ public class LocationUtil {
 	public static void setEndTrack(boolean endTrack)
 	{
 		mEndTrack = endTrack;
+	}
+
+	public static void setSensorUtil(SensorUtil SU)
+	{
+		mSU = SU;
 	}
 }

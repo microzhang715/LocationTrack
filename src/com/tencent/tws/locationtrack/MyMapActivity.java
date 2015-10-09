@@ -19,7 +19,6 @@ import com.tencent.tws.locationtrack.util.DoublePoint;
 import com.tencent.tws.locationtrack.util.LocationUtil;
 import com.tencent.tws.locationtrack.util.SensorUtil;
 
-import android.support.v4.app.Fragment;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -50,7 +49,7 @@ public class MyMapActivity extends MapActivity implements
 	private TencentLocation mLocation;
 	private TencentLocationManager mLocationManager;
 
-	// ÓÃÓÚ¼ÇÂ¼¶¨Î»²ÎÊı, ÒÔÏÔÊ¾µ½ UI
+	// ç”¨äºè®°å½•å®šä½å‚æ•°, ä»¥æ˜¾ç¤ºåˆ° UI
 	private String mRequestParams;
 
 	private List<Object> Overlays;
@@ -73,7 +72,7 @@ public class MyMapActivity extends MapActivity implements
 		initMapView();
 
 		mLocationManager = TencentLocationManager.getInstance(this);
-		// ÉèÖÃ×ø±êÏµÎª gcj-02, È±Ê¡×ø±êÎª gcj-02, ËùÒÔÍ¨³£²»±Ø½øĞĞÈçÏÂµ÷ÓÃ
+		// è®¾ç½®åæ ‡ç³»ä¸º gcj-02, ç¼ºçœåæ ‡ä¸º gcj-02, æ‰€ä»¥é€šå¸¸ä¸å¿…è¿›è¡Œå¦‚ä¸‹è°ƒç”¨
 		mLocationManager
 				.setCoordinateType(TencentLocationManager.COORDINATE_TYPE_GCJ02);
 		
@@ -85,7 +84,7 @@ public class MyMapActivity extends MapActivity implements
 //		final LatLng latLng1 = new LatLng(22.540552, 113.935446);
 //		final LatLng latLng2 = new LatLng(22.540549, 113.935044);
 
-		// Èç¹ûÒªĞŞ¸ÄÑÕÉ«£¬ÇëÖ±½ÓÊ¹ÓÃ4×Ö½ÚÑÕÉ«»ò¶¨ÒåµÄ±äÁ¿
+		// å¦‚æœè¦ä¿®æ”¹é¢œè‰²ï¼Œè¯·ç›´æ¥ä½¿ç”¨4å­—èŠ‚é¢œè‰²æˆ–å®šä¹‰çš„å˜é‡
 		PolylineOptions lineOpt = new PolylineOptions();
 		
 		for(String strLocation: LocationUtil.getListLocation())
@@ -99,7 +98,7 @@ public class MyMapActivity extends MapActivity implements
 				final LatLng latLng = new LatLng(long_la[1], long_la[0]);
 				lineOpt.add(latLng);
 				
-				Log.d("guccigu","¾­¶È = " + long_la[0] + "£¬Î¬¶È = " +long_la[1]);
+				Log.d("guccigu","ç»åº¦ = " + long_la[0] + "ï¼Œç»´åº¦ = " +long_la[1]);
 			}
 
 		}
@@ -167,13 +166,13 @@ public class MyMapActivity extends MapActivity implements
 				mMapView.getController().animateTo(of(mLocation));
 				
 			}
-			// ¶¨Î»³É¹¦
+			// å®šä½æˆåŠŸ
 			StringBuilder sb = new StringBuilder();
-			sb.append("¶¨Î»²ÎÊı=").append(mRequestParams).append("\n");
-			sb.append("(Î³¶È=").append(location.getLatitude()).append(",¾­¶È=")
-					.append(location.getLongitude()).append(",¾«¶È=")
-					.append(location.getAccuracy()).append("), À´Ô´=")
-					.append(location.getProvider()).append(", µØÖ·=")
+			sb.append("å®šä½å‚æ•°=").append(mRequestParams).append("\n");
+						sb.append("(çº¬åº¦=").append(location.getLatitude()).append(",ç»åº¦=")
+								.append(location.getLongitude()).append(",ç²¾åº¦=")
+								.append(location.getAccuracy()).append("), æ¥æº=")
+								.append(location.getProvider()).append(", åœ°å€=")
 					.append(location.getAddress());
 			
 			double long_laNum[] = LocationUtil.GaussProjCal(location.getLongitude(), location.getLatitude());
@@ -185,10 +184,11 @@ public class MyMapActivity extends MapActivity implements
 			LocationUtil.getBreadCrumbs().add(new DoublePoint(locationX,locationY));
 			LocationUtil.getListLocation().add(locationX + "," +locationY);
 			
-			// ¸üĞÂ status
+			// æ›´æ–° status
 			mStatus.setText(sb.toString());
 
-			// ¸üĞÂ location Í¼²ã
+
+			// æ›´æ–° location å›¾å±‚
 			mLocationOverlay.setAccuracy(mLocation.getAccuracy());
 			mLocationOverlay.setGeoCoords(of(mLocation));
 			mMapView.invalidate();
@@ -208,7 +208,7 @@ public class MyMapActivity extends MapActivity implements
 		request.setInterval(30000);
 		mLocationManager.requestLocationUpdates(request, this);
 
-		mRequestParams = request.toString() + ", ×ø±êÏµ="
+		mRequestParams = request.toString() + ", åæ ‡ç³»="
 				+ mLocationManager.getCoordinateType();
 	}
 
