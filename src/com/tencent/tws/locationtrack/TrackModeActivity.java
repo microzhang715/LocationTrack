@@ -123,6 +123,7 @@ public class TrackModeActivity extends BaseActivity implements SensorEventListen
     	if (sysOk) {
     		SU.registerListeners();
     		GLView.onResume();
+    		LocationUtil.setEndTrack(false);
     	}
     }
     

@@ -66,6 +66,7 @@ public class MySurfaceRenderer implements GLSurfaceView.Renderer {
         gl.glScalef(scaleFactor, scaleFactor, scaleFactor);
         
         //draw home square
+        gl.glColor4f(1, 1, 1, 1);
         gl.glVertexPointer(3, GL10.GL_FLOAT, 0, shapeBuffer);
         gl.glDrawArrays(GL10.GL_LINE_LOOP, 3, 4);
         
@@ -76,6 +77,7 @@ public class MySurfaceRenderer implements GLSurfaceView.Renderer {
 	        //draw pointer
 	        gl.glPushMatrix();
 	        gl.glTranslatef((float)p.getX(), (float)p.getY(), 0);
+	        gl.glColor4f(1, 1, 0, 1);
 			gl.glVertexPointer(3, GL10.GL_FLOAT, 0, shapeBuffer);
 			gl.glRotatef(LocationUtil.getCurrentAzimuthDegrees()-90, 0, 0, 1);
 			gl.glDrawArrays(GL10.GL_LINE_STRIP, 0, 3);
@@ -86,12 +88,21 @@ public class MySurfaceRenderer implements GLSurfaceView.Renderer {
         if(LocationUtil.getOldCrumbBufferSize()>0)
         {
             gl.glPushMatrix();
+            gl.glColor4f(1, 1, 1, 1);
     		gl.glVertexPointer(3, GL10.GL_FLOAT, 0, LocationUtil.getOldCrumbBuffer());
     		gl.glDrawArrays(GL10.GL_LINE_STRIP, 0, LocationUtil.getOldCrumbBufferSize());
     		gl.glPopMatrix();
         }
 		//draw trail
 		gl.glPushMatrix();
+		if(LocationUtil.getOldCrumbBufferSize()>0)
+        {
+			gl.glColor4f(1, 1, 0, 1);
+        }
+		else
+		{
+			gl.glColor4f(1, 1, 1, 1);
+		}
 		gl.glVertexPointer(3, GL10.GL_FLOAT, 0, LocationUtil.getCrumbBuffer());
 		gl.glDrawArrays(GL10.GL_LINE_STRIP, 0, LocationUtil.getCrumbBufferSize());
 		gl.glPopMatrix();
