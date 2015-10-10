@@ -54,7 +54,7 @@
         <activity
 				android:name=".bluetooth.DeviceScanActivity"
             android:label="@string/app_name" 
-            android:launchMode= "singleInstance">
+            android:launchMode= "singleTask">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 				<action android:name="com.tencent.tws.locationtrack.bluetooth.DeviceScanActivity" />
@@ -75,7 +75,7 @@
         <activity
             android:name=".TrackModeActivity"
             android:label="@string/app_name"
-            android:launchMode= "singleInstance">
+            android:launchMode= "singleTask">
             <intent-filter>
                 <action android:name="com.tencent.tws.locationtrack.TrackModeActivity" />
                 <category android:name="android.intent.category.DEFAULT" />
