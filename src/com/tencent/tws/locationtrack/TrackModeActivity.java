@@ -14,6 +14,7 @@ import com.tencent.tws.locationtrack.util.DoublePoint;
 import com.tencent.tws.locationtrack.util.LocationUtil;
 import com.tencent.tws.locationtrack.util.MySurfaceRenderer;
 import com.tencent.tws.locationtrack.util.SensorUtil;
+import com.tencent.tws.qdozemanager.QDozeManager;
 import com.tencent.tws.util.NotifyUtil;
 import com.tencent.tws.widget.BaseActivity;
 
@@ -46,6 +47,8 @@ public class TrackModeActivity extends BaseActivity implements SensorEventListen
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
+        
+    	QDozeManager.getInstance(this).ensureScreenOn("com.tencent.tws.locationtrack", true);
         SU = new SensorUtil(this);
 		LocationUtil.setSensorUtil(SU);
         LocationUtil.init(false);

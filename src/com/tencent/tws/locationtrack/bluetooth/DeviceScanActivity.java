@@ -35,6 +35,7 @@ import android.widget.*;
 import com.tencent.tws.framework.global.GlobalObj;
 import com.tencent.tws.locationtrack.R;
 import com.tencent.tws.locationtrack.util.LocationUtil;
+import com.tencent.tws.qdozemanager.QDozeManager;
 import com.tencent.tws.util.NotifyUtil;
 import com.tencent.tws.widget.BaseActivity;
 
@@ -69,6 +70,8 @@ public class DeviceScanActivity extends BaseActivity implements AdapterView.OnIt
 		GlobalObj.g_appContext = this;
 		mHandler = new Handler();
 
+		
+		QDozeManager.getInstance(this).ensureScreenOn("com.tencent.tws.locationtrack", true);
 		listView = (ListView) findViewById(R.id.my_list);
 		name = (TextView) findViewById(R.id.name);
 		address = (TextView) findViewById(R.id.address);
