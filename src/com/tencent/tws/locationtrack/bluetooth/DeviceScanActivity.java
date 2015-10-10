@@ -30,6 +30,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.*;
+
+import com.tencent.tws.framework.global.GlobalObj;
 import com.tencent.tws.locationtrack.R;
 import com.tencent.tws.widget.BaseActivity;
 
@@ -53,10 +55,13 @@ public class DeviceScanActivity extends BaseActivity implements AdapterView.OnIt
 	private static final long SCAN_PERIOD = 10000;
 	SharedPreferences sharedPreferences;
 
+	private static final String TRACKMODE = "com.tencent.tws.locationtrack.TrackModeActivity";
+	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.main_list);
+		GlobalObj.g_appContext = this;
 		mHandler = new Handler();
 
 		listView = (ListView) findViewById(R.id.my_list);
@@ -121,6 +126,7 @@ public class DeviceScanActivity extends BaseActivity implements AdapterView.OnIt
 		scanLeDevice(false);
 		mLeDeviceListAdapter.clear();
 	}
+	
 
 	private void scanLeDevice(final boolean enable) {
 		if (enable) {
@@ -272,10 +278,17 @@ public class DeviceScanActivity extends BaseActivity implements AdapterView.OnIt
 			if (action.equals(BluetoothLeService.ACTION_GATT_CONNECTED)) {
 				if (state != null) state.setText("连接成功");
 			} else if (action.equals(BluetoothLeService.ACTION_GATT_DISCONNECTED)) {
-				if (state != null) state.setText("连接断开");
+				if (state != null) 
+					{
+						state.setText("连接断开");
+						Intent i = new Intent(TRACKMODE);
+						GlobalObj.g_appContext.startActivity(i);
+					}
+				
 			}
 		}
 	}
+	
 
 	static class ViewHolder {
 		TextView deviceName;
