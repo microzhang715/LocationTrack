@@ -11,6 +11,7 @@
 	
 	<string name="stopdraw">结束绘制</string>
 	<string name="findcar">开始找车</string>
+	<string name="endSearch">结束找车，目标在周围10米范围内</string>
 
 	<string name="ble_not_supported">BLE is not supported</string>
 	<string name="label_data">Data:</string>

@@ -417,4 +417,9 @@ public class LocationUtil {
 	{
 		mSU = SU;
 	}
+	
+	public static SensorUtil getSensorUtil()
+	{
+		return mSU;
+	}
 }

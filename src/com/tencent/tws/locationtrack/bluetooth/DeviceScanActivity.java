@@ -34,6 +34,8 @@ import android.widget.*;
 
 import com.tencent.tws.framework.global.GlobalObj;
 import com.tencent.tws.locationtrack.R;
+import com.tencent.tws.locationtrack.util.LocationUtil;
+import com.tencent.tws.util.NotifyUtil;
 import com.tencent.tws.widget.BaseActivity;
 
 import java.util.ArrayList;
@@ -58,6 +60,7 @@ public class DeviceScanActivity extends BaseActivity implements AdapterView.OnIt
 	private static SharedPreferences sharedPreferences;
 
 	private static final String TRACKMODE = "com.tencent.tws.locationtrack.TrackModeActivity";
+	private static final String DeviceScan = "com.tencent.tws.locationtrack.bluetooth.DeviceScanActivity";
 	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -281,29 +284,54 @@ public class DeviceScanActivity extends BaseActivity implements AdapterView.OnIt
 			if (action.equals(BluetoothLeService.ACTION_GATT_CONNECTED)) {
 				if (state != null) {
 					state.setText("连接成功");
-					//刷新界面
+					// 刷新界面
 					if (name.equals("未知名称")) {
-						name.setText(sharedPreferences.getString(DeviceControlActivity.EXTRAS_DEVICE_NAME, ""));
-						address.setText(sharedPreferences.getString(DeviceControlActivity.EXTRAS_DEVICE_ADDRESS, ""));
+						name.setText(sharedPreferences.getString(
+								DeviceControlActivity.EXTRAS_DEVICE_NAME, ""));
+						address.setText(sharedPreferences
+								.getString(
+										DeviceControlActivity.EXTRAS_DEVICE_ADDRESS,
+										""));
 					}
+					NotifyUtil.vibrate(GlobalObj.g_appContext, 50);
+					// LocationUtil.setEndTrack(true);
+					// SensorUtil sU = LocationUtil.getSensorUtil();
+					// if(sU!=null)
+					// {
+					// sU.unregisterListeners();
+					// }
+					Toast.makeText(GlobalObj.g_appContext, R.string.endSearch,
+							Toast.LENGTH_SHORT).show();
+					Intent i = new Intent(DeviceScan);
+					GlobalObj.g_appContext.startActivity(i);
 				}
-			} else if (action.equals(BluetoothLeService.ACTION_GATT_DISCONNECTED)) {
+			} else if (action
+					.equals(BluetoothLeService.ACTION_GATT_DISCONNECTED)) {
 				if (state != null) {
-						state.setText("连接断开");
-						//刷新界面
+					state.setText("连接断开");
+					// 刷新界面
 					if (name.equals("未知名称")) {
-						name.setText(sharedPreferences.getString(DeviceControlActivity.EXTRAS_DEVICE_NAME, ""));
-						address.setText(sharedPreferences.getString(DeviceControlActivity.EXTRAS_DEVICE_ADDRESS, ""));
+						name.setText(sharedPreferences.getString(
+								DeviceControlActivity.EXTRAS_DEVICE_NAME, ""));
+						address.setText(sharedPreferences
+								.getString(
+										DeviceControlActivity.EXTRAS_DEVICE_ADDRESS,
+										""));
 					}
-						Intent i = new Intent(TRACKMODE);
-						GlobalObj.g_appContext.startActivity(i);
-					}
+					NotifyUtil.vibrate(GlobalObj.g_appContext, 50);
+					LocationUtil.setEndTrack(false);
+					LocationUtil.init(false);
+					Intent i = new Intent(TRACKMODE);
+					GlobalObj.g_appContext.startActivity(i);
+				}
 			} else if (action.equals(BluetoothLeService.ACTION_GATT_RSSI)) {
 				int rssiValue = intent.getIntExtra("rssi", 0);
 				int statusValue = intent.getIntExtra("status", 0);
 
-				if (rssiTexeView != null) rssiTexeView.setText(rssiValue + "");
-				Log.i("kermit", "rssiValue = " + rssiValue + " | status=" + statusValue);
+				if (rssiTexeView != null)
+					rssiTexeView.setText(rssiValue + "");
+				Log.i("kermit", "rssiValue = " + rssiValue + " | status="
+						+ statusValue);
 			}
 		}
 	}
