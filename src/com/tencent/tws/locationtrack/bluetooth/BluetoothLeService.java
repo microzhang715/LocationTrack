@@ -25,6 +25,8 @@ import android.os.IBinder;
 import android.util.Log;
 
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.UUID;
 
 /**
@@ -49,9 +51,11 @@ public class BluetoothLeService extends Service {
 	public final static String ACTION_GATT_SERVICES_DISCOVERED = "com.tencent.tws.locationtrack.ACTION_GATT_SERVICES_DISCOVERED";
 	public final static String ACTION_DATA_AVAILABLE = "com.tencent.tws.locationtrack.ACTION_DATA_AVAILABLE";
 	public final static String EXTRA_DATA = "com.tencent.tws.locationtrack.EXTRA_DATA";
+	public final static String ACTION_GATT_RSSI = "com.tencent.tws.locationtrack.ACTION_GATT_RSSI";
 
 	public final static UUID UUID_HEART_RATE_MEASUREMENT = UUID.fromString(SampleGattAttributes.HEART_RATE_MEASUREMENT);
 
+	private Timer mRssiTimer = new Timer();
 	// 连接状态回调
 	private final BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
 		@Override
@@ -59,11 +63,24 @@ public class BluetoothLeService extends Service {
 			if (newState == BluetoothProfile.STATE_CONNECTED) {
 				mConnectionState = STATE_CONNECTED;
 				broadcastUpdate(ACTION_GATT_CONNECTED);
-				Log.i(TAG, "Connected to GATT server.");
+				Log.i(TAG, "连接成功----STATE_CONNECTED");
+
+
+				//如果是连接状态，不停的去读取信号强度
+				TimerTask task = new TimerTask() {
+					@Override
+					public void run() {
+						mBluetoothGatt.readRemoteRssi();
+					}
+				};
+				mRssiTimer = new Timer();
+				mRssiTimer.schedule(task, 1000, 1000);
 			} else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
 				mConnectionState = STATE_DISCONNECTED;
-				Log.i(TAG, "Disconnected from GATT server.");
+				Log.i(TAG, "连接断开---STATE_DISCONNECTED");
 				broadcastUpdate(ACTION_GATT_DISCONNECTED);
+
+				mRssiTimer.cancel();
 			}
 		}
 
@@ -84,6 +101,16 @@ public class BluetoothLeService extends Service {
 
 		@Override
 		public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
+		}
+
+		@Override
+		public void onReadRemoteRssi(BluetoothGatt gatt, int rssi, int status) {
+			final Intent intent = new Intent(ACTION_GATT_RSSI);
+			intent.putExtra("rssi", rssi);
+			intent.putExtra("status", status);
+			sendBroadcast(intent);
+
+			Log.d(TAG, "read RSSI = " + rssi);
 		}
 	};
 

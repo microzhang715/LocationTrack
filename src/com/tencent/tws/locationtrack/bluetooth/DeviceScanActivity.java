@@ -26,6 +26,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -46,14 +47,15 @@ public class DeviceScanActivity extends BaseActivity implements AdapterView.OnIt
 	private boolean mScanning;
 	private Handler mHandler;
 	private ListView listView;
-	private TextView name;
-	private TextView address;
+	private static TextView name;
+	private static TextView address;
 	private static TextView state;
+	private static TextView rssiTexeView;
 	private Button scan;
 	private static final int REQUEST_ENABLE_BT = 1;
 	// Stops scanning after 10 seconds.
 	private static final long SCAN_PERIOD = 10000;
-	SharedPreferences sharedPreferences;
+	private static SharedPreferences sharedPreferences;
 
 	private static final String TRACKMODE = "com.tencent.tws.locationtrack.TrackModeActivity";
 	
@@ -68,6 +70,7 @@ public class DeviceScanActivity extends BaseActivity implements AdapterView.OnIt
 		name = (TextView) findViewById(R.id.name);
 		address = (TextView) findViewById(R.id.address);
 		state = (TextView) findViewById(R.id.state);
+		rssiTexeView = (TextView) findViewById(R.id.rssiValue);
 
 		scan = (Button) findViewById(R.id.scan);
 		scan.setOnClickListener(new View.OnClickListener() {
@@ -276,19 +279,34 @@ public class DeviceScanActivity extends BaseActivity implements AdapterView.OnIt
 		public void onReceive(Context context, Intent intent) {
 			String action = intent.getAction();
 			if (action.equals(BluetoothLeService.ACTION_GATT_CONNECTED)) {
-				if (state != null) state.setText("连接成功");
+				if (state != null) {
+					state.setText("连接成功");
+					//刷新界面
+					if (name.equals("未知名称")) {
+						name.setText(sharedPreferences.getString(DeviceControlActivity.EXTRAS_DEVICE_NAME, ""));
+						address.setText(sharedPreferences.getString(DeviceControlActivity.EXTRAS_DEVICE_ADDRESS, ""));
+					}
+				}
 			} else if (action.equals(BluetoothLeService.ACTION_GATT_DISCONNECTED)) {
-				if (state != null) 
-					{
+				if (state != null) {
 						state.setText("连接断开");
+						//刷新界面
+					if (name.equals("未知名称")) {
+						name.setText(sharedPreferences.getString(DeviceControlActivity.EXTRAS_DEVICE_NAME, ""));
+						address.setText(sharedPreferences.getString(DeviceControlActivity.EXTRAS_DEVICE_ADDRESS, ""));
+					}
 						Intent i = new Intent(TRACKMODE);
 						GlobalObj.g_appContext.startActivity(i);
 					}
-				
+			} else if (action.equals(BluetoothLeService.ACTION_GATT_RSSI)) {
+				int rssiValue = intent.getIntExtra("rssi", 0);
+				int statusValue = intent.getIntExtra("status", 0);
+
+				if (rssiTexeView != null) rssiTexeView.setText(rssiValue + "");
+				Log.i("kermit", "rssiValue = " + rssiValue + " | status=" + statusValue);
 			}
 		}
 	}
-	
 
 	static class ViewHolder {
 		TextView deviceName;

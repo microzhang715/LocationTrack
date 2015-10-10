@@ -90,6 +90,7 @@
 				<action android:name="com.tencent.tws.locationtrack.ACTION_GATT_SERVICES_DISCOVERED"/>
 				<action android:name="com.tencent.tws.locationtrack.ACTION_DATA_AVAILABLE"/>
 				<action android:name="com.tencent.tws.locationtrack.EXTRA_DATA"/>
+				<action android:name="com.tencent.tws.locationtrack.ACTION_GATT_RSSI"/>
 			</intent-filter>
 		</receiver>
     </application>
