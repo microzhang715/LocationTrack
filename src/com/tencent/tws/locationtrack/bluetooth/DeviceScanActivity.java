@@ -24,6 +24,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.res.AssetFileDescriptor;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
+import android.media.MediaPlayer.OnCompletionListener;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -39,12 +43,15 @@ import com.tencent.tws.qdozemanager.QDozeManager;
 import com.tencent.tws.util.NotifyUtil;
 import com.tencent.tws.widget.BaseActivity;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 /**
  * Activity for scanning and displaying available Bluetooth LE devices.
  */
 public class DeviceScanActivity extends BaseActivity implements AdapterView.OnItemClickListener {
+	
+	private final static String TAG = "DeviceScanActivity";
 	private LeDeviceListAdapter mLeDeviceListAdapter;
 	private BluetoothAdapter mBluetoothAdapter;
 	private boolean mScanning;
@@ -63,6 +70,8 @@ public class DeviceScanActivity extends BaseActivity implements AdapterView.OnIt
 	private static final String TRACKMODE = "com.tencent.tws.locationtrack.TrackModeActivity";
 	private static final String DeviceScan = "com.tencent.tws.locationtrack.bluetooth.DeviceScanActivity";
 	
+    private static MediaPlayer            mediaPlayer;
+    protected static final float     BEEP_VOLUME = 1.00f;
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -85,7 +94,7 @@ public class DeviceScanActivity extends BaseActivity implements AdapterView.OnIt
 				mLeDeviceListAdapter.clear();
 				mLeDeviceListAdapter.notifyDataSetChanged();
 
-				scanLeDevice(false);
+				//scanLeDevice(false);
 				mHandler.postDelayed(new Runnable() {
 					@Override
 					public void run() {
@@ -126,16 +135,61 @@ public class DeviceScanActivity extends BaseActivity implements AdapterView.OnIt
 		listView.setAdapter(mLeDeviceListAdapter);
 		listView.setOnItemClickListener(this);
 
+		initAlarmSound();
 		scanLeDevice(true);
 	}
 
 	@Override
 	protected void onPause() {
 		super.onPause();
-		scanLeDevice(false);
+		//scanLeDevice(false);
 		mLeDeviceListAdapter.clear();
 	}
 	
+	  private void initAlarmSound()
+	    {
+	        if (mediaPlayer == null)
+	        {
+	            // The volume on STREAM_SYSTEM is not adjustable, and users found it
+	            // too loud,
+	            // so we now play on the music stream.
+	            setVolumeControlStream(AudioManager.STREAM_MUSIC);
+	            mediaPlayer = new MediaPlayer();
+	            mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+	            mediaPlayer.setOnCompletionListener(beepListener);
+
+	            AssetFileDescriptor file = getResources().openRawResourceFd(R.raw.alarm_bird);
+	            try
+	            {
+	                mediaPlayer.setDataSource(file.getFileDescriptor(), file.getStartOffset(), file.getLength());
+	                mediaPlayer.setVolume(BEEP_VOLUME, BEEP_VOLUME);
+	                mediaPlayer.prepare();
+	            } catch (IOException e)
+	            {
+	                mediaPlayer = null;
+	            }finally{
+	            	if(file != null){
+	            		try {
+	            			 file.close();
+						} catch (IOException e2) {
+							e2.printStackTrace();
+						}
+	            	}
+	            }
+	        }
+	    }
+	
+	  
+	  /**
+	     * When the beep has finished playing, rewind to queue up another one.
+	     */
+	    private final OnCompletionListener beepListener = new OnCompletionListener()
+	                                                    {
+	                                                        public void onCompletion(MediaPlayer mediaPlayer)
+	                                                        {
+	                                                            mediaPlayer.seekTo(0);
+	                                                        }
+	                                                    };
 
 	private void scanLeDevice(final boolean enable) {
 		if (enable) {
@@ -144,6 +198,7 @@ public class DeviceScanActivity extends BaseActivity implements AdapterView.OnIt
 				@Override
 				public void run() {
 					mScanning = false;
+					//Log.d(TAG, "stopLeScan()=====scanLeDevice true");
 					mBluetoothAdapter.stopLeScan(mLeScanCallback);
 					invalidateOptionsMenu();
 				}
@@ -153,6 +208,7 @@ public class DeviceScanActivity extends BaseActivity implements AdapterView.OnIt
 			mBluetoothAdapter.startLeScan(mLeScanCallback);
 		} else {
 			mScanning = false;
+			Log.d(TAG, "stopLeScan()=====scanLeDevice false");
 			mBluetoothAdapter.stopLeScan(mLeScanCallback);
 		}
 		invalidateOptionsMenu();
@@ -172,6 +228,7 @@ public class DeviceScanActivity extends BaseActivity implements AdapterView.OnIt
 		}
 
 		if (mScanning) {
+			Log.d(TAG, "stopLeScan()=====onItemClick");
 			mBluetoothAdapter.stopLeScan(mLeScanCallback);
 			mScanning = false;
 		}
@@ -205,6 +262,7 @@ public class DeviceScanActivity extends BaseActivity implements AdapterView.OnIt
 					Toast.makeText(getApplicationContext(), "进入自动连接", Toast.LENGTH_SHORT).show();
 
 					if (mScanning) {
+						Log.d(TAG, "stopLeScan()=====addDevice");
 						mBluetoothAdapter.stopLeScan(mLeScanCallback);
 						mScanning = false;
 					}
@@ -269,6 +327,8 @@ public class DeviceScanActivity extends BaseActivity implements AdapterView.OnIt
 
 		@Override
 		public void onLeScan(final BluetoothDevice device, int rssi, byte[] scanRecord) {
+			
+			Log.d(TAG, "LeScanCallback======onLeScan");
 			runOnUiThread(new Runnable() {
 				@Override
 				public void run() {
@@ -296,7 +356,7 @@ public class DeviceScanActivity extends BaseActivity implements AdapterView.OnIt
 										DeviceControlActivity.EXTRAS_DEVICE_ADDRESS,
 										""));
 					}
-					NotifyUtil.vibrate(GlobalObj.g_appContext, 50);
+					NotifyUtil.vibrate(GlobalObj.g_appContext, 500);
 					// LocationUtil.setEndTrack(true);
 					// SensorUtil sU = LocationUtil.getSensorUtil();
 					// if(sU!=null)
@@ -321,7 +381,11 @@ public class DeviceScanActivity extends BaseActivity implements AdapterView.OnIt
 										DeviceControlActivity.EXTRAS_DEVICE_ADDRESS,
 										""));
 					}
-					NotifyUtil.vibrate(GlobalObj.g_appContext, 50);
+					if(mediaPlayer!=null)
+					{
+						mediaPlayer.start();
+					}
+					NotifyUtil.vibrate(GlobalObj.g_appContext, 500);
 					LocationUtil.setEndTrack(false);
 					LocationUtil.init(false);
 					Intent i = new Intent(TRACKMODE);

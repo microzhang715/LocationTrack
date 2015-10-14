@@ -56,6 +56,8 @@ public class BluetoothLeService extends Service {
 	public final static UUID UUID_HEART_RATE_MEASUREMENT = UUID.fromString(SampleGattAttributes.HEART_RATE_MEASUREMENT);
 
 	private Timer mRssiTimer = new Timer();
+	
+	private Timer mConnectTimer = new Timer();
 	// 连接状态回调
 	private final BluetoothGattCallback mGattCallback = new BluetoothGattCallback() {
 		@Override
@@ -75,11 +77,32 @@ public class BluetoothLeService extends Service {
 				};
 				mRssiTimer = new Timer();
 				mRssiTimer.schedule(task, 1000, 1000);
+				
+				mConnectTimer.cancel();
 			} else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
 				mConnectionState = STATE_DISCONNECTED;
 				Log.i(TAG, "连接断开---STATE_DISCONNECTED");
 				broadcastUpdate(ACTION_GATT_DISCONNECTED);
 
+				//开始扫描设备
+				mBluetoothAdapter.startLeScan(mLeScanCallback);
+//				TimerTask task = new TimerTask() {
+//					@Override
+//					public void run() {
+//						String address = getSharedPreferences("test", Context.MODE_PRIVATE).getString(DeviceControlActivity.EXTRAS_DEVICE_ADDRESS, "");
+//						if (address != null && !address.equals("")) {
+//							connect(address);
+//						}
+//						else
+//						{
+//							//开始扫描设备
+//							mBluetoothAdapter.startLeScan(mLeScanCallback);
+//						}
+//					}
+//				};
+//				mConnectTimer = new Timer();
+//				mConnectTimer.schedule(task, 1000, 1000);
+				
 				mRssiTimer.cancel();
 			}
 		}
@@ -110,7 +133,7 @@ public class BluetoothLeService extends Service {
 			intent.putExtra("status", status);
 			sendBroadcast(intent);
 
-			Log.d(TAG, "read RSSI = " + rssi);
+			//Log.d(TAG, "read RSSI = " + rssi);
 		}
 	};
 
@@ -169,12 +192,16 @@ public class BluetoothLeService extends Service {
 		Log.i(TAG, "onStartCommand");
 
 		initialize();
-		//开始扫描设备
-		mBluetoothAdapter.startLeScan(mLeScanCallback);
+
 
 		String address = getSharedPreferences("test", Context.MODE_PRIVATE).getString(DeviceControlActivity.EXTRAS_DEVICE_ADDRESS, "");
 		if (address != null && !address.equals("")) {
 			connect(address);
+		}
+		else
+		{
+			//开始扫描设备
+			mBluetoothAdapter.startLeScan(mLeScanCallback);
 		}
 
 		return super.onStartCommand(intent, flags, startId);
@@ -227,7 +254,7 @@ public class BluetoothLeService extends Service {
 		}
 		// We want to directly connect to the device, so we are setting the autoConnect
 		// parameter to false.
-		mBluetoothGatt = device.connectGatt(this, false, mGattCallback);
+		mBluetoothGatt = device.connectGatt(this, true, mGattCallback);
 		Log.d(TAG, "Trying to create a new connection.");
 		mBluetoothDeviceAddress = address;
 		mConnectionState = STATE_CONNECTING;
