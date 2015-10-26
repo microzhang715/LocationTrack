@@ -1,0 +1,14 @@
+<resources>
+    <color name="gray">#999999</color>
+    <color name="title">#222222</color>
+    <color name="title_second">#666666</color>
+    <color name="highlight">#d0634f</color>
+    <color name="highlight_border">#b45646</color>
+    <color name="mils">#6c928c</color>
+    <color name="divider">#ffffff</color>
+    <color name="snowhite">#ffffff</color>
+    <color name="green">#00ff00</color>
+    <color name="red">#ff0000</color>
+    <color name="blue">#0000ff</color>
+
+</resources>

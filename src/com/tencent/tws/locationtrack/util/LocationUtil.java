@@ -3,15 +3,20 @@ package com.tencent.tws.locationtrack.util;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
 import android.hardware.SensorEvent;
 import android.hardware.SensorManager;
 import android.util.Log;
+
+import com.tencent.mapsdk.raster.model.GeoPoint;
 import com.tencent.tws.framework.global.GlobalObj;
 import com.tencent.tws.util.NotifyUtil;
 
@@ -52,6 +57,8 @@ public class LocationUtil {
 	private static boolean mEndTrack;
 
 	private static SensorUtil mSU;
+	
+    private static HashMap<Double,Double> mParamsLocation = new HashMap<Double,Double>();
 	
 	//crumb trail
 	//*************************************************************************
@@ -422,4 +429,34 @@ public class LocationUtil {
 	{
 		return mSU;
 	}
+	
+	public static void setLocationTrack(HashMap<Double,Double> paramsLocation)
+	{
+		mParamsLocation = paramsLocation;
+	}
+	
+	public static HashMap<Double,Double> getLocationTrack()
+	{
+		return mParamsLocation;
+	}
+	
+	
+	public static GeoPoint of(Gps location) {
+		GeoPoint ge = new GeoPoint((int) (location.getWgLat() * 1E6),
+				(int) (location.getWgLon() * 1E6));
+		return ge;
+	}
+	
+    public static String convert(long mill){
+    	Date date=new Date(mill);
+    	String strs="";
+    	try {
+    	SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    	strs=sdf.format(date);
+    	} catch (Exception e) {
+    	e.printStackTrace();
+    	}
+    	return strs;
+    	}
+	
 }

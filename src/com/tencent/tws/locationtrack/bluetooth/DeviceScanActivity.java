@@ -30,6 +30,8 @@ import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnCompletionListener;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.PowerManager;
+import android.os.PowerManager.WakeLock;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -72,6 +74,8 @@ public class DeviceScanActivity extends BaseActivity implements AdapterView.OnIt
 	
     private static MediaPlayer            mediaPlayer;
     protected static final float     BEEP_VOLUME = 1.00f;
+    
+	WakeLock mWakeLock;
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -80,7 +84,10 @@ public class DeviceScanActivity extends BaseActivity implements AdapterView.OnIt
 		mHandler = new Handler();
 
 		
-		QDozeManager.getInstance(this).ensureScreenOn("com.tencent.tws.locationtrack", true);
+        PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);  
+        mWakeLock = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, TAG); 
+        mWakeLock.acquire();
+		
 		listView = (ListView) findViewById(R.id.my_list);
 		name = (TextView) findViewById(R.id.name);
 		address = (TextView) findViewById(R.id.address);
@@ -123,6 +130,10 @@ public class DeviceScanActivity extends BaseActivity implements AdapterView.OnIt
 	@Override
 	protected void onResume() {
 		super.onResume();
+		if(mWakeLock!=null)
+		{
+			mWakeLock.acquire();
+		}
 		sharedPreferences = getSharedPreferences("test", Context.MODE_PRIVATE);
 		if (!mBluetoothAdapter.isEnabled()) {
 			if (!mBluetoothAdapter.isEnabled()) {
@@ -143,6 +154,10 @@ public class DeviceScanActivity extends BaseActivity implements AdapterView.OnIt
 	protected void onPause() {
 		super.onPause();
 		//scanLeDevice(false);
+		if(mWakeLock!=null)
+		{
+			mWakeLock.release();
+		}
 		mLeDeviceListAdapter.clear();
 	}
 	
