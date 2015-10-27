@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 
+import com.tencent.tws.locationtrack.record.ArchiveMeta;
 import com.tencent.tws.locationtrack.record.ArchiveNameHelper;
 import com.tencent.tws.locationtrack.record.Archiver;
 import com.tencent.tws.locationtrack.util.LocationUtil;
@@ -59,7 +60,8 @@ public class RecordsActivity extends Activity  implements AdapterView.OnItemClic
 	        @Override
 	        public View getView(int position, View convertView, ViewGroup parent) {
 	            Archiver archive = archives.get(position);
-
+	            ArchiveMeta archiveMeta = archive.getMeta();
+	            
 	            LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 	            View rowView = inflater.inflate(R.layout.record_row, parent, false);
 
@@ -67,7 +69,9 @@ public class RecordsActivity extends Activity  implements AdapterView.OnItemClic
 	            TextView mCostTime = (TextView) rowView.findViewById(R.id.cost_time);
 	            TextView mDistance = (TextView) rowView.findViewById(R.id.distance);
 
-	            
+//	            mDistance.setText(String.format(getString(R.string.records_formatter),
+//	                    archiveMeta.getDistance() / ArchiveMeta.TO_KILOMETRE));
+	            mDistance.setText(String.valueOf(archiveMeta.getDistance()));
 	            Location location =  archive.getFirstRecord();
 	            if(location!=null)
 	            {
@@ -157,5 +161,27 @@ public class RecordsActivity extends Activity  implements AdapterView.OnItemClic
 	            }
 	        }
 	        archives.clear();
+	    }
+	    
+	    
+	    /**
+	     * 获得当前已经记录的距离
+	     *
+	     * @return
+	     */
+	    public float getRawDistance(Archiver archive) {
+	        ArrayList<Location> locations = archive.fetchAll();
+	        Location lastComputedLocation = null;
+	        float distance = 0;
+	        for (int i = 0; i < locations.size(); i++) {
+	            Location location = locations.get(i);
+	            if (lastComputedLocation != null) {
+	                distance += lastComputedLocation.distanceTo(location);
+	            }
+
+	            lastComputedLocation = location;
+	        }
+
+	        return distance;
 	    }
 }

@@ -37,6 +37,7 @@ import com.tencent.mapsdk.raster.model.PolylineOptions;
 import com.tencent.tencentmap.mapsdk.map.MapView;
 import com.tencent.tencentmap.mapsdk.map.Overlay;
 import com.tencent.tencentmap.mapsdk.map.Projection;
+import com.tencent.tws.locationtrack.record.ArchiveMeta;
 import com.tencent.tws.locationtrack.record.ArchiveNameHelper;
 import com.tencent.tws.locationtrack.record.Archiver;
 import com.tencent.tws.locationtrack.util.Gps;
@@ -78,6 +79,7 @@ public class GeoLocationActivity extends BaseActivity implements LocationListene
 	    private ArchiveNameHelper nameHelper;
 	    private String archivName;
 	    private Archiver archiver;
+	    private ArchiveMeta meta = null;
 	    private HashMap<Long, Location> locationCache;
 	    
 	    private final static int ACCURACY = 3;
@@ -308,7 +310,11 @@ public class GeoLocationActivity extends BaseActivity implements LocationListene
 	                flushCache();
 	            }
 	            
-	            
+	            // 计算动态路径
+	            this.meta = archiver.getMeta();
+	            if (meta != null) {
+	                meta.setRawDistance();
+	            }
 	            LocationUtil.getLocationTrack().put(location.getLongitude(),location.getLatitude());
 		        
 		        

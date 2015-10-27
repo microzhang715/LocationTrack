@@ -34,6 +34,8 @@ public class Archiver {
         static final String ACCURACY = "accuracy";
         static final String TIME = "time";
         static final String COUNT = "count";
+        static final String META_NAME = "meta";
+        static final String META_VALUE = "value";
     }
 	
     protected class ArchiveDatabaseHelper extends SQLiteOpenHelper {
@@ -50,7 +52,13 @@ public class Archiver {
                 + "time long not null"
                 + ");";
 
-
+        protected static final String SQL_CREATE_META_TABLE =
+                "create table " + ArchiveMeta.TABLE_NAME + " ("
+                    + "id integer primary key autoincrement, "
+                    + "meta string not null unique,"
+                    + "value string default null"
+                    + ");";
+        
         private static final int DB_VERSION = 1;
 
         public ArchiveDatabaseHelper(Context context, String name) {
@@ -60,6 +68,7 @@ public class Archiver {
         @Override
         public void onCreate(SQLiteDatabase database) {
             try {
+            	database.execSQL(SQL_CREATE_META_TABLE);
                 database.execSQL(SQL_CREATE_LOCATION_TABLE);
             } catch (SQLException e) {
                 Log.e(TAG,e.getMessage());
@@ -75,6 +84,7 @@ public class Archiver {
     
     
     protected String name;
+    private ArchiveMeta meta;
     private ArrayList<Location> locations;
     protected ArchiveDatabaseHelper databaseHelper = null;
     protected SQLiteDatabase database;
@@ -113,6 +123,7 @@ public class Archiver {
         this.databaseHelper = new ArchiveDatabaseHelper(context, name);
 
         this.reopen(this.mode);
+        this.meta = new ArchiveMeta(this);
     }
 
     public void open(String name) {
@@ -145,6 +156,9 @@ public class Archiver {
         return (file == null) ? false : file.exists();
     }
 
+    public ArchiveMeta getMeta() {
+        return meta;
+    }
 
     public boolean add(TencentLocation point, long timeMillis) {
         ContentValues values = new ContentValues();

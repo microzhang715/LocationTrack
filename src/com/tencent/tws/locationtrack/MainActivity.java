@@ -71,10 +71,10 @@ public class MainActivity extends BaseActivity {
 				if (TextUtils.isEmpty(intervalTime.getText().toString()) || TextUtils.isEmpty(intervalDistance.getText().toString())) {
 					 Toast.makeText(MainActivity.this, "请输入定位时间和距离间隔", Toast.LENGTH_SHORT).show();
 				} else {
-//					Intent i = new Intent(MainActivity.this,TencentLocationActivity.class);
-//					i.putExtra("intervalTime",
-//							Long.parseLong(intervalTime.getText().toString()) * 1000);
-//					startActivity(i);
+					Intent i = new Intent(MainActivity.this,TencentLocationActivity.class);
+					i.putExtra("intervalTime",
+							Long.parseLong(intervalTime.getText().toString()) * 1000);
+					startActivity(i);
 				}
 			}
 		});

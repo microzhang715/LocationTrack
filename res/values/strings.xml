@@ -17,6 +17,7 @@
 	<string name="sport_record">历史记录</string>
     <string name="no_description">描述为空</string>
 	<string name="km">公里</string>
+	<string name="records_formatter">%02.1f</string>
     
 	<string name="stopdraw">结束绘制</string>
 	<string name="findcar">开始找车</string>
