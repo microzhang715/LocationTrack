@@ -199,6 +199,7 @@ public class GeoLocationActivity extends BaseActivity implements LocationListene
 			{
 				mWakeLock.release();
 			}
+			locationManager.removeUpdates(this);
 		}
 	    
 		

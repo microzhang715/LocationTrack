@@ -175,7 +175,7 @@ public class TencentLocationActivity extends BaseActivity implements TencentLoca
 			{
 				mWakeLock.release();
 			}
-//			mLocationManager.removeUpdates(this);
+			mLocationManager.removeUpdates(this);
 		}
 		
 		

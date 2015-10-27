@@ -69,9 +69,9 @@ public class RecordsActivity extends Activity  implements AdapterView.OnItemClic
 	            TextView mCostTime = (TextView) rowView.findViewById(R.id.cost_time);
 	            TextView mDistance = (TextView) rowView.findViewById(R.id.distance);
 
-//	            mDistance.setText(String.format(getString(R.string.records_formatter),
-//	                    archiveMeta.getDistance() / ArchiveMeta.TO_KILOMETRE));
-	            mDistance.setText(String.valueOf(archiveMeta.getDistance()));
+	            mDistance.setText(String.format(getString(R.string.records_formatter),
+	                    archiveMeta.getDistance() / ArchiveMeta.TO_KILOMETRE));
+	           // mDistance.setText(String.valueOf(archiveMeta.getDistance()));
 	            Location location =  archive.getFirstRecord();
 	            if(location!=null)
 	            {
