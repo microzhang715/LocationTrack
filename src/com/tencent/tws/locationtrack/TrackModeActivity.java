@@ -9,13 +9,10 @@ import android.content.BroadcastReceiver;
 import android.content.Intent;
 import android.content.IntentFilter;
 
-import com.tencent.tws.framework.global.GlobalObj;
 import com.tencent.tws.locationtrack.util.DoublePoint;
 import com.tencent.tws.locationtrack.util.LocationUtil;
 import com.tencent.tws.locationtrack.util.MySurfaceRenderer;
 import com.tencent.tws.locationtrack.util.SensorUtil;
-import com.tencent.tws.qdozemanager.QDozeManager;
-import com.tencent.tws.util.NotifyUtil;
 import com.tencent.tws.widget.BaseActivity;
 
 import android.app.Activity;
@@ -26,6 +23,9 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
+import android.os.PowerManager;
+import android.os.Vibrator;
+import android.os.PowerManager.WakeLock;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -41,14 +41,16 @@ public class TrackModeActivity extends BaseActivity implements SensorEventListen
 	private boolean sysOk;
 	private SensorUtil SU;
 	
-
-	
+	WakeLock mWakeLock;
+	Context mContext;
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
         
-    	QDozeManager.getInstance(this).ensureScreenOn("com.tencent.tws.locationtrack", true);
+        PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);  
+        mWakeLock = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, TAG); 
+        mWakeLock.acquire();
         SU = new SensorUtil(this);
 		LocationUtil.setSensorUtil(SU);
         LocationUtil.init(false);
@@ -115,10 +117,23 @@ public class TrackModeActivity extends BaseActivity implements SensorEventListen
 			// TODO Auto-generated method stub
 			SU.unregisterListeners();
 			LocationUtil.setEndTrack(true);
-			NotifyUtil.vibrate(GlobalObj.g_appContext, 50);
+			Vibrator vibrator = (Vibrator) mContext
+					.getSystemService(Context.VIBRATOR_SERVICE);
+
+			vibrator.vibrate(500);
 		}
     	
     };
+    
+    
+	@Override
+	protected void onDestroy() {
+		super.onDestroy();
+		if(mWakeLock!=null)
+		{
+			mWakeLock.release();
+		}
+	}
     
     @Override
     public void onResume() {
@@ -128,6 +143,10 @@ public class TrackModeActivity extends BaseActivity implements SensorEventListen
     		GLView.onResume();
     		LocationUtil.setEndTrack(false);
     	}
+		if(mWakeLock!=null)
+		{
+			mWakeLock.acquire();
+		}
     }
     
     @Override
@@ -137,6 +156,10 @@ public class TrackModeActivity extends BaseActivity implements SensorEventListen
     		SU.unregisterListeners();
     		GLView.onPause();
     	}
+		if(mWakeLock!=null)
+		{
+			mWakeLock.release();
+		}
     }
     
     @Override 

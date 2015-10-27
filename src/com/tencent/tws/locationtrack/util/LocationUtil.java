@@ -17,8 +17,6 @@ import android.hardware.SensorManager;
 import android.util.Log;
 
 import com.tencent.mapsdk.raster.model.GeoPoint;
-import com.tencent.tws.framework.global.GlobalObj;
-import com.tencent.tws.util.NotifyUtil;
 
 
 public class LocationUtil {

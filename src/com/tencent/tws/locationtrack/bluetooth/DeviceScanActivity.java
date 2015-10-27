@@ -31,6 +31,7 @@ import android.media.MediaPlayer.OnCompletionListener;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.PowerManager;
+import android.os.Vibrator;
 import android.os.PowerManager.WakeLock;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -38,11 +39,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.*;
 
-import com.tencent.tws.framework.global.GlobalObj;
 import com.tencent.tws.locationtrack.R;
 import com.tencent.tws.locationtrack.util.LocationUtil;
-import com.tencent.tws.qdozemanager.QDozeManager;
-import com.tencent.tws.util.NotifyUtil;
 import com.tencent.tws.widget.BaseActivity;
 
 import java.io.IOException;
@@ -76,11 +74,12 @@ public class DeviceScanActivity extends BaseActivity implements AdapterView.OnIt
     protected static final float     BEEP_VOLUME = 1.00f;
     
 	WakeLock mWakeLock;
+	static Context mContext;
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.main_list);
-		GlobalObj.g_appContext = this;
+		mContext = this;
 		mHandler = new Handler();
 
 		
@@ -371,17 +370,19 @@ public class DeviceScanActivity extends BaseActivity implements AdapterView.OnIt
 										DeviceControlActivity.EXTRAS_DEVICE_ADDRESS,
 										""));
 					}
-					NotifyUtil.vibrate(GlobalObj.g_appContext, 500);
+					 Vibrator vibrator = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
+
+				      vibrator.vibrate(500);
 					// LocationUtil.setEndTrack(true);
 					// SensorUtil sU = LocationUtil.getSensorUtil();
 					// if(sU!=null)
 					// {
 					// sU.unregisterListeners();
 					// }
-					Toast.makeText(GlobalObj.g_appContext, R.string.endSearch,
+					Toast.makeText(mContext, R.string.endSearch,
 							Toast.LENGTH_SHORT).show();
 					Intent i = new Intent(DeviceScan);
-					GlobalObj.g_appContext.startActivity(i);
+					mContext.startActivity(i);
 				}
 			} else if (action
 					.equals(BluetoothLeService.ACTION_GATT_DISCONNECTED)) {
@@ -400,11 +401,13 @@ public class DeviceScanActivity extends BaseActivity implements AdapterView.OnIt
 					{
 						mediaPlayer.start();
 					}
-					NotifyUtil.vibrate(GlobalObj.g_appContext, 500);
+					  Vibrator vibrator = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
+
+				      vibrator.vibrate(500);
 					LocationUtil.setEndTrack(false);
 					LocationUtil.init(false);
 					Intent i = new Intent(TRACKMODE);
-					GlobalObj.g_appContext.startActivity(i);
+					mContext.startActivity(i);
 				}
 			} else if (action.equals(BluetoothLeService.ACTION_GATT_RSSI)) {
 				int rssiValue = intent.getIntExtra("rssi", 0);

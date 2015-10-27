@@ -43,7 +43,6 @@ import com.tencent.tws.locationtrack.record.Archiver;
 import com.tencent.tws.locationtrack.util.Gps;
 import com.tencent.tws.locationtrack.util.LocationUtil;
 import com.tencent.tws.locationtrack.util.PositionUtil;
-import com.tencent.tws.qdozemanager.QDozeManager;
 import com.tencent.tws.widget.BaseActivity;
 
 public class GeoLocationActivity extends BaseActivity implements LocationListener{

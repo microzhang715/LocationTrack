@@ -5,14 +5,14 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.IntentFilter;
 
-import com.tencent.tws.framework.global.GlobalObj;
-import com.tencent.tws.qdozemanager.QDozeManager;
 import com.tencent.tws.widget.BaseActivity;
 
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
+import android.os.PowerManager;
+import android.os.PowerManager.WakeLock;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.EditText;
@@ -21,6 +21,7 @@ import android.widget.Toast;
 
 public class MainActivity extends BaseActivity {
 
+	private static final String TAG = "MainActivity";
 	private static final String MYMAP = "com.tencent.tws.locationtrack.MyMapActivity";
 	private static final String TRACKMODE = "com.tencent.tws.locationtrack.TrackModeActivity";
 
@@ -28,16 +29,18 @@ public class MainActivity extends BaseActivity {
 	private static final String TENCENTLOCATION = "com.tencent.tws.locationtrack.TencentLocationActivity";
 
 	private static final String TAG_PKG = "com.tencent.tws.locationtrack.MainActivity";
+	WakeLock mWakeLock;
 
 	/** Called when the activity is first created. */
 	public void onCreate(Bundle savedInstanceState) {
 		// calls super, sets GUI
 		super.onCreate(savedInstanceState);
-		GlobalObj.g_appContext = this;
 		setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 		setContentView(R.layout.mainmenu);
 
-		QDozeManager.getInstance(this).ensureScreenOn(TAG_PKG, true);
+		 PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);  
+	        mWakeLock = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, TAG); 
+	        mWakeLock.acquire();
 		// associates buttons with IDs
 
 		ImageButton mapGeo = (ImageButton) findViewById(R.id.mapButtonGeo);
@@ -90,5 +93,32 @@ public class MainActivity extends BaseActivity {
 		});
 
 	}
+	
+	 @Override
+		protected void onResume() {
+			super.onResume();
+			if(mWakeLock!=null)
+			{
+				mWakeLock.acquire();
+			}
+		}
+
+		@Override
+		protected void onPause() {
+			super.onPause();
+			if(mWakeLock!=null)
+			{
+				mWakeLock.release();
+			}
+		}
+	    
+		@Override
+		protected void onDestroy() {
+			super.onDestroy();
+			if(mWakeLock!=null)
+			{
+				mWakeLock.release();
+			}
+		}
 
 }

@@ -36,7 +36,6 @@ import com.tencent.tws.locationtrack.record.ArchiveMeta;
 import com.tencent.tws.locationtrack.record.ArchiveNameHelper;
 import com.tencent.tws.locationtrack.record.Archiver;
 import com.tencent.tws.locationtrack.util.LocationUtil;
-import com.tencent.tws.qdozemanager.QDozeManager;
 import com.tencent.tws.widget.BaseActivity;
 
 public class TencentLocationActivity extends BaseActivity implements TencentLocationListener{
@@ -176,6 +175,7 @@ public class TencentLocationActivity extends BaseActivity implements TencentLoca
 			{
 				mWakeLock.release();
 			}
+//			mLocationManager.removeUpdates(this);
 		}
 		
 		
