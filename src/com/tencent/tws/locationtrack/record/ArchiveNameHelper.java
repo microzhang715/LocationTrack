@@ -127,6 +127,16 @@ public class ArchiveNameHelper {
 	        return databaseFile.getAbsolutePath();
 	    }
 
+	    public String getMyDBName() {
+	        String recordBy = sharedPreferences.getString(RECORD_BY, RECORD_BY_TIMES);
+	        String databaseFileName = System.currentTimeMillis() + SQLITE_DATABASE_FILENAME_EXT;
+	        if (recordBy.equals(RECORD_BY_DAY)) {
+	            databaseFileName = (new SimpleDateFormat(GROUP_BY_EACH_DAY).format(new Date())) + SQLITE_DATABASE_FILENAME_EXT;
+	        }
+
+	        File databaseFile = new File(getCurrentStorageDirectory().getAbsolutePath() + File.separator + "1445861154090.sqlite");
+	        return databaseFile.getAbsolutePath();
+	    }
 
 	    /**
 	     * 获得已经存在过的未清理的文件

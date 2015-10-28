@@ -86,6 +86,7 @@ public class Archiver {
     protected String name;
     private ArchiveMeta meta;
     private ArrayList<Location> locations;
+    private ArrayList<TencentLocation> tLocations;
     protected ArchiveDatabaseHelper databaseHelper = null;
     protected SQLiteDatabase database;
     protected Context context;
