@@ -1,82 +1,82 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent">
+<RelativeLayout  xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    
+        <com.tencent.tencentmap.mapsdk.map.MapView
+        android:id="@+id/mapviewOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+        <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" 
+        android:orientation="vertical" >
+             <TextView
+        android:id="@+id/tvGPSStatus"
+        android:textColor="#FF0000"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+         android:layout_gravity="center_horizontal"
+        android:text="@string/hello_world" />  
+<TextView
+        android:id="@+id/tvLocation"
+        android:textColor="#FF0000"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:text="@string/hello_world" />
+        <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" 
+        android:orientation="horizontal" 
+        android:layout_gravity="center_horizontal">
+	       <TextView
+	       android:id="@+id/tvSatelliteNum"
+	       android:textColor="#FF0000"
+	       android:layout_width="wrap_content"
+	       android:layout_height="wrap_content"
+	       android:layout_gravity="center_horizontal"
+	       android:text="@string/satellite_num" />
+	       <TextView
+	       android:id="@+id/tvIntervalTime"
+	       android:textColor="#FF0000"
+	       android:layout_width="wrap_content"
+	       android:layout_height="wrap_content"
+	       android:layout_gravity="center_horizontal"/>
+	       <TextView
+	       android:id="@+id/tvIntervalDistance"
+	       android:textColor="#FF0000"
+	       android:layout_width="wrap_content"
+	       android:layout_height="wrap_content"
+	       android:layout_gravity="center_horizontal"/>
+	       <TextView
+	       android:id="@+id/getIntervalTime"
+	       android:textColor="#FF0000"
+	       android:layout_width="wrap_content"
+	       android:layout_height="wrap_content"
+	       android:layout_gravity="center_horizontal"/>
+        </LinearLayout>
 
-	<com.tencent.tencentmap.mapsdk.map.MapView
-			android:id="@+id/mapviewOverlay"
-			android:layout_width="match_parent"
-			android:layout_height="match_parent"/>
-	<LinearLayout
-			android:layout_width="match_parent"
-			android:layout_height="wrap_content"
-			android:orientation="vertical">
-		<TextView
-				android:id="@+id/tvGPSStatus"
-				android:textColor="#FF0000"
-				android:layout_width="wrap_content"
-				android:layout_height="wrap_content"
-				android:layout_gravity="center_horizontal"
-				android:text="@string/hello_world"/>
-		<TextView
-				android:id="@+id/tvLocation"
-				android:textColor="#FF0000"
-				android:layout_width="wrap_content"
-				android:layout_height="wrap_content"
-				android:layout_gravity="center_horizontal"
-				android:text="@string/hello_world"/>
-		<LinearLayout
-				android:layout_width="wrap_content"
-				android:layout_height="wrap_content"
-				android:orientation="horizontal"
-				android:layout_gravity="center_horizontal">
-			<TextView
-					android:id="@+id/tvSatelliteNum"
-					android:textColor="#FF0000"
-					android:layout_width="wrap_content"
-					android:layout_height="wrap_content"
-					android:layout_gravity="center_horizontal"
-					android:text="@string/satellite_num"/>
-			<TextView
-					android:id="@+id/tvIntervalTime"
-					android:textColor="#FF0000"
-					android:layout_width="wrap_content"
-					android:layout_height="wrap_content"
-					android:layout_gravity="center_horizontal"/>
-			<TextView
-					android:id="@+id/tvIntervalDistance"
-					android:textColor="#FF0000"
-					android:layout_width="wrap_content"
-					android:layout_height="wrap_content"
-					android:layout_gravity="center_horizontal"/>
-			<TextView
-					android:id="@+id/getIntervalTime"
-					android:textColor="#FF0000"
-					android:layout_width="wrap_content"
-					android:layout_height="wrap_content"
-					android:layout_gravity="center_horizontal"/>
-		</LinearLayout>
-
-		<LinearLayout
-				android:layout_width="wrap_content"
-				android:layout_height="wrap_content"
-				android:layout_gravity="center_horizontal"
-				android:orientation="horizontal">
-			<Button
-					android:id="@+id/btnStartSports"
-					android:layout_width="wrap_content"
-					android:layout_height="wrap_content"
-					android:layout_gravity="center_horizontal"
-					android:text="@string/start_sport"/>
-
-			<Button
-					android:id="@+id/btnViewRecords"
-					android:layout_width="wrap_content"
-					android:layout_height="wrap_content"
-					android:layout_gravity="center_horizontal"
-					android:text="@string/sport_record"/>
-		</LinearLayout>
-
-	</LinearLayout>
-
-</RelativeLayout>
+        <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal" 
+        android:orientation="horizontal" >
+             <Button
+	            android:id="@+id/btnStartSports"
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:layout_gravity="center_horizontal"
+	            android:text="@string/start_sport" />
+   
+      		<Button
+	            android:id="@+id/btnViewRecords"
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:layout_gravity="center_horizontal"
+	            android:text="@string/sport_record" />
+        </LinearLayout>
+  
+        </LinearLayout>
+ 
+</RelativeLayout >
