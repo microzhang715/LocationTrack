@@ -206,7 +206,7 @@ public class ArchiveMeta {
         float distance = 0;
         for (int i = 0; i < locations.size(); i++) {
             Location location = locations.get(i);
-            if (lastComputedLocation != null) {
+            if (lastComputedLocation != null && location != null) {
                 distance += lastComputedLocation.distanceTo(location);
             }
 

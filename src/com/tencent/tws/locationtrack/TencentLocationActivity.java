@@ -1,23 +1,10 @@
 package com.tencent.tws.locationtrack;
 
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.TreeMap;
-
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.location.GpsSatellite;
-import android.location.GpsStatus;
-import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
+import android.location.*;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -27,7 +14,6 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
-
 import com.tencent.map.geolocation.TencentLocation;
 import com.tencent.map.geolocation.TencentLocationListener;
 import com.tencent.map.geolocation.TencentLocationManager;
@@ -43,8 +29,11 @@ import com.tencent.tws.locationtrack.record.Archiver;
 import com.tencent.tws.locationtrack.util.LocationUtil;
 import com.tencent.tws.widget.BaseActivity;
 
-public class TencentLocationActivity extends BaseActivity implements
-		TencentLocationListener {
+import java.math.BigDecimal;
+import java.text.DecimalFormat;
+import java.util.*;
+
+public class TencentLocationActivity extends BaseActivity implements TencentLocationListener {
 
 	private static final String TAG = "TencentLocationActivity";
 
@@ -82,7 +71,7 @@ public class TencentLocationActivity extends BaseActivity implements
 	private HashMap<Long, TencentLocation> tencentLocationCache;
 
 	private final static int ACCURACY = 3;
-	private final static int CACHE_SIZE = 5;
+	private final static int CACHE_SIZE = 2;
 	private BigDecimal lastLatitude;
 	private BigDecimal lastLongitude;
 	private long getLocationTime = (long) 0;
@@ -92,9 +81,11 @@ public class TencentLocationActivity extends BaseActivity implements
 
 	private TextView aveSpeed;
 	private TextView insSpeed;
-	private long startTime;
+	private long startTime = 0;
 	private Long currentTime;
+	private Button clearButton;
 
+	private TextView kalTextView;
 	private Handler handler;
 
 	@Override
@@ -102,32 +93,53 @@ public class TencentLocationActivity extends BaseActivity implements
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.geolocation);
 
+		Log.d("kermit", "onCreate");
 		context = this;
 		tencentLocationCache = new HashMap<Long, TencentLocation>();
 		locationCache = new HashMap<Long, Location>();
 
+		//数据库
 		this.nameHelper = new ArchiveNameHelper(context);
 		// archivName = nameHelper.getMyDBName();
 		archivName = nameHelper.getNewName();
 		archiver = new Archiver(getApplicationContext());
 		archiver.open(archivName, Archiver.MODE_READ_WRITE);
 
+		//获取参数
 		Intent intent = getIntent();
 		intervalTime = intent.getLongExtra("intervalTime", 1000);
 
-		PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
-		mWakeLock = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, TAG);
-		mWakeLock.acquire();
+		//启动定时器
+		timer.schedule(task, 0, 1000); // 1s后执行task,经过1s再次执行
+
+		//gps状态
 		txtLat = (TextView) findViewById(R.id.tvLocation);
 		TextView tvGPSStatus = (TextView) findViewById(R.id.tvGPSStatus);
-
-		// 平均 瞬时 速度
+		// 平均\瞬时速度
 		aveSpeed = (TextView) findViewById(R.id.ave_speed);
 		insSpeed = (TextView) findViewById(R.id.ins_speed);
 
+		kalTextView = (TextView) findViewById(R.id.kal);
+
+		//地图
 		initMapView();
 		Overlays = new ArrayList<Object>();
 
+		//不灭屏
+		PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+		mWakeLock = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, TAG);
+		mWakeLock.acquire();
+
+
+		clearButton = (Button) findViewById(R.id.clearButton);
+		clearButton.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				mMapView.clearAllOverlays();
+			}
+		});
+
+		//按钮监听
 		btnStartSports = (Button) findViewById(R.id.btnStartSports);
 		btnStartSports.setEnabled(false);
 		btnStartSports.setOnClickListener(new View.OnClickListener() {
@@ -138,6 +150,8 @@ public class TencentLocationActivity extends BaseActivity implements
 				Overlays.add(drawPolyline());
 			}
 		});
+
+
 		Button btnViewRecords = (Button) findViewById(R.id.btnViewRecords);
 		// btnStartSports.setEnabled(false);
 		btnViewRecords.setOnClickListener(new View.OnClickListener() {
@@ -145,24 +159,19 @@ public class TencentLocationActivity extends BaseActivity implements
 			@Override
 			public void onClick(View v) {
 				// TODO Auto-generated method stub
-				for (int i = 0; i < Overlays.size(); i++) {
-					mMapView.removeOverlay(Overlays.remove(i));
-				}
-				Overlays.clear();
+				mMapView.clearAllOverlays();
 			}
 		});
 
+		//判断GPS是否打开
 		locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-		// 判断是否已经打开GPS模块
-		if (locationManager
-				.isProviderEnabled(android.location.LocationManager.GPS_PROVIDER)) {
-			// GPS模块打开，可以定位操作
+		if (locationManager.isProviderEnabled(android.location.LocationManager.GPS_PROVIDER)) {
 			tvGPSStatus.setText("GPS已打开");
 		} else {
 			tvGPSStatus.setText("GPS已关闭");
-			// 打开GPS
 		}
 
+		//注册GPS监听回调
 		mLocationManager = TencentLocationManager.getInstance(this);
 		TencentLocationRequest request = TencentLocationRequest.create();
 		request.setInterval(intervalTime);
@@ -174,30 +183,32 @@ public class TencentLocationActivity extends BaseActivity implements
 	protected void onResume() {
 		super.onResume();
 
-		timer.schedule(task, 0, 1000); // 1s后执行task,经过1s再次执行
-
 		handler = new Handler() {
 			@Override
 			public void handleMessage(Message msg) {
 				// TODO Auto-generated method stub
 				switch (msg.what) {
-				case 1:
-					float speed = (float) msg.obj;
-					if (speed < 0.01) {
-						aveSpeed.setText("0.0");
-					}else {
-						aveSpeed.setText(speed + "");
-					}
-					break;
+					case 1:
+						Bundle bundle = (Bundle) msg.obj;
+						float speed = bundle.getFloat("speed");
+						double kcal = bundle.getDouble("kcak");
 
-				default:
-					break;
+						DecimalFormat myformat = new DecimalFormat("#0.00");
+						aveSpeed.setText(myformat.format(speed * 3600 / 1000)  + " km/h");
+						kalTextView.setText(myformat.format(kcal) + " kcal");
+						break;
+
+					default:
+						break;
 				}
 			}
 		};
 
 		// 数据库不为空,则进行绘制
 		if (archiver.fetchAll().size() != 0) {
+			//清除屏幕上所有标注
+			mMapView.clearAllOverlays();
+			//从数据库读取数据进行绘制
 			drawLines(null, true);
 		}
 
@@ -211,18 +222,29 @@ public class TencentLocationActivity extends BaseActivity implements
 		@Override
 		public void run() {
 			if (archiver.getFirstRecord() != null) {
-				startTime = archiver.getFirstRecord().getTime();
-				Log.d("kermit", "startTime = " + startTime);
+				//封装平均速度
+				if (startTime == 0) {
+					startTime = archiver.getFirstRecord().getTime();
+					Log.d("kermit", "startTime = " + startTime);
+				}
 				currentTime = System.currentTimeMillis();
 				long detTime = currentTime - startTime;
 				float distance = meta.getRawDistance();
 				float speed = distance / detTime;
+
+				//封装卡路里 跑步热量（kcal）＝体重（kg）×距离（公里）×1.036 默认体重60KG
+				double kcak = distance / 1000 * 60 * 1.036;
+
 				Message msg = Message.obtain();
 				msg.what = 1;
-				msg.obj = speed;
+				Bundle bundle = new Bundle();
+				bundle.putFloat("speed", speed);
+				bundle.putDouble("kcak", kcak);
+
+				msg.obj = bundle;
 				handler.sendMessage(msg);
-			}else {
-				Log.d("kermit","archiver.getFirstRecord() == null");
+
+
 			}
 		}
 	};
@@ -253,9 +275,7 @@ public class TencentLocationActivity extends BaseActivity implements
 			Long timeMillis = iterator.next();
 			TencentLocation location = tencentLocationCache.get(timeMillis);
 			if (archiver.add(location, timeMillis)) {
-				Log.i(TAG, String.format(
-						"Location(%f, %f) has been saved into database.",
-						location.getLatitude(), location.getLongitude()));
+				Log.i(TAG, String.format("Location(%f, %f) has been saved into database.", location.getLatitude(), location.getLongitude()));
 			}
 		}
 
@@ -263,11 +283,9 @@ public class TencentLocationActivity extends BaseActivity implements
 	}
 
 	private boolean filter(TencentLocation location) {
-		BigDecimal longitude = (new BigDecimal(location.getLongitude()))
-				.setScale(ACCURACY, BigDecimal.ROUND_HALF_UP);
+		BigDecimal longitude = (new BigDecimal(location.getLongitude())).setScale(ACCURACY, BigDecimal.ROUND_HALF_UP);
 
-		BigDecimal latitude = (new BigDecimal(location.getLatitude()))
-				.setScale(ACCURACY, BigDecimal.ROUND_HALF_UP);
+		BigDecimal latitude = (new BigDecimal(location.getLatitude())).setScale(ACCURACY, BigDecimal.ROUND_HALF_UP);
 
 		if (latitude.equals(lastLatitude) && longitude.equals(lastLongitude)) {
 			return false;
@@ -279,11 +297,9 @@ public class TencentLocationActivity extends BaseActivity implements
 	}
 
 	private boolean filter(Location location) {
-		BigDecimal longitude = (new BigDecimal(location.getLongitude()))
-				.setScale(ACCURACY, BigDecimal.ROUND_HALF_UP);
+		BigDecimal longitude = (new BigDecimal(location.getLongitude())).setScale(ACCURACY, BigDecimal.ROUND_HALF_UP);
 
-		BigDecimal latitude = (new BigDecimal(location.getLatitude()))
-				.setScale(ACCURACY, BigDecimal.ROUND_HALF_UP);
+		BigDecimal latitude = (new BigDecimal(location.getLatitude())).setScale(ACCURACY, BigDecimal.ROUND_HALF_UP);
 
 		if (latitude.equals(lastLatitude) && longitude.equals(lastLongitude)) {
 			return false;
@@ -299,8 +315,7 @@ public class TencentLocationActivity extends BaseActivity implements
 		// mMapView.setBuiltInZoomControls(true);
 		mMapView.getController().setZoom(50);
 
-		Bitmap bmpMarker = BitmapFactory.decodeResource(getResources(),
-				R.drawable.mark_location);
+		Bitmap bmpMarker = BitmapFactory.decodeResource(getResources(), R.drawable.mark_location);
 		mLocationOverlay = new LocationOverlay(bmpMarker);
 		mMapView.addOverlay(mLocationOverlay);
 	}
@@ -313,16 +328,13 @@ public class TencentLocationActivity extends BaseActivity implements
 		lineOpt.color(0xAAFF0000);
 		// lineOpt.add(latLng1);
 		// lineOpt.add(latLng2);
-		HashMap<Double, Double> mParamsLocation = LocationUtil
-				.getLocationTrack();
+		HashMap<Double, Double> mParamsLocation = LocationUtil.getLocationTrack();
 
 		for (Object key : mParamsLocation.keySet()) {
-			final LatLng latLng = new LatLng(mParamsLocation.get(key),
-					(double) key);
+			final LatLng latLng = new LatLng(mParamsLocation.get(key), (double) key);
 			lineOpt.add(latLng);
 
-			Log.d("guccigu",
-					"经度 = " + key + "，维度 = " + mParamsLocation.get(key));
+			Log.d("guccigu", "经度 = " + key + "，维度 = " + mParamsLocation.get(key));
 		}
 
 		Polyline line = mMapView.getMap().addPolyline(lineOpt);
@@ -330,23 +342,19 @@ public class TencentLocationActivity extends BaseActivity implements
 	}
 
 	private static GeoPoint of(Location location) {
-		GeoPoint ge = new GeoPoint((int) (location.getLatitude() * 1E6),
-				(int) (location.getLongitude() * 1E6));
+		GeoPoint ge = new GeoPoint((int) (location.getLatitude() * 1E6), (int) (location.getLongitude() * 1E6));
 		return ge;
 	}
 
 	private static GeoPoint of(TencentLocation location) {
-		GeoPoint ge = new GeoPoint((int) (location.getLatitude() * 1E6),
-				(int) (location.getLongitude() * 1E6));
+		GeoPoint ge = new GeoPoint((int) (location.getLatitude() * 1E6), (int) (location.getLongitude() * 1E6));
 		return ge;
 	}
 
 	@Override
-	public void onLocationChanged(TencentLocation location, int arg1,
-			String arg2) {
-		// Log.d("kermit", "onLocationChanged");
+	public void onLocationChanged(TencentLocation location, int arg1, String arg2) {
 		updateTextViews(location);
-		// 正常绘制数据
+		// 绘制流程
 		drawLines(location, false);
 	}
 
@@ -381,8 +389,7 @@ public class TencentLocationActivity extends BaseActivity implements
 				meta.setRawDistance();
 			}
 
-			LocationUtil.getLocationTrack().put(location.getLongitude(),
-					location.getLatitude());
+			LocationUtil.getLocationTrack().put(location.getLongitude(), location.getLatitude());
 
 			mMapView.getController().animateTo(of(location));
 
@@ -391,8 +398,7 @@ public class TencentLocationActivity extends BaseActivity implements
 			mMapView.invalidate();
 
 			if (location.getLatitude() > 0 && location.getLongitude() > 0) {
-				LatLng latLng = new LatLng(location.getLatitude(),
-						location.getLongitude());
+				LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
 				points.add(latLng);
 			}
 
@@ -445,8 +451,7 @@ public class TencentLocationActivity extends BaseActivity implements
 				meta.setRawDistance();
 			}
 
-			LocationUtil.getLocationTrack().put(location.getLongitude(),
-					location.getLatitude());
+			LocationUtil.getLocationTrack().put(location.getLongitude(), location.getLatitude());
 
 			mMapView.getController().animateTo(of(location));
 
@@ -455,8 +460,7 @@ public class TencentLocationActivity extends BaseActivity implements
 			mMapView.invalidate();
 
 			if (location.getLatitude() > 0 && location.getLongitude() > 0) {
-				LatLng latLng = new LatLng(location.getLatitude(),
-						location.getLongitude());
+				LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
 				points.add(latLng);
 			}
 
@@ -499,22 +503,18 @@ public class TencentLocationActivity extends BaseActivity implements
 		txtLat = (TextView) findViewById(R.id.tvLocation);
 
 		TextView getIntervalTime = (TextView) findViewById(R.id.getIntervalTime);
-		txtLat.setText("维度:" + location.getLatitude() + ",经度:"
-				+ location.getLongitude() + ",时间 :"
-				+ LocationUtil.convert(location.getTime()));
+		txtLat.setText("维度:" + location.getLatitude() + ",经度:" + location.getLongitude() + ",时间 :" + LocationUtil.convert(location.getTime()));
 
 		if (getLocationTime != location.getTime()) {
-			getIntervalTime
-					.setText("获取间隔时间："
-							+ String.valueOf((location.getTime() - getLocationTime) / 1000));
+			getIntervalTime.setText("获取间隔时间：" + String.valueOf((location.getTime() - getLocationTime) / 1000));
 		}
 		getLocationTime = location.getTime();
 
 		btnStartSports.setEnabled(true);
-
+		DecimalFormat myformat = new DecimalFormat("#0.00");
 		// 获取瞬时速度
 		if (insSpeed != null) {
-			insSpeed.setText(location.getSpeed() + "");
+			insSpeed.setText(myformat.format(location.getSpeed() * 3600 / 1000) + " km/h");
 		}
 	}
 
@@ -556,8 +556,7 @@ public class TencentLocationActivity extends BaseActivity implements
 				Log.d(TAG, "updateGpsStatus----count=" + count);
 			}
 			mSatelliteNum = numSatelliteList.size();
-			String strSatelliteNum = this.getString(R.string.satellite_num)
-					+ mSatelliteNum;
+			String strSatelliteNum = this.getString(R.string.satellite_num) + mSatelliteNum;
 			TextView tv = (TextView) findViewById(R.id.tvSatelliteNum);
 			tv.setText(strSatelliteNum);
 
