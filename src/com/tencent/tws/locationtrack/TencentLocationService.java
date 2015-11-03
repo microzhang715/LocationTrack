@@ -2,16 +2,11 @@ package com.tencent.tws.locationtrack;
 
 import android.app.Service;
 import android.content.ContentValues;
-import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
-import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
-import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
-import com.tencent.map.geolocation.TencentLocationUtils;
+import com.tencent.map.geolocation.*;
 import com.tencent.tws.locationtrack.database.LocationDbHelper;
 import com.tencent.tws.locationtrack.database.MyContentProvider;
 
@@ -22,17 +17,16 @@ import java.util.List;
 /**
  * Created by microzhang on 2015/10/30 at 17:08.
  */
-public class LocationService extends Service implements LocationListener {
-	private static final String TAG = "LocationService";
-	private LocationManager mLocationManager;
+public class TencentLocationService extends Service implements TencentLocationListener {
+	private static final String TAG = "TencentLocationService";
+	private TencentLocationManager mTencentLocationManager;
 
 	private static final int INTERVAL_TIME = 3000;
-	private static final int INTERVAL_DISTANCE = 10;
-
 	//用于记录所有点信息
-	private List<Location> listLocations = new ArrayList<>();
+	private List<TencentLocation> listLocations = new ArrayList<>();
 	private double lastLatitude;
 	private double lastLongitude;
+
 
 	//用于过滤数据时候使用
 	private BigDecimal lastBigLatitude;
@@ -53,42 +47,40 @@ public class LocationService extends Service implements LocationListener {
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		Log.i(TAG, "onStartCommand");
-
-		mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+		mTencentLocationManager = TencentLocationManager.getInstance(this);
+		TencentLocationRequest request = TencentLocationRequest.create();
 		if (intent != null) {
-			mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
-					intent.getIntExtra("intervalTime", INTERVAL_TIME),
-					intent.getIntExtra("intervalDistance", INTERVAL_DISTANCE), this);
+			request.setInterval(intent.getLongExtra("intervalTime", INTERVAL_TIME));
 		} else {
-			mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, INTERVAL_TIME, INTERVAL_DISTANCE, this);
+			request.setInterval(INTERVAL_TIME);
 		}
 
-        //mLocationManager.addGpsStatusListener(statusListener);
+		mTencentLocationManager.requestLocationUpdates(request, this);
 		return super.onStartCommand(intent, flags, startId);
 	}
 
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
-		mLocationManager.removeUpdates(this);
+		mTencentLocationManager.removeUpdates(this);
 	}
 
 	@Override
-	public void onLocationChanged(Location location) {
+	public void onLocationChanged(TencentLocation tencentLocation, int i, String s) {
 		ContentValues values = new ContentValues();
-		values.put(LocationDbHelper.LATITUDE, location.getLatitude());
-		values.put(LocationDbHelper.LONGITUDE, location.getLongitude());
-		values.put(LocationDbHelper.INS_SPEED, location.getSpeed());
-		values.put(LocationDbHelper.BEARING, location.getBearing());
-		values.put(LocationDbHelper.ALTITUDE, location.getAltitude());
-		values.put(LocationDbHelper.ACCURACY, location.getAccuracy());
+		values.put(LocationDbHelper.LATITUDE, tencentLocation.getLatitude());
+		values.put(LocationDbHelper.LONGITUDE, tencentLocation.getLongitude());
+		values.put(LocationDbHelper.INS_SPEED, tencentLocation.getSpeed());
+		values.put(LocationDbHelper.BEARING, tencentLocation.getBearing());
+		values.put(LocationDbHelper.ALTITUDE, tencentLocation.getAltitude());
+		values.put(LocationDbHelper.ACCURACY, tencentLocation.getAccuracy());
 		values.put(LocationDbHelper.TIME, System.currentTimeMillis());
 
 		//保存所有历史点记录
-		listLocations.add(location);
+		listLocations.add(tencentLocation);
 
 		if (lastLongitude != 0 && lastLongitude != 0) {
-			values.put(LocationDbHelper.DISTANCE, getDistanceBetween2Point(lastLatitude, lastLongitude, location.getLatitude(), location.getLongitude()));
+			values.put(LocationDbHelper.DISTANCE, getDistanceBetween2Point(lastLatitude, lastLongitude, tencentLocation.getLatitude(), tencentLocation.getLongitude()));
 		} else {
 			values.put(LocationDbHelper.DISTANCE, 0.0);
 		}
@@ -96,16 +88,16 @@ public class LocationService extends Service implements LocationListener {
 		values.put(LocationDbHelper.AVG_SPEED, getAvgSpeed());
 		values.put(LocationDbHelper.KCAL, getkcal());
 
-		lastLatitude = location.getLatitude();
-		lastLongitude = location.getLongitude();
+		lastLatitude = tencentLocation.getLatitude();
+		lastLongitude = tencentLocation.getLongitude();
 
 
-		Log.i(TAG, "latitude=" + location.getLatitude() + " | " +
-				"longitude=" + location.getLongitude() + " | " +
-				"ins_speed=" + location.getSpeed() + " | " +
-				"bearing=" + location.getBearing() + " | " +
-				"altitude=" + location.getAltitude() + " | " +
-				"accuracy=" + location.getAccuracy() + " | " +
+		Log.i(TAG, "latitude=" + tencentLocation.getLatitude() + " | " +
+				"longitude=" + tencentLocation.getLongitude() + " | " +
+				"ins_speed=" + tencentLocation.getSpeed() + " | " +
+				"bearing=" + tencentLocation.getBearing() + " | " +
+				"altitude=" + tencentLocation.getAltitude() + " | " +
+				"accuracy=" + tencentLocation.getAccuracy() + " | " +
 				"times=" + System.currentTimeMillis() + " | " +
 				"allDistance=" + getAllDistance() + " | " +
 				"avg_speed=" + getAvgSpeed() + " | " +
@@ -126,6 +118,11 @@ public class LocationService extends Service implements LocationListener {
 		this.getContentResolver().notifyChange(MyContentProvider.CONTENT_URI, null);
 	}
 
+
+	@Override
+	public void onStatusUpdate(String s, int i, String s1) {
+
+	}
 
 	private long getFirstLocationTime() {
 		String[] PROJECTION = new String[]{LocationDbHelper.ID, LocationDbHelper.LATITUDE, LocationDbHelper.LONGITUDE, LocationDbHelper.INS_SPEED, LocationDbHelper.BEARING, LocationDbHelper.ALTITUDE, LocationDbHelper.ACCURACY, LocationDbHelper.TIME, LocationDbHelper.DISTANCE, LocationDbHelper.AVG_SPEED, LocationDbHelper.KCAL,};
@@ -199,21 +196,5 @@ public class LocationService extends Service implements LocationListener {
 		lastBigLatitude = mylatitude;
 		lastBigLongitude = mylongitude;
 		return true;
-	}
-
-
-	@Override
-	public void onStatusChanged(String provider, int status, Bundle extras) {
-
-	}
-
-	@Override
-	public void onProviderEnabled(String provider) {
-
-	}
-
-	@Override
-	public void onProviderDisabled(String provider) {
-
 	}
 }

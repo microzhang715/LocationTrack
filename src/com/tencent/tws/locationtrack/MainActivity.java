@@ -3,18 +3,14 @@ package com.tencent.tws.locationtrack;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
-import android.database.ContentObserver;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.Toast;
-import com.tencent.tws.locationtrack.database.MyContentProvider;
 import com.tencent.tws.widget.BaseActivity;
 
 public class MainActivity extends BaseActivity {
@@ -30,6 +26,7 @@ public class MainActivity extends BaseActivity {
 	WakeLock mWakeLock;
 
 //	private ContentObserverSubClass mContentObserverSubClass;
+
 	/**
 	 * Called when the activity is first created.
 	 */
@@ -58,9 +55,8 @@ public class MainActivity extends BaseActivity {
 					Toast.makeText(MainActivity.this, "请输入定位时间和距离间隔", Toast.LENGTH_SHORT).show();
 				} else {
 					//Intent i = new Intent(GEOLOCATION);
-					Intent i = new Intent(MainActivity.this, GeoLocationActivity.class);
-					i.putExtra("intervalTime",
-							Long.parseLong(intervalTime.getText().toString()) * 1000);
+					Intent i = new Intent(MainActivity.this, LocationActivity.class);
+					i.putExtra("intervalTime", Long.parseLong(intervalTime.getText().toString()) * 1000);
 					i.putExtra("intervalDistance", Integer.parseInt(intervalDistance.getText().toString()));
 					startActivity(i);
 				}
@@ -68,9 +64,9 @@ public class MainActivity extends BaseActivity {
 			}
 		});
 
-//		Intent serviceIntent = new Intent(this, LocationService.class);
+//		Intent serviceIntent = new Intent(this, TencentLocationService.class);
 //		startService(serviceIntent);
-//		Log.i("LocationService", "LocationService 启动");
+//		Log.i("TencentLocationService", "TencentLocationService 启动");
 
 //		initContentObserver();
 
@@ -82,8 +78,7 @@ public class MainActivity extends BaseActivity {
 					Toast.makeText(MainActivity.this, "请输入定位时间和距离间隔", Toast.LENGTH_SHORT).show();
 				} else {
 					Intent i = new Intent(MainActivity.this, TencentLocationActivity.class);
-					i.putExtra("intervalTime",
-							Long.parseLong(intervalTime.getText().toString()) * 1000);
+					i.putExtra("intervalTime", Long.parseLong(intervalTime.getText().toString()) * 1000);
 					startActivity(i);
 				}
 			}

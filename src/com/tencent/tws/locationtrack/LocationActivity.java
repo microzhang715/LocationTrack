@@ -36,9 +36,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class TencentLocationActivity extends BaseActivity {
+public class LocationActivity extends BaseActivity {
 
-	private static final String TAG = "TencentLocationActivity";
+	private static final String TAG = "LocationActivity";
 
 	protected LocationManager locationManager;
 	protected Context context;
@@ -92,10 +92,10 @@ public class TencentLocationActivity extends BaseActivity {
 		initMapView();
 
 		//启动后台服务获取地理信息
-		Intent serviceIntent = new Intent(this, TencentLocationService.class);
+		Intent serviceIntent = new Intent(this, LocationService.class);
 		serviceIntent.putExtra("intervalTime", getIntent().getLongExtra("intervalTime", 1000));
 		startService(serviceIntent);
-		Log.i("TencentLocationService", "TencentLocationService 启动");
+		Log.i("LocationService", "LocationService 启动");
 
 		initContentObserver();
 
@@ -118,7 +118,7 @@ public class TencentLocationActivity extends BaseActivity {
 
 		//判断GPS是否打开
 		locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-		if (locationManager.isProviderEnabled(android.location.LocationManager.GPS_PROVIDER)) {
+		if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
 			tvGPSStatus.setText("GPS已打开");
 		} else {
 			tvGPSStatus.setText("GPS已关闭");
@@ -383,7 +383,7 @@ public class TencentLocationActivity extends BaseActivity {
 				float kcal = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.KCAL));
 				float accuracy = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.ACCURACY));
 
-//				Log.i("kermit", "latitude = " + latitude + " | " + "longitude = " + longitude);
+				Log.i(TAG, "latitude=" + latitude + "  latitude=" + latitude);
 				updateTextViews(longitude, latitude, times, insSpeed, aveSpeed, kcal);
 				drawLines(longitude, latitude, accuracy, true);
 			}
