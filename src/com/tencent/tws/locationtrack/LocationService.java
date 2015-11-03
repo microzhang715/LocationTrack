@@ -6,12 +6,13 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.os.IBinder;
 import android.util.Log;
-import com.tencent.map.geolocation.TencentLocation;
-import com.tencent.map.geolocation.TencentLocationListener;
-import com.tencent.map.geolocation.TencentLocationManager;
-import com.tencent.map.geolocation.TencentLocationRequest;
+import com.tencent.map.geolocation.*;
 import com.tencent.tws.locationtrack.database.LocationDbHelper;
 import com.tencent.tws.locationtrack.database.MyContentProvider;
+
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by microzhang on 2015/10/30 at 17:08.
@@ -19,10 +20,17 @@ import com.tencent.tws.locationtrack.database.MyContentProvider;
 public class LocationService extends Service implements TencentLocationListener {
 	private static final String TAG = "LocationService";
 	private TencentLocationManager mLocationManager;
-//	Cursor cursor = null;
 
-	private double tmpLatitude = 0;
-	private double tmpLongitude = 0;
+	private static final int INTERVAL_TIME = 3000;
+	//用于记录所有点信息
+	private List<TencentLocation> listLocations = new ArrayList<>();
+	private double lastLatitude;
+	private double lastLongitude;
+
+
+	//用于过滤数据时候使用
+	private BigDecimal lastBigLatitude;
+	private BigDecimal lastBigLongitude;
 
 	@Override
 	public IBinder onBind(Intent intent) {
@@ -33,7 +41,7 @@ public class LocationService extends Service implements TencentLocationListener 
 	public void onCreate() {
 		super.onCreate();
 		Log.i(TAG, "onCreate");
-		//locationManager.addGpsStatusListener(statusListener); GPS 状态相关的
+//		locationManager.addGpsStatusListener(statusListener); GPS 状态相关的
 	}
 
 	@Override
@@ -41,7 +49,12 @@ public class LocationService extends Service implements TencentLocationListener 
 		Log.i(TAG, "onStartCommand");
 		mLocationManager = TencentLocationManager.getInstance(this);
 		TencentLocationRequest request = TencentLocationRequest.create();
-		request.setInterval(intent.getLongExtra("intervalTime", 1000));
+		if (intent != null) {
+			request.setInterval(intent.getLongExtra("intervalTime", INTERVAL_TIME));
+		} else {
+			request.setInterval(INTERVAL_TIME);
+		}
+
 		mLocationManager.requestLocationUpdates(request, this);
 		return super.onStartCommand(intent, flags, startId);
 	}
@@ -63,10 +76,21 @@ public class LocationService extends Service implements TencentLocationListener 
 		values.put(LocationDbHelper.ACCURACY, tencentLocation.getAccuracy());
 		values.put(LocationDbHelper.TIME, System.currentTimeMillis());
 
-		//计算出来的数值
-		values.put(LocationDbHelper.DISTANCE, getDistance());
+		//保存所有历史点记录
+		listLocations.add(tencentLocation);
+
+		if (lastLongitude != 0 && lastLongitude != 0) {
+			values.put(LocationDbHelper.DISTANCE, getDistanceBetween2Point(lastLatitude, lastLongitude, tencentLocation.getLatitude(), tencentLocation.getLongitude()));
+		} else {
+			values.put(LocationDbHelper.DISTANCE, 0.0);
+		}
+
 		values.put(LocationDbHelper.AVG_SPEED, getAvgSpeed());
 		values.put(LocationDbHelper.KCAL, getkcal());
+
+		lastLatitude = tencentLocation.getLatitude();
+		lastLongitude = tencentLocation.getLongitude();
+
 
 		Log.i(TAG, "latitude=" + tencentLocation.getLatitude() + " | " +
 				"longitude=" + tencentLocation.getLongitude() + " | " +
@@ -75,28 +99,25 @@ public class LocationService extends Service implements TencentLocationListener 
 				"altitude=" + tencentLocation.getAltitude() + " | " +
 				"accuracy=" + tencentLocation.getAccuracy() + " | " +
 				"times=" + System.currentTimeMillis() + " | " +
-				"distance=" + getDistance() + " | " +
+				"allDistance=" + getAllDistance() + " | " +
 				"avg_speed=" + getAvgSpeed() + " | " +
 				"kcal=" + getkcal());
 
+		getContentResolver().insert(MyContentProvider.CONTENT_URI, values);
 
-		Cursor cursor = getContentResolver().query(MyContentProvider.CONTENT_URI, null, null, null, null);
-		if (cursor.moveToLast()) {
-			tmpLatitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LATITUDE));
-			tmpLongitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LONGITUDE));
-		}
+		//过滤数据并进行插入操作
+//		if (filter(tencentLocation.getLongitude(), tencentLocation.getLatitude())) {//插入数据
+//			Log.i(TAG, "insert data");
+//			getContentResolver().insert(MyContentProvider.CONTENT_URI, values);
+//		} else {//更新数据
+//			Log.i(TAG, "update data");
+//			getContentResolver().update(MyContentProvider.CONTENT_URI, values, null, null);
+//		}
 
-		if (tmpLatitude == tencentLocation.getLatitude() && tmpLongitude == tencentLocation.getLongitude()) {
-			Log.i(TAG, "update db");
-			getContentResolver().update(MyContentProvider.CONTENT_URI, values, null, null);
-		} else {
-			Log.i(TAG, "insert db");
-			getContentResolver().insert(MyContentProvider.CONTENT_URI, values);
-		}
-
+		//通知观察者数据更新
 		this.getContentResolver().notifyChange(MyContentProvider.CONTENT_URI, null);
-		cursor.close();
 	}
+
 
 	@Override
 	public void onStatusUpdate(String s, int i, String s1) {
@@ -110,6 +131,7 @@ public class LocationService extends Service implements TencentLocationListener 
 		if (cursor != null && cursor.moveToFirst()) {
 			time = cursor.getLong(cursor.getColumnIndex(LocationDbHelper.TIME));
 		}
+		cursor.close();
 		return time;
 	}
 
@@ -122,28 +144,35 @@ public class LocationService extends Service implements TencentLocationListener 
 		return time;
 	}
 
-	private float getDistance() {
-		float allDistance = 0;
-		Cursor cursor = getContentResolver().query(MyContentProvider.CONTENT_URI, null, null, null, null);
-		if (cursor != null && cursor.moveToFirst()) {
+	private double getDistanceBetween2Point(double lastLatitude, double lastLongitude, double newLatitude, double newLongitude) {
+		return TencentLocationUtils.distanceBetween(lastLatitude, lastLongitude, newLatitude, newLongitude);
+	}
+
+	private double getAllDistance() {
+		double allDistance = 0;
+		String[] PROJECTION = new String[]{LocationDbHelper.ID, LocationDbHelper.LATITUDE, LocationDbHelper.LONGITUDE, LocationDbHelper.INS_SPEED, LocationDbHelper.BEARING, LocationDbHelper.ALTITUDE, LocationDbHelper.ACCURACY, LocationDbHelper.TIME, LocationDbHelper.DISTANCE, LocationDbHelper.AVG_SPEED, LocationDbHelper.KCAL,};
+		Cursor cursor = getContentResolver().query(MyContentProvider.CONTENT_URI, PROJECTION, null, null, null);
+		if (cursor.moveToFirst()) {
 			for (int i = 0; i < cursor.getCount(); i++) {
-				float tmpDistance = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.DISTANCE));
-				allDistance += tmpDistance;
+				cursor.moveToPosition(i);
+				allDistance += cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.DISTANCE));
 			}
 		}
 		cursor.close();
 		return allDistance;
 	}
 
-	private float getkcal() {
-		return 60 * getDistance() * 1.036f;
+	private double getkcal() {
+		return 60 * getAllDistance() * 1.036;
 	}
 
-	private float getAvgSpeed() {
+	private double getAvgSpeed() {
 		long startTime = getFirstLocationTime();
 		long currentTime = System.currentTimeMillis();
-		float avgSpeed = getDistance() / (currentTime - startTime) * 3600 / 1000;
-		return avgSpeed;
+		long deltTime = (currentTime - startTime) / 1000;
+		Log.i(TAG, "deltTime=" + deltTime + " avg_speed=" + getAllDistance() / deltTime * 3600 / 1000);
+
+		return getAllDistance() / deltTime * 3600 / 1000;
 	}
 
 	private int getLastId() {
@@ -153,5 +182,19 @@ public class LocationService extends Service implements TencentLocationListener 
 			id = cursor.getInt(cursor.getColumnIndex(LocationDbHelper.ID));
 		}
 		return id;
+	}
+
+	private boolean filter(double longitude, double latitude) {
+		BigDecimal mylongitude = (new BigDecimal(longitude)).setScale(5, BigDecimal.ROUND_HALF_UP);
+		BigDecimal mylatitude = (new BigDecimal(latitude)).setScale(5, BigDecimal.ROUND_HALF_UP);
+
+		if (lastBigLatitude != null && lastBigLongitude != null) {
+			if (mylatitude.equals(lastBigLatitude) && mylongitude.equals(lastBigLongitude)) {
+				return false;
+			}
+		}
+		lastBigLatitude = mylatitude;
+		lastBigLongitude = mylongitude;
+		return true;
 	}
 }

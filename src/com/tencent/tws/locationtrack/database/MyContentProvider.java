@@ -9,6 +9,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
 import android.text.TextUtils;
+import android.util.Log;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -31,6 +32,7 @@ public class MyContentProvider extends ContentProvider {
 	private static final int LOCATION_ID = 2;
 
 	private static final UriMatcher uriMatcher;
+	public static final String LAST_DATABASE_NAME = "_location.db";
 
 	static {
 		uriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
@@ -54,8 +56,16 @@ public class MyContentProvider extends ContentProvider {
 
 	@Override
 	public boolean onCreate() {
-		//创建数据库
-		dbHelper = new LocationDbHelper(getContext());
+		Log.i("kermit", "MyContentProvider onCreate");
+		String databaseName = System.currentTimeMillis() + LAST_DATABASE_NAME;
+		if (SPUtils.readSp(getContext()) != "") {
+			Log.i("kermit","open database");
+			dbHelper = new LocationDbHelper(getContext(), SPUtils.readSp(getContext()));
+		} else {
+			Log.i("kermit","new database");
+			dbHelper = new LocationDbHelper(getContext(), databaseName);
+			SPUtils.writeSp(getContext(), databaseName);
+		}
 		return true;
 	}
 
@@ -136,8 +146,7 @@ public class MyContentProvider extends ContentProvider {
 		switch (uriMatcher.match(uri)) {
 			case LOCATION_ID:
 				String locId = uri.getPathSegments().get(1);
-				count = db.delete(LocationDbHelper.TABLE_NAME, LocationDbHelper.ID + "=" + locId + (!TextUtils.isEmpty(selection) ?
-						" and (" + selection + ')' : ""), selectionArgs);
+				count = db.delete(LocationDbHelper.TABLE_NAME, LocationDbHelper.ID + "=" + locId + (!TextUtils.isEmpty(selection) ? " and (" + selection + ')' : ""), selectionArgs);
 				break;
 			case LOCATION:
 				count = db.delete(LocationDbHelper.TABLE_NAME, selection, selectionArgs);

@@ -1,144 +1,151 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.tencent.tws.locationtrack"
-    android:versionCode="1"
-    android:versionName="1.0" >
+          package="com.tencent.tws.locationtrack"
+          android:versionCode="1"
+          android:versionName="1.0">
 
     <uses-sdk
-			android:minSdkVersion="18"
-			android:targetSdkVersion="18"/>
-    
-      <!-- 腾讯定位 sdk 要求的权限  (开始) -->
+            android:minSdkVersion="18"
+            android:targetSdkVersion="18"/>
+    <!-- 腾讯定位 sdk 要求的权限  (开始) -->
     <!-- 通过GPS得到精确位置 -->
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <!-- 通过网络得到粗略位置 -->
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <!-- 访问网络. 某些位置信息需要从网络服务器获取 -->
-    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.INTERNET"/>
     <!-- 访问WiFi状态. 需要WiFi信息用于网络定位 -->
-    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
     <!-- 修改WiFi状态. 发起WiFi扫描, 需要WiFi信息用于网络定位 -->
-    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE"/>
     <!-- 访问网络状态, 检测网络的可用性. 需要网络运营商相关信息用于网络定位 -->
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <!-- 访问网络的变化, 需要某些信息用于网络定位 -->
-    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE"/>
     <!-- 访问手机当前状态, 需要device id用于网络定位 -->
-    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
     <!-- 腾讯定位 sdk 要求的权限 (结束) -->
-
-
     <!-- Demo中使用了腾讯地图 sdk, 腾讯地图 sdk 还要求的以下权限 -->
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission android:name="android.permission.READ_PHONE_SINTERNETWIFI_STATE" />
-    <uses-permission android:name="android.permission.CALL_PHONE" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <uses-permission android:name="android.permission.READ_PHONE_SINTERNETWIFI_STATE"/>
+    <uses-permission android:name="android.permission.CALL_PHONE"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.BLUETOOTH"/>
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
+    <uses-permission android:name="android.permission.BLUETOOTH_STACK"/>
+    <uses-permission android:name="android.permission.VIBRATE"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 
-    <uses-permission android:name="android.permission.BLUETOOTH" />
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
-    <uses-permission android:name="android.permission.BLUETOOTH_STACK" />
-
-    <uses-permission android:name="android.permission.VIBRATE" />
-
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-	<uses-feature
-			android:name="android.hardware.bluetooth_le"
-			android:required="true"/>
+    <uses-feature
+            android:name="android.hardware.bluetooth_le"
+            android:required="true"/>
     <application
-        android:allowBackup="true"
-        android:icon="@drawable/ic_launcher"
-        android:label="@string/app_name"
-        android:theme="@style/AppTheme" >
-                <meta-data 
-            android:name="TencentMapSDK"	
-            android:value="MMWBZ-3NYPD-DFI4S-PK26W-I5LV7-SGB7X"/>
-                <activity
-            android:name=".MainActivity"
-            android:label="@string/app_name" >
+            android:allowBackup="true"
+            android:icon="@drawable/ic_launcher"
+            android:label="@string/app_name"
+            android:theme="@style/AppTheme">
+        <meta-data
+                android:name="TencentMapSDK"
+                android:value="MMWBZ-3NYPD-DFI4S-PK26W-I5LV7-SGB7X"/>
+        <uses-library android:name="android.test.runner"/>
+
+        <activity
+                android:name=".MainActivity"
+                android:label="@string/app_name">
             <intent-filter>           
-                <action android:name="android.intent.action.MAIN" />           
-                <category android:name="android.intent.category.LAUNCHER" />
-            
+                <action android:name="android.intent.action.MAIN"/>           
+                <category android:name="android.intent.category.LAUNCHER"/>
+                            
             </intent-filter>
         </activity>
-        
-       <activity
-            android:name=".GeoLocationActivity"
-            android:label="GeoLocationActivity">
-            <intent-filter>
-                <action android:name="com.tencent.tws.locationtrack.GeoLocationActivity" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>     
-        </activity>
-              <activity
-            android:name=".RecordsActivity"
-            android:label="RecordsActivity">
-            <intent-filter>
-                <action android:name="com.tencent.tws.locationtrack.RecordsActivity" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>     
-        </activity>
-        
-       <activity
-            android:name=".DetailActivity"
-            android:label="DetailActivity">
-            <intent-filter>
-                <action android:name="com.tencent.tws.locationtrack.DetailActivity" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>     
-        </activity>
-              
         <activity
-            android:name=".TencentLocationActivity"
-            android:label="TencentLocationActivity">
+                android:name=".GeoLocationActivity"
+                android:label="GeoLocationActivity">
             <intent-filter>
-                <action android:name="com.tencent.tws.locationtrack.TencentLocationActivity" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>     
-        </activity>
-                
-        <activity
-				android:name=".bluetooth.DeviceScanActivity"
-            android:label="@string/app_name" 
-            android:launchMode= "singleTask">
-            <intent-filter>
-				<action android:name="com.tencent.tws.locationtrack.bluetooth.DeviceScanActivity" />
+                <action android:name="com.tencent.tws.locationtrack.GeoLocationActivity"/>
                 <category android:name="android.intent.category.DEFAULT"/>
             </intent-filter>
         </activity>
-        
         <activity
-            android:name=".MyMapActivity"
-            android:label="@string/app_name">
+                android:name=".RecordsActivity"
+                android:label="RecordsActivity">
             <intent-filter>
-                <action android:name="com.tencent.tws.locationtrack.MyMapActivity" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>     
+                <action android:name="com.tencent.tws.locationtrack.RecordsActivity"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
         </activity>
         <activity
-            android:name=".TrackModeActivity"
-            android:label="@string/app_name"
-            android:launchMode= "singleTask">
+                android:name=".DetailActivity"
+                android:label="DetailActivity">
             <intent-filter>
-                <action android:name="com.tencent.tws.locationtrack.TrackModeActivity" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>     
+                <action android:name="com.tencent.tws.locationtrack.DetailActivity"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
         </activity>
-		<service
-				android:name=".bluetooth.BluetoothLeService"
-				android:enabled="true">
-			<intent-filter android:priority="1000"/>
-		</service>
-		<receiver android:name=".bluetooth.DeviceScanActivity$ConnRec">
-			<intent-filter>
-				<action android:name="com.tencent.tws.locationtrack.ACTION_GATT_CONNECTEDD"/>
-				<action android:name="com.tencent.tws.locationtrack.ACTION_GATT_DISCONNECTED"/>
-				<action android:name="com.tencent.tws.locationtrack.ACTION_GATT_SERVICES_DISCOVERED"/>
-				<action android:name="com.tencent.tws.locationtrack.ACTION_DATA_AVAILABLE"/>
-				<action android:name="com.tencent.tws.locationtrack.EXTRA_DATA"/>
-				<action android:name="com.tencent.tws.locationtrack.ACTION_GATT_RSSI"/>
-			</intent-filter>
-		</receiver>
-    </application>
+        <activity
+                android:name=".TencentLocationActivity"
+                android:label="TencentLocationActivity">
+            <intent-filter>
+                <action android:name="com.tencent.tws.locationtrack.TencentLocationActivity"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+                android:name=".bluetooth.DeviceScanActivity"
+                android:label="@string/app_name"
+                android:launchMode="singleTask">
+            <intent-filter>
+                <action android:name="com.tencent.tws.locationtrack.bluetooth.DeviceScanActivity"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+                android:name=".MyMapActivity"
+                android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="com.tencent.tws.locationtrack.MyMapActivity"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <activity
+                android:name=".TrackModeActivity"
+                android:label="@string/app_name"
+                android:launchMode="singleTask">
+            <intent-filter>
+                <action android:name="com.tencent.tws.locationtrack.TrackModeActivity"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
 
+        <service
+                android:name=".bluetooth.BluetoothLeService"
+                android:enabled="true">
+            <intent-filter android:priority="1000"/>
+        </service>
+        <receiver android:name=".bluetooth.DeviceScanActivity$ConnRec">
+            <intent-filter>
+                <action android:name="com.tencent.tws.locationtrack.ACTION_GATT_CONNECTEDD"/>
+                <action android:name="com.tencent.tws.locationtrack.ACTION_GATT_DISCONNECTED"/>
+                <action android:name="com.tencent.tws.locationtrack.ACTION_GATT_SERVICES_DISCOVERED"/>
+                <action android:name="com.tencent.tws.locationtrack.ACTION_DATA_AVAILABLE"/>
+                <action android:name="com.tencent.tws.locationtrack.EXTRA_DATA"/>
+                <action android:name="com.tencent.tws.locationtrack.ACTION_GATT_RSSI"/>
+            </intent-filter>
+        </receiver>
+        <provider
+                android:name=".database.MyContentProvider"
+                android:authorities="com.tencent.tws.locationtrack.database.MyContentProvider"
+                android:exported="true"/>
+
+        <service
+                android:name=".LocationService"
+                android:enabled="true">
+            <intent-filter android:priority="1000"/>
+        </service>
+
+    </application>
+    <instrumentation
+            android:name="android.test.InstrumentationTestRunner"
+            android:targetPackage="com.tencent.tws.locationtrack"
+            android:label="Tests for My App"/>
 </manifest>

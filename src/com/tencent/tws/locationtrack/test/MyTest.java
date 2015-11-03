@@ -8,6 +8,7 @@ import android.test.AndroidTestCase;
 import android.util.Log;
 import com.tencent.tws.locationtrack.database.LocationDbHelper;
 import com.tencent.tws.locationtrack.database.MyContentProvider;
+import com.tencent.tws.locationtrack.database.SPUtils;
 
 /**
  * Created by microzhang on 2015/11/1.
@@ -16,19 +17,7 @@ public class MyTest extends AndroidTestCase {
 
 
 	public void testQuery() throws Exception {
-		String[] PROJECTION = new String[]{
-				LocationDbHelper.ID,
-				LocationDbHelper.LATITUDE,
-				LocationDbHelper.LONGITUDE,
-				LocationDbHelper.INS_SPEED,
-				LocationDbHelper.BEARING,
-				LocationDbHelper.ALTITUDE,
-				LocationDbHelper.ACCURACY,
-				LocationDbHelper.TIME,
-				LocationDbHelper.DISTANCE,
-				LocationDbHelper.AVG_SPEED,
-				LocationDbHelper.KCAL,
-		};
+		String[] PROJECTION = new String[]{LocationDbHelper.ID, LocationDbHelper.LATITUDE, LocationDbHelper.LONGITUDE, LocationDbHelper.INS_SPEED, LocationDbHelper.BEARING, LocationDbHelper.ALTITUDE, LocationDbHelper.ACCURACY, LocationDbHelper.TIME, LocationDbHelper.DISTANCE, LocationDbHelper.AVG_SPEED, LocationDbHelper.KCAL,};
 
 		Cursor cursor = getContext().getContentResolver().query(MyContentProvider.CONTENT_URI, PROJECTION, null, null, null);
 		if (cursor.moveToFirst()) {
@@ -42,6 +31,7 @@ public class MyTest extends AndroidTestCase {
 				Log.i("kermit", "ALTITUDE=" + cursor.getInt(cursor.getColumnIndex(LocationDbHelper.ALTITUDE)));
 				Log.i("kermit", "ACCURACY=" + cursor.getInt(cursor.getColumnIndex(LocationDbHelper.ACCURACY)));
 				Log.i("kermit", "TIME=" + cursor.getLong(cursor.getColumnIndex(LocationDbHelper.TIME)));
+
 			}
 		}
 	}
@@ -74,6 +64,36 @@ public class MyTest extends AndroidTestCase {
 	public void testDelet() throws Exception {
 		Uri uri = ContentUris.withAppendedId(MyContentProvider.CONTENT_URI, 2);
 		getContext().getContentResolver().delete(uri, null, null);
+	}
+
+	public void testAllDistance() {
+		String[] PROJECTION = new String[]{LocationDbHelper.ID, LocationDbHelper.LATITUDE, LocationDbHelper.LONGITUDE, LocationDbHelper.INS_SPEED, LocationDbHelper.BEARING, LocationDbHelper.ALTITUDE, LocationDbHelper.ACCURACY, LocationDbHelper.TIME, LocationDbHelper.DISTANCE, LocationDbHelper.AVG_SPEED, LocationDbHelper.KCAL,};
+		double allDistance = 0;
+		Cursor cursor = getContext().getContentResolver().query(MyContentProvider.CONTENT_URI, PROJECTION, null, null, null);
+		if (cursor.moveToFirst()) {
+			for (int i = 0; i < cursor.getCount(); i++) {
+				cursor.moveToPosition(i);
+				allDistance += cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.DISTANCE));
+			}
+		}
+		Log.i("kermit", "cursor.getCount()=" + cursor.getCount() + "allDistance=" + allDistance);
+	}
+
+	public void testTimes() {
+		long time = 0;
+		String[] PROJECTION = new String[]{LocationDbHelper.ID, LocationDbHelper.LATITUDE, LocationDbHelper.LONGITUDE, LocationDbHelper.INS_SPEED, LocationDbHelper.BEARING, LocationDbHelper.ALTITUDE, LocationDbHelper.ACCURACY, LocationDbHelper.TIME, LocationDbHelper.DISTANCE, LocationDbHelper.AVG_SPEED, LocationDbHelper.KCAL,};
+		Cursor cursor = getContext().getContentResolver().query(MyContentProvider.CONTENT_URI, PROJECTION, null, null, null);
+		if (cursor != null && cursor.moveToFirst()) {
+			time = cursor.getLong(cursor.getColumnIndex(LocationDbHelper.TIME));
+		}
+
+		Log.i("kermit", "first time = " + time);
+		Log.i("kermit", "current time = " + System.currentTimeMillis());
+		Log.i("kermit", "delt time = " + (System.currentTimeMillis() - time) / 1000);
+	}
+
+	public void testSP(){
+		SPUtils.writeSp(getContext(),"1111111");
 	}
 }
 

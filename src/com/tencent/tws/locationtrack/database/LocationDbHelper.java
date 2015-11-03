@@ -13,7 +13,7 @@ import android.util.Log;
 public class LocationDbHelper extends SQLiteOpenHelper {
 	private static final String TAG = "LocationDbHelper";
 
-	public static final String DATABASE_NAME = "location.db";
+//	public static final String DATABASE_NAME = "location.db";
 	public static final int DATABASE_VERSION = 1;
 	public static final String TABLE_NAME = "locations";
 
@@ -36,18 +36,18 @@ public class LocationDbHelper extends SQLiteOpenHelper {
 					+ "id integer primary key autoincrement, "
 					+ "latitude double not null, "
 					+ "longitude double not null,"
-					+ "ins_speed double not null, "
+					+ "ins_speed float not null, "
 					+ "bearing float not null,"
 					+ "altitude double not null,"
 					+ "accuracy float not null,"
 					+ "times long not null,"
-					+ "distance float not null,"
-					+ "avg_speed float not null, "
-					+ "kcal float not null"
+					+ "distance double not null,"
+					+ "avg_speed double not null, "
+					+ "kcal double not null"
 					+ ");";
 
-	public LocationDbHelper(Context context) {
-		super(context, DATABASE_NAME, null, DATABASE_VERSION);
+	public LocationDbHelper(Context context,String databaseName) {
+		super(context, databaseName, null, DATABASE_VERSION);
 		Log.i("kermit", "LocationDbHelper");
 	}
 

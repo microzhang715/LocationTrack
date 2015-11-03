@@ -26,6 +26,7 @@ import com.tencent.mapsdk.raster.model.PolylineOptions;
 import com.tencent.tencentmap.mapsdk.map.MapView;
 import com.tencent.tws.locationtrack.database.LocationDbHelper;
 import com.tencent.tws.locationtrack.database.MyContentProvider;
+import com.tencent.tws.locationtrack.database.SPUtils;
 import com.tencent.tws.locationtrack.util.LocationUtil;
 import com.tencent.tws.widget.BaseActivity;
 
@@ -62,6 +63,7 @@ public class TencentLocationActivity extends BaseActivity {
 	private TextView tvAveSpeed;
 	private TextView tvInsSpeed;
 	private Button clearButton;
+	private Button exitButton;
 
 	private TextView tvKal;
 	private TextView tvGPSStatus;
@@ -89,7 +91,6 @@ public class TencentLocationActivity extends BaseActivity {
 		//地图
 		initMapView();
 
-
 		//启动后台服务获取地理信息
 		Intent serviceIntent = new Intent(this, LocationService.class);
 		serviceIntent.putExtra("intervalTime", getIntent().getLongExtra("intervalTime", 1000));
@@ -104,6 +105,14 @@ public class TencentLocationActivity extends BaseActivity {
 			@Override
 			public void onClick(View v) {
 				mMapView.clearAllOverlays();
+			}
+		});
+
+		exitButton = (Button) findViewById(R.id.exitButton);
+		exitButton.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				SPUtils.clearSp(getApplicationContext());
 			}
 		});
 
@@ -127,8 +136,33 @@ public class TencentLocationActivity extends BaseActivity {
 	protected void onResume() {
 		super.onResume();
 
+		if (SPUtils.readSp(getApplicationContext()) != "") {//数据库是存在的
+			dbDrawResume();
+		}
+
 		if (mWakeLock != null) {
 			mWakeLock.acquire();
+		}
+	}
+
+	//读取数据库，绘制数据库中所有数据
+	private void dbDrawResume() {
+		String[] PROJECTION = new String[]{LocationDbHelper.ID, LocationDbHelper.LATITUDE, LocationDbHelper.LONGITUDE, LocationDbHelper.INS_SPEED, LocationDbHelper.BEARING, LocationDbHelper.ALTITUDE, LocationDbHelper.ACCURACY, LocationDbHelper.TIME, LocationDbHelper.DISTANCE, LocationDbHelper.AVG_SPEED, LocationDbHelper.KCAL,};
+		cursor = getApplicationContext().getContentResolver().query(MyContentProvider.CONTENT_URI, PROJECTION, null, null, null);
+		if (cursor.moveToFirst()) {
+			for (int i = 0; i < cursor.getCount(); i++) {
+				cursor.moveToPosition(i);
+				double latitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LATITUDE));
+				double longitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LONGITUDE));
+				long times = cursor.getLong(cursor.getColumnIndex(LocationDbHelper.TIME));
+				double insSpeed = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.INS_SPEED));
+				float aveSpeed = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.AVG_SPEED));
+				float kcal = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.KCAL));
+				float accuracy = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.ACCURACY));
+
+				updateTextViews(longitude, latitude, times, insSpeed, aveSpeed, kcal);
+				drawLines(longitude, latitude, accuracy, true);
+			}
 		}
 	}
 
@@ -268,7 +302,7 @@ public class TencentLocationActivity extends BaseActivity {
 			Overlays.add(line);
 		}
 
-		Log.i(TAG,"points.size() = " + points.size());
+		Log.i(TAG, "points.size() = " + points.size());
 
 	}
 
@@ -337,37 +371,21 @@ public class TencentLocationActivity extends BaseActivity {
 		@Override
 		public void onChange(boolean selfChange) {
 			super.onChange(selfChange);
-			String[] PROJECTION = new String[]{
-					LocationDbHelper.ID,
-					LocationDbHelper.LATITUDE,
-					LocationDbHelper.LONGITUDE,
-					LocationDbHelper.INS_SPEED,
-					LocationDbHelper.BEARING,
-					LocationDbHelper.ALTITUDE,
-					LocationDbHelper.ACCURACY,
-					LocationDbHelper.TIME,
-					LocationDbHelper.DISTANCE,
-					LocationDbHelper.AVG_SPEED,
-					LocationDbHelper.KCAL,
-			};
+			String[] PROJECTION = new String[]{LocationDbHelper.ID, LocationDbHelper.LATITUDE, LocationDbHelper.LONGITUDE, LocationDbHelper.INS_SPEED, LocationDbHelper.BEARING, LocationDbHelper.ALTITUDE, LocationDbHelper.ACCURACY, LocationDbHelper.TIME, LocationDbHelper.DISTANCE, LocationDbHelper.AVG_SPEED, LocationDbHelper.KCAL,};
 
-			//不是每次都查询一遍的 ？？？？？？？？？？？？？？？
 			cursor = getApplicationContext().getContentResolver().query(MyContentProvider.CONTENT_URI, PROJECTION, null, null, null);
-			if (cursor.moveToFirst()) {
-				for (int i = 0; i < cursor.getCount(); i++) {
-					cursor.moveToPosition(i);
-					double latitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LATITUDE));
-					double longitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LONGITUDE));
-					long times = cursor.getLong(cursor.getColumnIndex(LocationDbHelper.TIME));
-					double insSpeed = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.INS_SPEED));
-					float aveSpeed = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.AVG_SPEED));
-					float kcal = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.KCAL));
-					float accuracy = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.ACCURACY));
+			if (cursor.moveToLast()) {
+				double latitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LATITUDE));
+				double longitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LONGITUDE));
+				long times = cursor.getLong(cursor.getColumnIndex(LocationDbHelper.TIME));
+				double insSpeed = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.INS_SPEED));
+				float aveSpeed = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.AVG_SPEED));
+				float kcal = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.KCAL));
+				float accuracy = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.ACCURACY));
 
-					Log.i("kermit", "latitude = " + latitude + " | " + "longitude = " + longitude);
-					updateTextViews(longitude, latitude, times, insSpeed, aveSpeed, kcal);
-					drawLines(longitude, latitude, accuracy, true);
-				}
+//				Log.i("kermit", "latitude = " + latitude + " | " + "longitude = " + longitude);
+				updateTextViews(longitude, latitude, times, insSpeed, aveSpeed, kcal);
+				drawLines(longitude, latitude, accuracy, true);
 			}
 		}
 
@@ -376,5 +394,4 @@ public class TencentLocationActivity extends BaseActivity {
 			return true;
 		}
 	}
-
 }
