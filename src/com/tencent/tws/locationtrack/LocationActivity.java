@@ -15,6 +15,7 @@ import android.os.Handler;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -28,7 +29,14 @@ import com.tencent.tws.locationtrack.database.LocationDbHelper;
 import com.tencent.tws.locationtrack.database.MyContentProvider;
 import com.tencent.tws.locationtrack.database.SPUtils;
 import com.tencent.tws.locationtrack.util.LocationUtil;
+import com.tencent.tws.locationtrack.views.CustomShareBoard;
 import com.tencent.tws.widget.BaseActivity;
+import com.umeng.socialize.controller.UMServiceFactory;
+import com.umeng.socialize.controller.UMSocialService;
+import com.umeng.socialize.media.UMImage;
+import com.umeng.socialize.sso.QZoneSsoHandler;
+import com.umeng.socialize.sso.UMQQSsoHandler;
+import com.umeng.socialize.weixin.controller.UMWXHandler;
 
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
@@ -64,6 +72,7 @@ public class LocationActivity extends BaseActivity {
 	private TextView tvInsSpeed;
 	private Button clearButton;
 	private Button exitButton;
+	private Button shareButton;
 
 	private TextView tvKal;
 	private TextView tvGPSStatus;
@@ -72,11 +81,26 @@ public class LocationActivity extends BaseActivity {
 	private DBContentObserver mDBContentObserver;
 
 	private Cursor cursor;
+	double insSpeed = 0;
+	double aveSpeed =0;
+	double kcal = 0;
+	private boolean isFinishDBDraw = true;
+
+	// 分享初始化控制器
+	final UMSocialService mController = UMServiceFactory.getUMSocialService("com.umeng.share");
+
+	// wx967daebe835fbeac是你在微信开发平台注册应用的AppID, 这里需要替换成你注册的AppID
+	private static final String WEIXIN_APP_ID = "wx967daebe835fbeac";
+	private static final String WEIXIN_APP_SECRET = "5fa9e68ca3970e87a1f83e563c8dcbce";
+
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.geolocation);
+
+		//初始化分享平台内容
+		initSharePlatform();
 
 		//不灭屏
 		PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
@@ -116,6 +140,16 @@ public class LocationActivity extends BaseActivity {
 			}
 		});
 
+		shareButton = (Button) findViewById(R.id.btnShare);
+		shareButton.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				//mController.openShare(LocationActivity.this, false);
+				postShare();
+			}
+		});
+
+
 		//判断GPS是否打开
 		locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 		if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
@@ -127,6 +161,41 @@ public class LocationActivity extends BaseActivity {
 		locationManager.addGpsStatusListener(statusListener);
 	}
 
+	private void initSharePlatform() {
+		//在相应的地方要注册Handler才可以相应事件
+		// 添加微信平台
+		UMWXHandler wxHandler = new UMWXHandler(this, WEIXIN_APP_ID, WEIXIN_APP_SECRET);
+		wxHandler.addToSocialSDK();
+		// 支持微信朋友圈
+		UMWXHandler wxCircleHandler = new UMWXHandler(this, WEIXIN_APP_ID, WEIXIN_APP_SECRET);
+		wxCircleHandler.setToCircle(true);
+		wxCircleHandler.addToSocialSDK();
+		//参数1为当前Activity， 参数2为开发者在QQ互联申请的APP ID，参数3为开发者在QQ互联申请的APP kEY.
+		QZoneSsoHandler qZoneSsoHandler = new QZoneSsoHandler(this, "100424468", "c7394704798a158208a74ab60104f0ba");
+		qZoneSsoHandler.addToSocialSDK();
+		//参数1为当前Activity， 参数2为开发者在QQ互联申请的APP ID，参数3为开发者在QQ互联申请的APP kEY.
+		UMQQSsoHandler qqSsoHandler = new UMQQSsoHandler(this, "100424468", "c7394704798a158208a74ab60104f0ba");
+		qqSsoHandler.addToSocialSDK();
+	}
+
+	private void postShare() {
+		// 设置分享内容
+		mController.setShareContent("瞬时速度="+insSpeed + " 平均速度="+aveSpeed + " 能量=" + kcal);
+		// 设置分享图片, 参数2为图片的url地址
+		mController.setShareMedia(new UMImage(this, "http://i6.topit.me/6/5d/45/1131907198420455d6o.jpg"));
+
+
+		CustomShareBoard shareBoard = new CustomShareBoard(this);
+		shareBoard.showAtLocation(this.getWindow().getDecorView(), Gravity.BOTTOM, 0, 0);
+	}
+
+	@Override
+	protected void onRestart() {
+		super.onRestart();
+		Log.i(TAG, "onRestart");
+		isFinishDBDraw = false;
+	}
+
 	private void initContentObserver() {
 		mDBContentObserver = new DBContentObserver(new Handler());
 		getContentResolver().registerContentObserver(MyContentProvider.CONTENT_URI, true, mDBContentObserver);
@@ -136,8 +205,14 @@ public class LocationActivity extends BaseActivity {
 	protected void onResume() {
 		super.onResume();
 
+		Log.i(TAG, "onResume");
 		if (SPUtils.readSp(getApplicationContext()) != "") {//数据库是存在的
+			if (mMapView != null) {
+				Log.i(TAG,"clearAllOverlays");
+				mMapView.clearAllOverlays();
+			}
 			dbDrawResume();
+			isFinishDBDraw = true;
 		}
 
 		if (mWakeLock != null) {
@@ -149,9 +224,11 @@ public class LocationActivity extends BaseActivity {
 	private void dbDrawResume() {
 		String[] PROJECTION = new String[]{LocationDbHelper.ID, LocationDbHelper.LATITUDE, LocationDbHelper.LONGITUDE, LocationDbHelper.INS_SPEED, LocationDbHelper.BEARING, LocationDbHelper.ALTITUDE, LocationDbHelper.ACCURACY, LocationDbHelper.TIME, LocationDbHelper.DISTANCE, LocationDbHelper.AVG_SPEED, LocationDbHelper.KCAL,};
 		cursor = getApplicationContext().getContentResolver().query(MyContentProvider.CONTENT_URI, PROJECTION, null, null, null);
+
+		points.clear();
+
 		if (cursor.moveToFirst()) {
-			for (int i = 0; i < cursor.getCount(); i++) {
-				cursor.moveToPosition(i);
+			while (cursor.moveToNext()) {
 				double latitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LATITUDE));
 				double longitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LONGITUDE));
 				long times = cursor.getLong(cursor.getColumnIndex(LocationDbHelper.TIME));
@@ -160,10 +237,12 @@ public class LocationActivity extends BaseActivity {
 				float kcal = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.KCAL));
 				float accuracy = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.ACCURACY));
 
-				updateTextViews(longitude, latitude, times, insSpeed, aveSpeed, kcal);
+				//updateTextViews(longitude, latitude, times, insSpeed, aveSpeed, kcal);
 				drawLines(longitude, latitude, accuracy, true);
 			}
 		}
+
+
 	}
 
 	@Override
@@ -306,7 +385,7 @@ public class LocationActivity extends BaseActivity {
 
 	}
 
-	private void updateTextViews(double longitude, double latitude, long time, double insSpeed, float aveSpeed, float kal) {
+	private void updateTextViews(double longitude, double latitude, long time, double insSpeed, double aveSpeed, double kal) {
 		TextView getIntervalTime = (TextView) findViewById(R.id.getIntervalTime);
 		tvLocation.setText("维度:" + latitude + ",经度:" + longitude + ",时间 :" + LocationUtil.convert(time));
 
@@ -378,14 +457,21 @@ public class LocationActivity extends BaseActivity {
 				double latitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LATITUDE));
 				double longitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LONGITUDE));
 				long times = cursor.getLong(cursor.getColumnIndex(LocationDbHelper.TIME));
-				double insSpeed = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.INS_SPEED));
-				float aveSpeed = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.AVG_SPEED));
-				float kcal = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.KCAL));
+				insSpeed = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.INS_SPEED));
+				aveSpeed = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.AVG_SPEED));
+				kcal = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.KCAL));
 				float accuracy = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.ACCURACY));
 
 				Log.i(TAG, "latitude=" + latitude + "  latitude=" + latitude);
+
 				updateTextViews(longitude, latitude, times, insSpeed, aveSpeed, kcal);
-				drawLines(longitude, latitude, accuracy, true);
+				if (isFinishDBDraw == false) {
+					Log.i(TAG, "11111111");
+					LatLng latLng = new LatLng(latitude, longitude);
+					points.add(latLng);
+				} else {
+					drawLines(longitude, latitude, accuracy, true);
+				}
 			}
 		}
 

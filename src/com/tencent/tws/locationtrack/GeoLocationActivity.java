@@ -139,22 +139,22 @@ public class GeoLocationActivity extends BaseActivity implements LocationListene
 					isRecord = !isRecord;
 				}	
 	        });
-	        Button btnViewRecords = (Button) findViewById(R.id.btnViewRecords);
-		       // btnStartSports.setEnabled(false);
-		        btnViewRecords.setOnClickListener(new View.OnClickListener(){
-
-					@Override
-					public void onClick(View v) {
-						// TODO Auto-generated method stub
-//						for(int i=0;i<Overlays.size();i++)
-//						{
-//							mMapView.removeOverlay(Overlays.remove(i));
-//						}
-//						Overlays.clear();
-						Intent i = new Intent(GeoLocationActivity.this,RecordsActivity.class);
-						startActivity(i);
-					}	
-		        });
+//	        Button btnViewRecords = (Button) findViewById(R.id.btnViewRecords);
+//		       // btnStartSports.setEnabled(false);
+//		        btnViewRecords.setOnClickListener(new View.OnClickListener(){
+//
+//					@Override
+//					public void onClick(View v) {
+//						// TODO Auto-generated method stub
+////						for(int i=0;i<Overlays.size();i++)
+////						{
+////							mMapView.removeOverlay(Overlays.remove(i));
+////						}
+////						Overlays.clear();
+//						Intent i = new Intent(GeoLocationActivity.this,RecordsActivity.class);
+//						startActivity(i);
+//					}
+//		        });
 	 
 	        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 	      //判断是否已经打开GPS模块
