@@ -28,7 +28,9 @@ import com.tencent.tencentmap.mapsdk.map.MapView;
 import com.tencent.tws.locationtrack.database.LocationDbHelper;
 import com.tencent.tws.locationtrack.database.MyContentProvider;
 import com.tencent.tws.locationtrack.database.SPUtils;
+import com.tencent.tws.locationtrack.util.Gps;
 import com.tencent.tws.locationtrack.util.LocationUtil;
+import com.tencent.tws.locationtrack.util.PositionUtil;
 import com.tencent.tws.locationtrack.views.CustomShareBoard;
 import com.tencent.tws.widget.BaseActivity;
 import com.umeng.socialize.controller.UMServiceFactory;
@@ -82,7 +84,7 @@ public class LocationActivity extends BaseActivity {
 
 	private Cursor cursor;
 	double insSpeed = 0;
-	double aveSpeed =0;
+	double aveSpeed = 0;
 	double kcal = 0;
 	private boolean isFinishDBDraw = true;
 
@@ -180,7 +182,7 @@ public class LocationActivity extends BaseActivity {
 
 	private void postShare() {
 		// 设置分享内容
-		mController.setShareContent("瞬时速度="+insSpeed + " 平均速度="+aveSpeed + " 能量=" + kcal);
+		mController.setShareContent("瞬时速度=" + insSpeed + " 平均速度=" + aveSpeed + " 能量=" + kcal);
 		// 设置分享图片, 参数2为图片的url地址
 		mController.setShareMedia(new UMImage(this, "http://i6.topit.me/6/5d/45/1131907198420455d6o.jpg"));
 
@@ -208,7 +210,7 @@ public class LocationActivity extends BaseActivity {
 		Log.i(TAG, "onResume");
 		if (SPUtils.readSp(getApplicationContext()) != "") {//数据库是存在的
 			if (mMapView != null) {
-				Log.i(TAG,"clearAllOverlays");
+				Log.i(TAG, "clearAllOverlays");
 				mMapView.clearAllOverlays();
 			}
 			dbDrawResume();
@@ -238,7 +240,8 @@ public class LocationActivity extends BaseActivity {
 				float accuracy = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.ACCURACY));
 
 				//updateTextViews(longitude, latitude, times, insSpeed, aveSpeed, kcal);
-				drawLines(longitude, latitude, accuracy, true);
+				Gps gps = PositionUtil.gps84_To_Gcj02(latitude, longitude);
+				drawLines(gps.getWgLon(), gps.getWgLat(), accuracy, true);
 			}
 		}
 
@@ -467,10 +470,12 @@ public class LocationActivity extends BaseActivity {
 				updateTextViews(longitude, latitude, times, insSpeed, aveSpeed, kcal);
 				if (isFinishDBDraw == false) {
 					Log.i(TAG, "11111111");
-					LatLng latLng = new LatLng(latitude, longitude);
+					Gps gps = PositionUtil.gps84_To_Gcj02(latitude, longitude);
+					LatLng latLng = new LatLng(gps.getWgLon(), gps.getWgLat());
 					points.add(latLng);
 				} else {
-					drawLines(longitude, latitude, accuracy, true);
+					Gps gps = PositionUtil.gps84_To_Gcj02(latitude, longitude);
+					drawLines(gps.getWgLon(), gps.getWgLat(), accuracy, true);
 				}
 			}
 		}
