@@ -465,11 +465,8 @@ public class LocationActivity extends BaseActivity {
 				kcal = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.KCAL));
 				float accuracy = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.ACCURACY));
 
-				Log.i(TAG, "latitude=" + latitude + "  latitude=" + latitude);
-
 				updateTextViews(longitude, latitude, times, insSpeed, aveSpeed, kcal);
 				if (isFinishDBDraw == false) {
-					Log.i(TAG, "11111111");
 					Gps gps = PositionUtil.gps84_To_Gcj02(latitude, longitude);
 					LatLng latLng = new LatLng(gps.getWgLon(), gps.getWgLat());
 					points.add(latLng);

@@ -5,6 +5,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -26,7 +27,7 @@ public class LocationService extends Service implements LocationListener {
 	private static final String TAG = "LocationService";
 	private LocationManager mLocationManager;
 
-	private static final int INTERVAL_TIME = 3000;
+	private static final int INTERVAL_TIME = 1000;
 	private static final int INTERVAL_DISTANCE = 10;
 
 	//用于记录所有点信息
@@ -55,15 +56,21 @@ public class LocationService extends Service implements LocationListener {
 		Log.i(TAG, "onStartCommand");
 
 		mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+
+		//为获取地理位置信息时设置查询条件
+		String bestProvider = mLocationManager.getBestProvider(getCriteria(), true);
+		//获取位置信息
+		//如果不设置查询要求，getLastKnownLocation方法传人的参数为LocationManager.GPS_PROVIDER
+		Location location = mLocationManager.getLastKnownLocation(bestProvider);
+		insertAndNotif(location);
+
 		if (intent != null) {
-			mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
-					intent.getIntExtra("intervalTime", INTERVAL_TIME),
-					intent.getIntExtra("intervalDistance", INTERVAL_DISTANCE), this);
+			mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, intent.getIntExtra("intervalTime", INTERVAL_TIME), intent.getIntExtra("intervalDistance", INTERVAL_DISTANCE), this);
 		} else {
 			mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, INTERVAL_TIME, INTERVAL_DISTANCE, this);
 		}
 
-        //mLocationManager.addGpsStatusListener(statusListener);
+		//mLocationManager.addGpsStatusListener(statusListener);
 		return super.onStartCommand(intent, flags, startId);
 	}
 
@@ -75,6 +82,10 @@ public class LocationService extends Service implements LocationListener {
 
 	@Override
 	public void onLocationChanged(Location location) {
+		insertAndNotif(location);
+	}
+
+	private void insertAndNotif(Location location) {
 		ContentValues values = new ContentValues();
 		values.put(LocationDbHelper.LATITUDE, location.getLatitude());
 		values.put(LocationDbHelper.LONGITUDE, location.getLongitude());
@@ -87,7 +98,7 @@ public class LocationService extends Service implements LocationListener {
 		//保存所有历史点记录
 		listLocations.add(location);
 
-		if (lastLongitude != 0 && lastLongitude != 0) {
+		if (lastLongitude != 0 && lastLatitude != 0) {
 			values.put(LocationDbHelper.DISTANCE, getDistanceBetween2Point(lastLatitude, lastLongitude, location.getLatitude(), location.getLongitude()));
 		} else {
 			values.put(LocationDbHelper.DISTANCE, 0.0);
@@ -135,6 +146,7 @@ public class LocationService extends Service implements LocationListener {
 			time = cursor.getLong(cursor.getColumnIndex(LocationDbHelper.TIME));
 		}
 		cursor.close();
+		Log.i(TAG, "firstTime=" + time);
 		return time;
 	}
 
@@ -166,7 +178,7 @@ public class LocationService extends Service implements LocationListener {
 	}
 
 	private double getkcal() {
-		return 60 * getAllDistance() * 1.036;
+		return 60 * getAllDistance() * 0.8;
 	}
 
 	private double getAvgSpeed() {
@@ -175,7 +187,7 @@ public class LocationService extends Service implements LocationListener {
 		long deltTime = (currentTime - startTime) / 1000;
 		Log.i(TAG, "deltTime=" + deltTime + " avg_speed=" + getAllDistance() / deltTime * 3600 / 1000);
 
-		return getAllDistance() / deltTime * 3600 / 1000;
+		return (getAllDistance() / deltTime) * (3600 / 1000);
 	}
 
 	private int getLastId() {
@@ -209,11 +221,34 @@ public class LocationService extends Service implements LocationListener {
 
 	@Override
 	public void onProviderEnabled(String provider) {
-
+		Location location = mLocationManager.getLastKnownLocation(provider);
+		insertAndNotif(location);
 	}
 
 	@Override
 	public void onProviderDisabled(String provider) {
 
+	}
+
+	/**
+	 * 返回查询条件
+	 *
+	 * @return
+	 */
+	private Criteria getCriteria() {
+		Criteria criteria = new Criteria();
+		//设置定位精确度 Criteria.ACCURACY_COARSE比较粗略，Criteria.ACCURACY_FINE则比较精细
+		criteria.setAccuracy(Criteria.ACCURACY_FINE);
+		//设置是否要求速度
+		criteria.setSpeedRequired(true);
+		// 设置是否允许运营商收费
+		criteria.setCostAllowed(false);
+		//设置是否需要方位信息
+		criteria.setBearingRequired(true);
+		//设置是否需要海拔信息
+		criteria.setAltitudeRequired(false);
+		// 设置对电源的需求
+		criteria.setPowerRequirement(Criteria.POWER_LOW);
+		return criteria;
 	}
 }
