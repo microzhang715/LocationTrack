@@ -62,7 +62,10 @@ public class LocationService extends Service implements LocationListener {
 		//获取位置信息
 		//如果不设置查询要求，getLastKnownLocation方法传人的参数为LocationManager.GPS_PROVIDER
 		Location location = mLocationManager.getLastKnownLocation(bestProvider);
-		insertAndNotif(location);
+		if (location != null){
+			insertAndNotif(location);
+		}
+
 
 		if (intent != null) {
 			mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, intent.getIntExtra("intervalTime", INTERVAL_TIME), intent.getIntExtra("intervalDistance", INTERVAL_DISTANCE), this);
@@ -82,7 +85,9 @@ public class LocationService extends Service implements LocationListener {
 
 	@Override
 	public void onLocationChanged(Location location) {
-		insertAndNotif(location);
+		if (location != null){
+			insertAndNotif(location);
+		}
 	}
 
 	private void insertAndNotif(Location location) {
@@ -222,7 +227,10 @@ public class LocationService extends Service implements LocationListener {
 	@Override
 	public void onProviderEnabled(String provider) {
 		Location location = mLocationManager.getLastKnownLocation(provider);
-		insertAndNotif(location);
+		if (location != null){
+			insertAndNotif(location);
+		}
+
 	}
 
 	@Override
