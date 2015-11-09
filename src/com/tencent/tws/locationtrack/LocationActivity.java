@@ -19,6 +19,7 @@ import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+
 import com.tencent.map.geolocation.TencentLocation;
 import com.tencent.mapsdk.raster.model.GeoPoint;
 import com.tencent.mapsdk.raster.model.LatLng;
@@ -205,6 +206,7 @@ public class LocationActivity extends BaseActivity {
 
 	@Override
 	protected void onResume() {
+		mMapView.onResume();
 		super.onResume();
 
 		Log.i(TAG, "onResume");
@@ -250,6 +252,7 @@ public class LocationActivity extends BaseActivity {
 
 	@Override
 	protected void onPause() {
+		mMapView.onPause();
 		super.onPause();
 		if (mWakeLock != null) {
 			mWakeLock.release();
@@ -258,6 +261,7 @@ public class LocationActivity extends BaseActivity {
 
 	@Override
 	protected void onDestroy() {
+		mMapView.onDestroy();
 		super.onDestroy();
 		if (cursor != null) {
 			cursor.close();
@@ -266,6 +270,11 @@ public class LocationActivity extends BaseActivity {
 		if (mWakeLock != null) {
 			mWakeLock.release();
 		}
+	}
+	@Override
+	protected void onStop() {
+		mMapView.onStop();
+		super.onStop();
 	}
 
 

@@ -18,6 +18,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+
 import com.tencent.map.geolocation.TencentLocation;
 import com.tencent.mapsdk.raster.model.GeoPoint;
 import com.tencent.mapsdk.raster.model.LatLng;
@@ -134,6 +135,7 @@ public class TencentLocationActivity extends BaseActivity {
 
 	@Override
 	protected void onResume() {
+		mMapView.onResume();
 		super.onResume();
 
 		if (SPUtils.readSp(getApplicationContext()) != "") {//数据库是存在的
@@ -168,6 +170,7 @@ public class TencentLocationActivity extends BaseActivity {
 
 	@Override
 	protected void onPause() {
+		mMapView.onPause();
 		super.onPause();
 		if (mWakeLock != null) {
 			mWakeLock.release();
@@ -176,6 +179,7 @@ public class TencentLocationActivity extends BaseActivity {
 
 	@Override
 	protected void onDestroy() {
+		mMapView.onDestroy();
 		super.onDestroy();
 		if (cursor != null) {
 			cursor.close();
@@ -186,7 +190,12 @@ public class TencentLocationActivity extends BaseActivity {
 		}
 	}
 
-
+	@Override
+	protected void onStop() {
+		mMapView.onStop();
+		super.onStop();
+	}
+	
 	private boolean filter(TencentLocation location) {
 		BigDecimal longitude = (new BigDecimal(location.getLongitude())).setScale(ACCURACY, BigDecimal.ROUND_HALF_UP);
 
