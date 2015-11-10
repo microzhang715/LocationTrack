@@ -119,7 +119,7 @@ public class GeoLocationActivity extends BaseActivity implements LocationListene
 			initMapView();
 			Overlays = new ArrayList<Object>();
 			
-			btnStartSports = (Button) findViewById(R.id.btnStartSports);
+//			btnStartSports = (Button) findViewById(R.id.btnStartSports);
 			btnStartSports.setEnabled(false);
 	        btnStartSports.setOnClickListener(new View.OnClickListener(){
 
@@ -137,7 +137,7 @@ public class GeoLocationActivity extends BaseActivity implements LocationListene
 						btnStartSports.setText(R.string.stop_sport);
 					}
 					isRecord = !isRecord;
-				}	
+				}
 	        });
 //	        Button btnViewRecords = (Button) findViewById(R.id.btnViewRecords);
 //		       // btnStartSports.setEnabled(false);

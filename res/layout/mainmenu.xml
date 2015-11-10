@@ -1,87 +1,86 @@
-<?xml version="1.0" encoding="utf-8"?><RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent" 
-    android:background="#FFFFFF">
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:background="#FFFFFF">
 
-   
-    <ImageButton
-        android:id="@+id/mapButtonGeo"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="2dp"
-        android:layout_marginBottom="10dp"
-        android:background="@null"
-        android:src="@drawable/mapmenu" />
-    
-  <ImageButton
-        android:id="@+id/mapButtonTencent"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignRight="@+id/mapButtonGeo"
-        android:layout_below="@+id/mapButtonGeo"
-        android:layout_marginTop="2dp"
-        android:layout_marginBottom="10dp"
-        android:background="@null"
-        android:src="@drawable/mapmenu" />
-    
+	<ImageButton
+			android:id="@+id/mapButtonGeo"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_alignParentTop="true"
+			android:layout_centerHorizontal="true"
+			android:layout_marginTop="2dp"
+			android:layout_marginBottom="10dp"
+			android:background="@null"
+			android:src="@drawable/mapmenu"/>
 
-    <ImageButton
-        android:id="@+id/aboutButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignRight="@+id/mapButtonTencent"
-        android:layout_below="@+id/mapButtonTencent"
-        android:layout_marginTop="10dp"
-        android:background="@null"
-        android:src="@drawable/about" />
+	<!--<ImageButton-->
+	<!--android:id="@+id/mapButtonTencent"-->
+	<!--android:layout_width="wrap_content"-->
+	<!--android:layout_height="wrap_content"-->
+	<!--android:layout_alignRight="@+id/mapButtonGeo"-->
+	<!--android:layout_below="@+id/mapButtonGeo"-->
+	<!--android:layout_marginTop="2dp"-->
+	<!--android:layout_marginBottom="10dp"-->
+	<!--android:background="@null"-->
+	<!--android:src="@drawable/mapmenu" />-->
 
-    <ImageView
-        android:id="@+id/imageView1"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/mapButtonGeo"
-        android:layout_centerHorizontal="true"
-        android:src="@drawable/separator" />
-    
-        <ImageView
-        android:id="@+id/imageView2"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/mapButtonTencent"
-        android:layout_centerHorizontal="true"
-        android:src="@drawable/separator" />
-            
- <LinearLayout     
-    android:layout_width="fill_parent"
-    android:layout_height="wrap_content"
-    android:layout_below="@+id/aboutButton"
-    android:orientation="horizontal">
-    	  <TextView
-	       android:textColor="#FF0000"
-	       android:layout_width="wrap_content"
-	       android:layout_height="wrap_content"
-	       android:text="时间间隔："/>
-    <EditText
-        android:id="@+id/edit_intervalTime"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:hint="定位时间间隔(单位S)" 
-        android:text="1"/>
-     	  <TextView
-	       android:textColor="#FF0000"
-	       android:layout_width="wrap_content"
-	       android:layout_height="wrap_content"
-	       android:text="距离间隔："/>
-        <EditText
-        android:id="@+id/edit_intervalDistance"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:hint="定位距离间隔(单位M)" 
-        android:text="10"/>
-    </LinearLayout>
-        
+	<!--<ImageButton-->
+	<!--android:id="@+id/aboutButton"-->
+	<!--android:layout_width="wrap_content"-->
+	<!--android:layout_height="wrap_content"-->
+	<!--android:layout_alignRight="@+id/mapButtonTencent"-->
+	<!--android:layout_below="@+id/mapButtonTencent"-->
+	<!--android:layout_marginTop="10dp"-->
+	<!--android:background="@null"-->
+	<!--android:src="@drawable/about" />-->
+
+	<ImageView
+			android:id="@+id/imageView1"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_below="@+id/mapButtonGeo"
+			android:layout_centerHorizontal="true"
+			android:src="@drawable/separator"/>
+
+	<ImageView
+			android:id="@+id/imageView2"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_below="@+id/mapButtonGeo"
+			android:layout_centerHorizontal="true"
+			android:src="@drawable/separator"/>
+
+	<!--<LinearLayout-->
+			<!--android:layout_width="fill_parent"-->
+			<!--android:layout_height="wrap_content"-->
+			<!--android:layout_below="@+id/mapButtonGeo"-->
+			<!--android:orientation="horizontal">-->
+		<!--<TextView-->
+				<!--android:textColor="#FF0000"-->
+				<!--android:layout_width="wrap_content"-->
+				<!--android:layout_height="wrap_content"-->
+				<!--android:text="时间间隔："/>-->
+		<!--<EditText-->
+				<!--android:id="@+id/edit_intervalTime"-->
+				<!--android:layout_width="wrap_content"-->
+				<!--android:layout_height="wrap_content"-->
+				<!--android:layout_weight="1"-->
+				<!--android:hint="定位时间间隔(单位S)"-->
+				<!--android:text="1"/>-->
+		<!--<TextView-->
+				<!--android:textColor="#FF0000"-->
+				<!--android:layout_width="wrap_content"-->
+				<!--android:layout_height="wrap_content"-->
+				<!--android:text="距离间隔："/>-->
+		<!--<EditText-->
+				<!--android:id="@+id/edit_intervalDistance"-->
+				<!--android:layout_width="wrap_content"-->
+				<!--android:layout_height="wrap_content"-->
+				<!--android:layout_weight="1"-->
+				<!--android:hint="定位距离间隔(单位M)"-->
+				<!--android:text="10"/>-->
+	<!--</LinearLayout>-->
+
 </RelativeLayout>

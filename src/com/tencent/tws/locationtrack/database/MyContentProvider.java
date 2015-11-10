@@ -20,6 +20,8 @@ import java.util.HashMap;
  */
 public class MyContentProvider extends ContentProvider {
 
+	private static final String TAG = "MyContentProvider";
+
 	public static final String AUTHORITY = "com.tencent.tws.locationtrack.database.MyContentProvider";
 	public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY + "/locations");
 	public static final String CONTENT_TYPE = "vnd.android.cursor.dir/locations";
@@ -56,13 +58,13 @@ public class MyContentProvider extends ContentProvider {
 
 	@Override
 	public boolean onCreate() {
-		Log.i("kermit", "MyContentProvider onCreate");
+		Log.i(TAG, "MyContentProvider onCreate");
 		String databaseName = System.currentTimeMillis() + LAST_DATABASE_NAME;
 		if (SPUtils.readSp(getContext()) != "") {
-			Log.i("kermit","open database");
+			Log.i(TAG, "open database");
 			dbHelper = new LocationDbHelper(getContext(), SPUtils.readSp(getContext()));
 		} else {
-			Log.i("kermit","new database");
+			Log.i(TAG, "new database");
 			dbHelper = new LocationDbHelper(getContext(), databaseName);
 			SPUtils.writeSp(getContext(), databaseName);
 		}

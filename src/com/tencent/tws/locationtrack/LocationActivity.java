@@ -69,7 +69,7 @@ public class LocationActivity extends BaseActivity {
 	private final static int ACCURACY = 3;
 	private BigDecimal lastLatitude;
 	private BigDecimal lastLongitude;
-	private long getLocationTime = (long) 0;
+	private long lastLocationTime = (long) 0;
 
 	private TextView tvAveSpeed;
 	private TextView tvInsSpeed;
@@ -80,7 +80,7 @@ public class LocationActivity extends BaseActivity {
 	private TextView tvKal;
 	private TextView tvGPSStatus;
 	private TextView tvLocation;
-
+	private TextView getIntervalTime;
 	private DBContentObserver mDBContentObserver;
 
 	private Cursor cursor;
@@ -96,6 +96,7 @@ public class LocationActivity extends BaseActivity {
 	private static final String WEIXIN_APP_ID = "wx967daebe835fbeac";
 	private static final String WEIXIN_APP_SECRET = "5fa9e68ca3970e87a1f83e563c8dcbce";
 
+	Intent serviceIntent;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -115,11 +116,14 @@ public class LocationActivity extends BaseActivity {
 		tvAveSpeed = (TextView) findViewById(R.id.ave_speed);
 		tvInsSpeed = (TextView) findViewById(R.id.ins_speed);
 		tvKal = (TextView) findViewById(R.id.kal);
+		getIntervalTime = (TextView) findViewById(R.id.getIntervalTime);
+
+
 		//地图
 		initMapView();
 
 		//启动后台服务获取地理信息
-		Intent serviceIntent = new Intent(this, LocationService.class);
+		serviceIntent = new Intent(this, LocationService.class);
 		serviceIntent.putExtra("intervalTime", getIntent().getLongExtra("intervalTime", 1000));
 		startService(serviceIntent);
 		Log.i("LocationService", "LocationService 启动");
@@ -140,6 +144,13 @@ public class LocationActivity extends BaseActivity {
 			@Override
 			public void onClick(View v) {
 				SPUtils.clearSp(getApplicationContext());
+
+				if (serviceIntent != null) {
+					stopService(serviceIntent);
+				}
+
+				android.os.Process.killProcess(android.os.Process.myPid());    //获取PID
+				System.exit(0);   //常规java、c#的标准退出法，返回值为0代表正常退出
 			}
 		});
 
@@ -243,7 +254,9 @@ public class LocationActivity extends BaseActivity {
 
 				//updateTextViews(longitude, latitude, times, insSpeed, aveSpeed, kcal);
 				Gps gps = PositionUtil.gps84_To_Gcj02(latitude, longitude);
-				drawLines(gps.getWgLon(), gps.getWgLat(), accuracy, true);
+				if (gps != null) {
+					drawLines(gps.getWgLon(), gps.getWgLat(), accuracy, true);
+				}
 			}
 		}
 
@@ -265,6 +278,10 @@ public class LocationActivity extends BaseActivity {
 		super.onDestroy();
 		if (cursor != null) {
 			cursor.close();
+		}
+
+		if (locationManager != null) {
+			locationManager.removeGpsStatusListener(statusListener);
 		}
 
 		if (mWakeLock != null) {
@@ -397,14 +414,18 @@ public class LocationActivity extends BaseActivity {
 
 	}
 
-	private void updateTextViews(double longitude, double latitude, long time, double insSpeed, double aveSpeed, double kal) {
-		TextView getIntervalTime = (TextView) findViewById(R.id.getIntervalTime);
-		tvLocation.setText("维度:" + latitude + ",经度:" + longitude + ",时间 :" + LocationUtil.convert(time));
+	private void updateTextViews(double longitude, double latitude, long times, double insSpeed, double aveSpeed, double kal) {
+		tvLocation.setText("维度:" + latitude + ",经度:" + longitude + ",时间 :" + LocationUtil.convert(times));
 
-		if (getLocationTime != time) {
-			getIntervalTime.setText("获取间隔时间：" + String.valueOf((time - getLocationTime) / 1000));
+		if (lastLocationTime != times && lastLocationTime != 0) {
+			Log.i("kermit", "lastLocationTime=" + lastLocationTime);
+			Log.i("kermit", "times=" + times);
+			Log.i("kermit", "deltTimes=" + (times - lastLocationTime));
+			long deltTIme = (times - lastLocationTime) / 1000;
+			getIntervalTime.setText("   获取间隔时间：" + deltTIme);
 		}
-		getLocationTime = time;
+
+		lastLocationTime = times;
 
 		DecimalFormat myformat = new DecimalFormat("#0.00");
 		tvInsSpeed.setText(myformat.format(insSpeed) + " km/h");
@@ -477,11 +498,15 @@ public class LocationActivity extends BaseActivity {
 				updateTextViews(longitude, latitude, times, insSpeed, aveSpeed, kcal);
 				if (isFinishDBDraw == false) {
 					Gps gps = PositionUtil.gps84_To_Gcj02(latitude, longitude);
-					LatLng latLng = new LatLng(gps.getWgLon(), gps.getWgLat());
-					points.add(latLng);
+					if (gps != null) {
+						LatLng latLng = new LatLng(gps.getWgLon(), gps.getWgLat());
+						points.add(latLng);
+					}
 				} else {
 					Gps gps = PositionUtil.gps84_To_Gcj02(latitude, longitude);
-					drawLines(gps.getWgLon(), gps.getWgLat(), accuracy, true);
+					if (gps != null) {
+						drawLines(gps.getWgLon(), gps.getWgLat(), accuracy, true);
+					}
 				}
 			}
 		}

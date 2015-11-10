@@ -35,7 +35,8 @@
 	<uses-permission android:name="android.permission.BLUETOOTH_STACK"/>
 	<uses-permission android:name="android.permission.VIBRATE"/>
 	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
-	<uses-permission android:name="android.permission.GET_TASKS" />
+	<uses-permission android:name="android.permission.GET_TASKS"/>
+
 	<uses-feature
 			android:name="android.hardware.bluetooth_le"
 			android:required="true"/>
@@ -43,6 +44,7 @@
 			android:allowBackup="true"
 			android:icon="@drawable/ic_launcher"
 			android:label="@string/app_name"
+			android:largeHeap="true"
 			android:theme="@style/AppTheme">
 		<meta-data
 				android:name="TencentMapSDK"
@@ -53,8 +55,8 @@
 				android:label="@string/app_name"
 				android:name=".MainActivity">
 			<intent-filter>           
-				<action android:name="android.intent.action.MAIN"/>           
-				<category android:name="android.intent.category.LAUNCHER"/>
+				<!--<action android:name="android.intent.action.MAIN"/>           -->
+				<!--<category android:name="android.intent.category.LAUNCHER"/>-->
 				            
 			</intent-filter>
 		</activity>
@@ -93,10 +95,13 @@
 
 		<activity
 				android:label="LocationActivity"
-				android:name=".LocationActivity">
+				android:name=".LocationActivity"
+				android:launchMode="singleInstance">
 			<intent-filter>
-				<action android:name="com.tencent.tws.locationtrack.LocationActivity"/>
-				<category android:name="android.intent.category.DEFAULT"/>
+				<action android:name="android.intent.action.MAIN"/>           
+				<category android:name="android.intent.category.LAUNCHER"/>
+				<!--<action android:name="com.tencent.tws.locationtrack.LocationActivity"/>-->
+				<!--<category android:name="android.intent.category.DEFAULT"/>-->
 			</intent-filter>
 		</activity>
 
@@ -177,25 +182,23 @@
 				android:screenOrientation="portrait"
 				android:theme="@android:style/Theme.Translucent.NoTitleBar"/>
 
-
 		<activity
 				android:name="com.tencent.tauth.AuthActivity"
 				android:launchMode="singleTask"
-				android:noHistory="true" >
+				android:noHistory="true">
 			<intent-filter>
-				<action android:name="android.intent.action.VIEW" />
+				<action android:name="android.intent.action.VIEW"/>
 
-				<category android:name="android.intent.category.DEFAULT" />
-				<category android:name="android.intent.category.BROWSABLE" />
+				<category android:name="android.intent.category.DEFAULT"/>
+				<category android:name="android.intent.category.BROWSABLE"/>
 
-				<data android:scheme="tencent你的QQ互联APPID" />
+				<data android:scheme="tencent你的QQ互联APPID"/>
 			</intent-filter>
 		</activity>
-		<activity android:name="com.tencent.connect.common.AssistActivity"
-		          android:theme="@android:style/Theme.Translucent.NoTitleBar"
-		          android:screenOrientation="portrait">
-		</activity>
-
+		<activity
+				android:name="com.tencent.connect.common.AssistActivity"
+				android:theme="@android:style/Theme.Translucent.NoTitleBar"
+				android:screenOrientation="portrait"></activity>
 
 	</application>
 	<instrumentation

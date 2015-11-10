@@ -6,11 +6,10 @@ import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
-import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
-import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.Toast;
+import com.tencent.tws.locationtrack.database.SPUtils;
 import com.tencent.tws.widget.BaseActivity;
 
 public class MainActivity extends BaseActivity {
@@ -24,6 +23,9 @@ public class MainActivity extends BaseActivity {
 
 	private static final String TAG_PKG = "com.tencent.tws.locationtrack.MainActivity";
 	WakeLock mWakeLock;
+
+	private static final int INTERNAL_TIME = 1000;
+	private static final int INTERNAL_DISTANCE = 10;
 
 //	private ContentObserverSubClass mContentObserverSubClass;
 
@@ -42,25 +44,24 @@ public class MainActivity extends BaseActivity {
 		// associates buttons with IDs
 
 		ImageButton mapGeo = (ImageButton) findViewById(R.id.mapButtonGeo);
-		ImageButton mapTencent = (ImageButton) findViewById(R.id.mapButtonTencent);
-		ImageButton aboutUs = (ImageButton) findViewById(R.id.aboutButton);
-		final EditText intervalTime = (EditText) findViewById(R.id.edit_intervalTime);
-		final EditText intervalDistance = (EditText) findViewById(R.id.edit_intervalDistance);
+//		ImageButton mapTencent = (ImageButton) findViewById(R.id.mapButtonTencent);
+//		ImageButton aboutUs = (ImageButton) findViewById(R.id.aboutButton);
+//		final EditText intervalTime = (EditText) findViewById(R.id.edit_intervalTime);
+//		final EditText intervalDistance = (EditText) findViewById(R.id.edit_intervalDistance);
 
 		// associates listener for Map Selection button
 		mapGeo.setOnClickListener(new View.OnClickListener() {
 
 			public void onClick(View v) {
-				if (TextUtils.isEmpty(intervalTime.getText().toString()) || TextUtils.isEmpty(intervalDistance.getText().toString())) {
-					Toast.makeText(MainActivity.this, "请输入定位时间和距离间隔", Toast.LENGTH_SHORT).show();
-				} else {
-					//Intent i = new Intent(GEOLOCATION);
-					Intent i = new Intent(MainActivity.this, LocationActivity.class);
-					i.putExtra("intervalTime", Long.parseLong(intervalTime.getText().toString()) * 1000);
-					i.putExtra("intervalDistance", Integer.parseInt(intervalDistance.getText().toString()));
-					startActivity(i);
-				}
-
+//				if (TextUtils.isEmpty(intervalTime.getText().toString()) || TextUtils.isEmpty(intervalDistance.getText().toString())) {
+//					Toast.makeText(MainActivity.this, "请输入定位时间和距离间隔", Toast.LENGTH_SHORT).show();
+//				} else {
+				//Intent i = new Intent(GEOLOCATION);
+				Intent i = new Intent(MainActivity.this, LocationActivity.class);
+				i.putExtra("intervalTime", INTERNAL_TIME);
+				i.putExtra("intervalDistance", INTERNAL_DISTANCE);
+				startActivity(i);
+//				}
 			}
 		});
 
@@ -71,28 +72,28 @@ public class MainActivity extends BaseActivity {
 //		initContentObserver();
 
 		// associates listener for Map Selection button
-		mapTencent.setOnClickListener(new View.OnClickListener() {
-
-			public void onClick(View v) {
-				if (TextUtils.isEmpty(intervalTime.getText().toString()) || TextUtils.isEmpty(intervalDistance.getText().toString())) {
-					Toast.makeText(MainActivity.this, "请输入定位时间和距离间隔", Toast.LENGTH_SHORT).show();
-				} else {
-					Intent i = new Intent(MainActivity.this, TencentLocationActivity.class);
-					i.putExtra("intervalTime", Long.parseLong(intervalTime.getText().toString()) * 1000);
-					startActivity(i);
-				}
-			}
-		});
+//		mapTencent.setOnClickListener(new View.OnClickListener() {
+//
+//			public void onClick(View v) {
+//				if (TextUtils.isEmpty(intervalTime.getText().toString()) || TextUtils.isEmpty(intervalDistance.getText().toString())) {
+//					Toast.makeText(MainActivity.this, "请输入定位时间和距离间隔", Toast.LENGTH_SHORT).show();
+//				} else {
+//					Intent i = new Intent(MainActivity.this, TencentLocationActivity.class);
+//					i.putExtra("intervalTime", Long.parseLong(intervalTime.getText().toString()) * 1000);
+//					startActivity(i);
+//				}
+//			}
+//		});
 
 		// associates listener for About Us Button
-		aboutUs.setOnClickListener(new View.OnClickListener() {
+//		aboutUs.setOnClickListener(new View.OnClickListener() {
+//
+//			public void onClick(View v) {
+////				Intent i = new Intent(MYMAP);
+////				startActivity(i);
 
-			public void onClick(View v) {
-//				Intent i = new Intent(MYMAP);
-//				startActivity(i);
-
-			}
-		});
+//			}
+//		});
 
 	}
 
@@ -104,6 +105,16 @@ public class MainActivity extends BaseActivity {
 	@Override
 	protected void onResume() {
 		super.onResume();
+
+		if (SPUtils.readSp(getApplicationContext()) != "") {
+			Log.i(TAG, "read_sp=" + SPUtils.readSp(getApplicationContext()));
+
+			Intent i = new Intent(MainActivity.this, LocationActivity.class);
+			i.putExtra("intervalTime", 1000);
+			i.putExtra("intervalDistance", 10);
+			startActivity(i);
+		}
+
 		if (mWakeLock != null) {
 			mWakeLock.acquire();
 		}
