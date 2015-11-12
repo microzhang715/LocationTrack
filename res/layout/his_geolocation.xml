@@ -21,6 +21,7 @@
                 android:orientation="horizontal">
 
             <TextView
+                    android:textSize="25sp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
@@ -29,6 +30,7 @@
 
             <TextView
                     android:id="@+id/his_ave_speed"
+                    android:textSize="25sp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
@@ -44,6 +46,7 @@
 
             <TextView
                     android:layout_width="wrap_content"
+                    android:textSize="25sp"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
                     android:textColor="#FF0000"
@@ -51,6 +54,7 @@
 
             <TextView
                     android:id="@+id/his_kal"
+                    android:textSize="25sp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
@@ -66,12 +70,14 @@
             <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:textSize="25sp"
                     android:layout_gravity="center_horizontal"
                     android:textColor="#FF0000"
                     android:text="总共距离:"/>
 
             <TextView
                     android:id="@+id/his_all_dis"
+                    android:textSize="25sp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"

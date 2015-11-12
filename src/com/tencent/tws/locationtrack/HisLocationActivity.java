@@ -32,9 +32,13 @@ import com.tencent.tws.locationtrack.util.Gps;
 import com.tencent.tws.locationtrack.util.PositionUtil;
 import com.tencent.tws.locationtrack.views.CustomShareBoard;
 import com.tencent.tws.widget.BaseActivity;
+import com.umeng.scrshot.UMScrShotController;
+import com.umeng.scrshot.adapter.UMAppAdapter;
 import com.umeng.socialize.controller.UMServiceFactory;
 import com.umeng.socialize.controller.UMSocialService;
 import com.umeng.socialize.media.UMImage;
+import com.umeng.socialize.sensor.controller.UMShakeService;
+import com.umeng.socialize.sensor.controller.impl.UMShakeServiceFactory;
 import com.umeng.socialize.sso.QZoneSsoHandler;
 import com.umeng.socialize.sso.UMQQSsoHandler;
 import com.umeng.socialize.weixin.controller.UMWXHandler;
@@ -88,6 +92,9 @@ public class HisLocationActivity extends BaseActivity {
 
     // 分享初始化控制器
     final UMSocialService mController = UMServiceFactory.getUMSocialService("com.umeng.share");
+    UMShakeService mShakeController = UMShakeServiceFactory.getShakeService("com.umeng.share");
+    Bitmap shareBitmap = null;
+
 
     // wx967daebe835fbeac是你在微信开发平台注册应用的AppID, 这里需要替换成你注册的AppID
     private static final String WEIXIN_APP_ID = "wx967daebe835fbeac";
@@ -195,11 +202,19 @@ public class HisLocationActivity extends BaseActivity {
 
     private void postShare() {
 
-        DecimalFormat myformat = new DecimalFormat("#0.00");
-        // 设置分享内容
-        mController.setShareContent("平均速度=" + myformat.format(hisSpeedValue) + "km/h" + " 能量=" + myformat.format(hisKcalValue) + "kcal" + " 总共距离=" + myformat.format(hisDisValue) + "km");
-        // 设置分享图片, 参数2为图片的url地址
-        mController.setShareMedia(new UMImage(this, "http://i6.topit.me/6/5d/45/1131907198420455d6o.jpg"));
+        //截屏方法
+        mShakeController.takeScrShot(HisLocationActivity.this, new UMAppAdapter(HisLocationActivity.this), new UMScrShotController.OnScreenshotListener() {
+            @Override
+            public void onComplete(Bitmap bmp) {
+                if (bmp != null) {
+                    shareBitmap = bmp;
+                }
+            }
+        });
+
+        if (shareBitmap != null) {
+            mController.setShareMedia(new UMImage(getApplicationContext(), shareBitmap));
+        }
 
         CustomShareBoard shareBoard = new CustomShareBoard(this);
         shareBoard.showAtLocation(this.getWindow().getDecorView(), Gravity.BOTTOM, 0, 0);

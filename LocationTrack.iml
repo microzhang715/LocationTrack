@@ -28,6 +28,8 @@
     <orderEntry type="library" name="TencentMapSDK_Raster_v1.1.2.15850" level="project" />
     <orderEntry type="library" name="weixin" level="project" />
     <orderEntry type="library" name="main" level="project" />
+    <orderEntry type="library" name="SocialSDK_scrshot" level="project" />
+    <orderEntry type="library" name="SocialSDK_shake" level="project" />
   </component>
   <component name="org.twodividedbyzero.idea.findbugs">
     <option name="_basePreferences">
