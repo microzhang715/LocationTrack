@@ -141,8 +141,10 @@ public class HisLocationActivity extends BaseActivity {
         if (intentDbName != null && !intentDbName.equals("")) {
             String dbName = getIntent().getStringExtra("fulldbName");
             Log.i(TAG, "get intentDbName=" + intentDbName);
-            dbHelper = new LocationDbHelper(getApplicationContext(), dbName);
-            sqLiteDatabase = dbHelper.getWritableDatabase();
+            if (dbName != null && !dbName.equals("") && !dbName.equals("0")) {
+                dbHelper = new LocationDbHelper(getApplicationContext(), dbName);
+                sqLiteDatabase = dbHelper.getWritableDatabase();
+            }
         } else {
             Toast.makeText(getApplicationContext(), "数据库文件不存在", Toast.LENGTH_SHORT).show();
         }
@@ -269,20 +271,22 @@ public class HisLocationActivity extends BaseActivity {
             }
         }
 
-        cursor.moveToLast();
-        lastTime = cursor.getLong(cursor.getColumnIndex(LocationDbHelper.TIME));
+        if (cursor.getCount() != 0) {
+            cursor.moveToLast();
+            lastTime = cursor.getLong(cursor.getColumnIndex(LocationDbHelper.TIME));
 
-        long deltTime = (lastTime - startTime) / 1000;
-        double aveSpeed = (allDis * 10) / (deltTime * 36f);
-        double allKcal = 60 * allDis * 1.036 / 1000;
+            long deltTime = (lastTime - startTime) / 1000;
+            double aveSpeed = (allDis * 10) / (deltTime * 36f);
+            double allKcal = 60 * allDis * 1.036 / 1000;
 
-        Log.i(TAG, "allDis=" + allDis + " | allKcal=" + allKcal + " | aveSpeed=" + aveSpeed);
+            Log.i(TAG, "allDis=" + allDis + " | allKcal=" + allKcal + " | aveSpeed=" + aveSpeed);
 
-        hisDisValue = allDis / 1000;
-        hisSpeedValue = aveSpeed;
-        hisKcalValue = allKcal;
+            hisDisValue = allDis / 1000;
+            hisSpeedValue = aveSpeed;
+            hisKcalValue = allKcal;
 
-        updateTextViews(hisSpeedValue, hisKcalValue, hisDisValue);
+            updateTextViews(hisSpeedValue, hisKcalValue, hisDisValue);
+        }
     }
 
     @Override

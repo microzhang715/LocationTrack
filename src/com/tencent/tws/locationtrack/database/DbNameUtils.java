@@ -37,15 +37,15 @@ public class DbNameUtils {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-
         }
 
         Arrays.sort(tmp);
 
         for (int i = tmp.length - 1; i >= 0; i--) {
-            resultNames.add(String.valueOf(tmp[i]));
+            if (tmp[i] != 0) {
+                resultNames.add(String.valueOf(tmp[i]));
+            }
         }
-
         return resultNames;
     }
 

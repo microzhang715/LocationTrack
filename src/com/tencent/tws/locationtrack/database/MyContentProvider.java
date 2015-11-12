@@ -63,13 +63,15 @@ public class MyContentProvider extends ContentProvider {
         Log.i(TAG, "MyContentProvider onCreate");
 
         String databaseName = System.currentTimeMillis() + LAST_DATABASE_NAME;
-        if (SPUtils.readSp(getContext()) != "") {
+        if (SPUtils.readSp(getContext()) != "" && SPUtils.readSp(getContext()) != "0") {//数据库名字存储了,打开这个数据库
             Log.i(TAG, "open database");
             dbHelper = new LocationDbHelper(getContext(), SPUtils.readSp(getContext()));
-        } else {
+        } else {//创建新的数据
             Log.i(TAG, "new database");
-            dbHelper = new LocationDbHelper(getContext(), databaseName);
-            SPUtils.writeSp(getContext(), databaseName);
+            if (databaseName != null && databaseName != "0") {
+                dbHelper = new LocationDbHelper(getContext(), databaseName);
+                SPUtils.writeSp(getContext(), databaseName);
+            }
         }
 
         return true;

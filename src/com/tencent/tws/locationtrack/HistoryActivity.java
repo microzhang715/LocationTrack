@@ -4,6 +4,9 @@ package com.tencent.tws.locationtrack;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteQueryBuilder;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -14,8 +17,12 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 import com.tencent.tws.locationtrack.database.DbNameUtils;
+import com.tencent.tws.locationtrack.database.LocationDbHelper;
+import com.tencent.tws.locationtrack.util.LocationUtil;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class HistoryActivity extends Activity implements AdapterView.OnItemClickListener {
     private static final String TAG = "HistoryActivity";
@@ -27,6 +34,29 @@ public class HistoryActivity extends Activity implements AdapterView.OnItemClick
     private DbNameUtils dbNameUtils;
 
     private ArrayList<String> dbaNamesList;
+
+    private static LocationDbHelper dbHelper;
+
+
+    private static HashMap<String, String> locationMaps;
+    SQLiteDatabase sqLiteDatabase;
+
+    static {
+        //定义别名
+        locationMaps = new HashMap<String, String>();
+        locationMaps.put(LocationDbHelper.ID, LocationDbHelper.ID);
+        locationMaps.put(LocationDbHelper.LATITUDE, LocationDbHelper.LATITUDE);
+        locationMaps.put(LocationDbHelper.LONGITUDE, LocationDbHelper.LONGITUDE);
+        locationMaps.put(LocationDbHelper.INS_SPEED, LocationDbHelper.INS_SPEED);
+        locationMaps.put(LocationDbHelper.BEARING, LocationDbHelper.BEARING);
+        locationMaps.put(LocationDbHelper.ALTITUDE, LocationDbHelper.ALTITUDE);
+        locationMaps.put(LocationDbHelper.ACCURACY, LocationDbHelper.ACCURACY);
+        locationMaps.put(LocationDbHelper.TIME, LocationDbHelper.TIME);
+        locationMaps.put(LocationDbHelper.DISTANCE, LocationDbHelper.DISTANCE);
+        locationMaps.put(LocationDbHelper.AVG_SPEED, LocationDbHelper.AVG_SPEED);
+        locationMaps.put(LocationDbHelper.KCAL, LocationDbHelper.KCAL);
+    }
+
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -56,7 +86,6 @@ public class HistoryActivity extends Activity implements AdapterView.OnItemClick
     @Override
     public void onStop() {
         super.onStop();
-//        closeArchives();
     }
 
     @Override
@@ -71,15 +100,6 @@ public class HistoryActivity extends Activity implements AdapterView.OnItemClick
         Log.i(TAG, "fulldbName=" + fulldbName);
     }
 
-
-    //    @Override
-//    public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-////        Archiver archiver = archives.get(i);
-////        Intent intent = new Intent(this, DetailActivity.class);
-////        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-////        intent.putExtra(INTENT_ARCHIVE_FILE_NAME, archiver.getName());
-////        startActivity(intent);
-//    }
 
     public class DatebaseAdapter extends ArrayAdapter<String> {
         private ArrayList<String> dbNames;
@@ -96,10 +116,81 @@ public class HistoryActivity extends Activity implements AdapterView.OnItemClick
             View rowView = inflater.inflate(R.layout.db_names, parent, false);
 
             TextView dbName = (TextView) rowView.findViewById(R.id.db_name);
-            dbName.setText(dbNames.get(position));
+            TextView infoTime = (TextView) rowView.findViewById(R.id.info_time);
+            TextView infoDis = (TextView) rowView.findViewById(R.id.info_dis);
+
+            //设置日期
+            try {
+                long time = Long.parseLong(dbNames.get(position));
+                dbName.setText(LocationUtil.convert(time));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            //设置时间和距离
+            DecimalFormat myformat = new DecimalFormat("#0.00");
+            infoDis.setText(myformat.format(getAllDisInfo(dbNames.get(position))));
+            infoTime.setText(myformat.format(getDeltTime(dbNames.get(position))));
 
             return rowView;
         }
+    }
+
+    private double getDeltTime(String dbName) {
+        String realName = dbName + "_location.db";
+
+        Log.i(TAG, "realName = " + realName);
+        dbHelper = new LocationDbHelper(getApplicationContext(), realName);
+        sqLiteDatabase = dbHelper.getReadableDatabase();
+        String[] PROJECTION = new String[]{LocationDbHelper.ID, LocationDbHelper.LATITUDE, LocationDbHelper.LONGITUDE, LocationDbHelper.INS_SPEED, LocationDbHelper.BEARING, LocationDbHelper.ALTITUDE, LocationDbHelper.ACCURACY, LocationDbHelper.TIME, LocationDbHelper.DISTANCE, LocationDbHelper.AVG_SPEED, LocationDbHelper.KCAL,};
+        Cursor cursor = query(sqLiteDatabase, PROJECTION, null, null, null);
+
+        long startTime = 0;
+        long lastTime = 0;
+
+        if (cursor.getCount() > 0) {
+            cursor.moveToFirst();
+            startTime = cursor.getLong(cursor.getColumnIndex(LocationDbHelper.TIME));
+            cursor.moveToLast();
+            lastTime = cursor.getLong(cursor.getColumnIndex(LocationDbHelper.TIME));
+        }
+
+        double delt = (lastTime - startTime) / (1000 * 60f);//分钟
+        cursor.close();
+        return delt;
+    }
+
+    private double getAllDisInfo(String dbName) {
+        String realName = dbName + "_location.db";
+        dbHelper = new LocationDbHelper(getApplicationContext(), realName);
+        sqLiteDatabase = dbHelper.getReadableDatabase();
+        String[] PROJECTION = new String[]{LocationDbHelper.ID, LocationDbHelper.LATITUDE, LocationDbHelper.LONGITUDE, LocationDbHelper.INS_SPEED, LocationDbHelper.BEARING, LocationDbHelper.ALTITUDE, LocationDbHelper.ACCURACY, LocationDbHelper.TIME, LocationDbHelper.DISTANCE, LocationDbHelper.AVG_SPEED, LocationDbHelper.KCAL,};
+        Cursor cursor = query(sqLiteDatabase, PROJECTION, null, null, null);
+
+        double allDis = 0;
+
+        if (cursor.getCount() > 0) {
+            if (cursor.moveToFirst()) {
+                while (cursor.moveToNext()) {
+                    float dis = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.DISTANCE));
+                    allDis += dis;
+                }
+            }
+        }
+        cursor.close();
+        return allDis / 1000; // 公里
+    }
+
+    public Cursor query(SQLiteDatabase sqLiteDatabase, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
+        //SQLiteDatabase sqLiteDatabase = dbHelper.getWritableDatabase();
+        SQLiteQueryBuilder sqLiteQueryBuilder = new SQLiteQueryBuilder();
+        sqLiteQueryBuilder.setTables(LocationDbHelper.TABLE_NAME);
+        sqLiteQueryBuilder.setProjectionMap(locationMaps);
+
+        String orderBy = LocationDbHelper.DEFAULT_ORDERBY;
+
+        Cursor cursor = sqLiteQueryBuilder.query(sqLiteDatabase, projection, selection, selectionArgs, null, null, orderBy);
+        return cursor;
     }
 
 }

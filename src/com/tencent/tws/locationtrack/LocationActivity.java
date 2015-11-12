@@ -458,7 +458,7 @@ public class LocationActivity extends BaseActivity {
         DecimalFormat myformat = new DecimalFormat("#0.00");
         tvInsSpeed.setText(myformat.format(insSpeed) + " km/h");
         tvAveSpeed.setText(myformat.format(aveSpeed) + " km/h");
-        tvKal.setText(myformat.format(kal));
+        tvKal.setText(myformat.format(kal) + " kal");
     }
 
 

@@ -190,7 +190,7 @@ public class LocationService extends Service implements LocationListener {
     }
 
     private double getkcal() {
-        return 60 * getAllDistance() * 0.8;
+        return 60 * getAllDistance() * 1.036 / 1000;
     }
 
     private double getAvgSpeed() {
