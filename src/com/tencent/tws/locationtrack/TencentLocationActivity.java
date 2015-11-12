@@ -101,13 +101,13 @@ public class TencentLocationActivity extends BaseActivity {
 		initContentObserver();
 
 		//清屏按钮注册
-		clearButton = (Button) findViewById(R.id.clearButton);
-		clearButton.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				mMapView.clearAllOverlays();
-			}
-		});
+//		clearButton = (Button) findViewById(R.id.clearButton);
+//		clearButton.setOnClickListener(new View.OnClickListener() {
+//			@Override
+//			public void onClick(View v) {
+//				mMapView.clearAllOverlays();
+//			}
+//		});
 
 		exitButton = (Button) findViewById(R.id.exitButton);
 		exitButton.setOnClickListener(new View.OnClickListener() {

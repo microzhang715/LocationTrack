@@ -2,8 +2,9 @@ package com.tencent.tws.locationtrack;
 
 import android.content.Context;
 import android.content.Intent;
-import android.database.ContentObserver;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteQueryBuilder;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.location.GpsSatellite;
@@ -11,7 +12,6 @@ import android.location.GpsStatus;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.util.Log;
@@ -28,7 +28,6 @@ import com.tencent.mapsdk.raster.model.Polyline;
 import com.tencent.mapsdk.raster.model.PolylineOptions;
 import com.tencent.tencentmap.mapsdk.map.MapView;
 import com.tencent.tws.locationtrack.database.LocationDbHelper;
-import com.tencent.tws.locationtrack.database.MyContentProvider;
 import com.tencent.tws.locationtrack.database.SPUtils;
 import com.tencent.tws.locationtrack.util.Gps;
 import com.tencent.tws.locationtrack.util.LocationUtil;
@@ -45,12 +44,13 @@ import com.umeng.socialize.weixin.controller.UMWXHandler;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
-public class LocationActivity extends BaseActivity {
+public class HisLocationActivity extends BaseActivity {
 
-    private static final String TAG = "LocationActivity";
+    private static final String TAG = "HisLocationActivity";
 
     protected LocationManager locationManager;
     protected Context context;
@@ -84,13 +84,12 @@ public class LocationActivity extends BaseActivity {
     private TextView tvLocation;
     private TextView getIntervalTime;
     private TextView allDis;
-    private DBContentObserver mDBContentObserver;
+//    private DBContentObserver mDBContentObserver;
 
     private Cursor cursor;
     double insSpeed = 0;
     double aveSpeed = 0;
     double kcal = 0;
-    private boolean isFinishDBDraw = true;
 
     // 分享初始化控制器
     final UMSocialService mController = UMServiceFactory.getUMSocialService("com.umeng.share");
@@ -104,53 +103,60 @@ public class LocationActivity extends BaseActivity {
     public static final String LAST_DATABASE_NAME = "_location.db";
     private static LocationDbHelper dbHelper;
 
+    private static HashMap<String, String> locationMaps;
+    SQLiteDatabase sqLiteDatabase;
+
+
+    static {
+        //定义别名
+        locationMaps = new HashMap<String, String>();
+        locationMaps.put(LocationDbHelper.ID, LocationDbHelper.ID);
+        locationMaps.put(LocationDbHelper.LATITUDE, LocationDbHelper.LATITUDE);
+        locationMaps.put(LocationDbHelper.LONGITUDE, LocationDbHelper.LONGITUDE);
+        locationMaps.put(LocationDbHelper.INS_SPEED, LocationDbHelper.INS_SPEED);
+        locationMaps.put(LocationDbHelper.BEARING, LocationDbHelper.BEARING);
+        locationMaps.put(LocationDbHelper.ALTITUDE, LocationDbHelper.ALTITUDE);
+        locationMaps.put(LocationDbHelper.ACCURACY, LocationDbHelper.ACCURACY);
+        locationMaps.put(LocationDbHelper.TIME, LocationDbHelper.TIME);
+        locationMaps.put(LocationDbHelper.DISTANCE, LocationDbHelper.DISTANCE);
+        locationMaps.put(LocationDbHelper.AVG_SPEED, LocationDbHelper.AVG_SPEED);
+        locationMaps.put(LocationDbHelper.KCAL, LocationDbHelper.KCAL);
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.geolocation);
+        setContentView(R.layout.his_geolocation);
 
         //初始化分享平台内容
-//        initSharePlatform();
+        initSharePlatform();
 
         //不灭屏
         PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
         mWakeLock = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, TAG);
         mWakeLock.acquire();
 
-        tvLocation = (TextView) findViewById(R.id.tvLocation);
-        tvGPSStatus = (TextView) findViewById(R.id.tvGPSStatus);
-        tvAveSpeed = (TextView) findViewById(R.id.ave_speed);
-        tvInsSpeed = (TextView) findViewById(R.id.ins_speed);
-        tvKal = (TextView) findViewById(R.id.kal);
-        allDis = (TextView) findViewById(R.id.all_dis);
-        getIntervalTime = (TextView) findViewById(R.id.getIntervalTime);
+        tvLocation = (TextView) findViewById(R.id.his_tvLocation);
+        tvGPSStatus = (TextView) findViewById(R.id.his_tvGPSStatus);
+        tvAveSpeed = (TextView) findViewById(R.id.his_ave_speed);
+        tvInsSpeed = (TextView) findViewById(R.id.his_ins_speed);
+        tvKal = (TextView) findViewById(R.id.his_kal);
+        allDis = (TextView) findViewById(R.id.his_all_dis);
+        getIntervalTime = (TextView) findViewById(R.id.his_getIntervalTime);
 
         //地图
         initMapView();
+        String intentDbName = getIntent().getStringExtra("fulldbName");
+        if (intentDbName != null && !intentDbName.equals("")) {
+            String dbName = getIntent().getStringExtra("fulldbName");
+            Log.i(TAG, "get intentDbName=" + intentDbName);
+            dbHelper = new LocationDbHelper(getApplicationContext(), dbName);
+            sqLiteDatabase = dbHelper.getWritableDatabase();
 
-        //初始化观察者
-        initContentObserver();
-
-        //开始按钮
-        startButton = (Button) findViewById(R.id.startButton);
-        startButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                //启动后台服务获取地理信息
-                serviceIntent = new Intent(getApplicationContext(), LocationService.class);
-                startService(serviceIntent);
-                startButton.setEnabled(false);
-                SPUtils.setExitFlag(getApplicationContext(), false);
-
-                Log.i("LocationService", "LocationService 启动");
-            }
-        });
-        if (SPUtils.readExitFlag(getApplicationContext()) == false) {
-            serviceIntent = new Intent(getApplicationContext(), LocationService.class);
-            startService(serviceIntent);
-            startButton.setEnabled(false);
+//            MyContentProvider.setDbHelper(dbHelper,dbName);
+        } else {
+            Toast.makeText(getApplicationContext(), "数据库文件不存在", Toast.LENGTH_SHORT).show();
         }
-
 
         //退出按钮
         exitButton = (Button) findViewById(R.id.exitButton);
@@ -163,46 +169,20 @@ public class LocationActivity extends BaseActivity {
                     stopService(serviceIntent);
                 }
 
-                //设置退出标志位
-                SPUtils.setExitFlag(getApplicationContext(), true);
-
                 android.os.Process.killProcess(android.os.Process.myPid());    //获取PID
                 System.exit(0);   //常规java、c#的标准退出法，返回值为0代表正常退出
             }
         });
 
-//        //分享按钮
-//        shareButton = (Button) findViewById(R.id.btnShare);
-//        shareButton.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                //mController.openShare(LocationActivity.this, false);
-//                postShare();
-//            }
-//        });
-
-
-        //判断GPS是否打开
-        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-            tvGPSStatus.setText("GPS已打开");
-        } else {
-            tvGPSStatus.setText("GPS已关闭");
-        }
-        //注册GPS监听回调
-        locationManager.addGpsStatusListener(statusListener);
-    }
-
-
-    @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event) {
-        switch (event.getKeyCode()) {
-            case KeyEvent.KEYCODE_BACK:
-
-                Toast.makeText(getApplicationContext(), "运动界面下，请退出后再返回", Toast.LENGTH_SHORT).show();
-                return true;
-        }
-        return super.onKeyDown(keyCode, event);
+        //数据分享按钮
+        shareButton = (Button) findViewById(R.id.his_share);
+        shareButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //mController.openShare(LocationActivity.this, false);
+                postShare();
+            }
+        });
     }
 
     private void initSharePlatform() {
@@ -236,41 +216,41 @@ public class LocationActivity extends BaseActivity {
     protected void onRestart() {
         super.onRestart();
         Log.i(TAG, "onRestart");
-        isFinishDBDraw = false;
     }
 
-    private void initContentObserver() {
-        mDBContentObserver = new DBContentObserver(new Handler());
-        getContentResolver().registerContentObserver(MyContentProvider.CONTENT_URI, true, mDBContentObserver);
-    }
 
     @Override
     protected void onResume() {
         mMapView.onResume();
         super.onResume();
+        if (mMapView != null) {
+            mMapView.clearAllOverlays();
+        }
+
+        dbDrawResume();
+
+        setLocationInfo();
 
         Log.i(TAG, "onResume");
-        if (SPUtils.readSp(getApplicationContext()) != "") {//数据库是存在的
-            if (mMapView != null) {
-                Log.i(TAG, "clearAllOverlays");
-                mMapView.clearAllOverlays();
-            }
-            dbDrawResume();
-            isFinishDBDraw = true;
-        }
+
 
         if (mWakeLock != null) {
             mWakeLock.acquire();
         }
     }
 
+    private void setLocationInfo() {
+
+    }
+
     //读取数据库，绘制数据库中所有数据
     private void dbDrawResume() {
         String[] PROJECTION = new String[]{LocationDbHelper.ID, LocationDbHelper.LATITUDE, LocationDbHelper.LONGITUDE, LocationDbHelper.INS_SPEED, LocationDbHelper.BEARING, LocationDbHelper.ALTITUDE, LocationDbHelper.ACCURACY, LocationDbHelper.TIME, LocationDbHelper.DISTANCE, LocationDbHelper.AVG_SPEED, LocationDbHelper.KCAL,};
-        cursor = getApplicationContext().getContentResolver().query(MyContentProvider.CONTENT_URI, PROJECTION, null, null, null);
+        cursor = query(PROJECTION, null, null, null);
 
         points.clear();
 
+        Log.i(TAG, "dbDrawResume");
         if (cursor.moveToFirst()) {
             while (cursor.moveToNext()) {
                 double latitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LATITUDE));
@@ -281,6 +261,7 @@ public class LocationActivity extends BaseActivity {
                 float kcal = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.KCAL));
                 float accuracy = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.ACCURACY));
 
+                Log.i(TAG, "latitude=" + latitude);
                 //updateTextViews(longitude, latitude, times, insSpeed, aveSpeed, kcal);
                 Gps gps = PositionUtil.gps84_To_Gcj02(latitude, longitude);
                 if (gps != null) {
@@ -352,7 +333,7 @@ public class LocationActivity extends BaseActivity {
     }
 
     private void initMapView() {
-        mMapView = (MapView) findViewById(R.id.mapviewOverlay);
+        mMapView = (MapView) findViewById(R.id.his_mapviewOverlay);
         // mMapView.setBuiltInZoomControls(true);
         mMapView.getController().setZoom(50);
 
@@ -362,27 +343,6 @@ public class LocationActivity extends BaseActivity {
 
         Overlays = new ArrayList<Object>();
     }
-
-//	private Polyline drawPolyline() {
-//		// final LatLng latLng1 = new LatLng(22.540452, 113.935446);
-//		// final LatLng latLng2 = new LatLng(22.540549, 113.935044);
-//		// 如果要修改颜色，请直接使用4字节颜色或定义的变量
-//		PolylineOptions lineOpt = new PolylineOptions();
-//		lineOpt.color(0xAAFF0000);
-//		// lineOpt.add(latLng1);
-//		// lineOpt.add(latLng2);
-//		HashMap<Double, Double> mParamsLocation = LocationUtil.getLocationTrack();
-//
-//		for (Object key : mParamsLocation.keySet()) {
-//			final LatLng latLng = new LatLng(mParamsLocation.get(key), (double) key);
-//			lineOpt.add(latLng);
-//
-//			Log.d("guccigu", "经度 = " + key + "，维度 = " + mParamsLocation.get(key));
-//		}
-//
-//		Polyline line = mMapView.getMap().addPolyline(lineOpt);
-//		return line;
-//	}
 
 
     private static GeoPoint of(double latitude, double longitude) {
@@ -501,57 +461,15 @@ public class LocationActivity extends BaseActivity {
         }
     }
 
+    public Cursor query(String[] projection, String selection, String[] selectionArgs, String sortOrder) {
+        SQLiteDatabase sqLiteDatabase = dbHelper.getWritableDatabase();
+        SQLiteQueryBuilder sqLiteQueryBuilder = new SQLiteQueryBuilder();
+        sqLiteQueryBuilder.setTables(LocationDbHelper.TABLE_NAME);
+        sqLiteQueryBuilder.setProjectionMap(locationMaps);
 
-    private class DBContentObserver extends ContentObserver {
+        String orderBy = LocationDbHelper.DEFAULT_ORDERBY;
 
-        public DBContentObserver(Handler handler) {
-            super(handler);
-        }
-
-        @Override
-        public void onChange(boolean selfChange) {
-            super.onChange(selfChange);
-            String[] PROJECTION = new String[]{LocationDbHelper.ID, LocationDbHelper.LATITUDE, LocationDbHelper.LONGITUDE, LocationDbHelper.INS_SPEED, LocationDbHelper.BEARING, LocationDbHelper.ALTITUDE, LocationDbHelper.ACCURACY, LocationDbHelper.TIME, LocationDbHelper.DISTANCE, LocationDbHelper.AVG_SPEED, LocationDbHelper.KCAL,};
-            long allDistance = 0;
-
-            cursor = getApplicationContext().getContentResolver().query(MyContentProvider.CONTENT_URI, PROJECTION, null, null, null);
-
-            if (cursor.moveToFirst()) {
-                for (int i = 0; i < cursor.getCount(); i++) {
-                    cursor.moveToPosition(i);
-                    allDistance += cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.DISTANCE));
-                }
-            }
-            allDis.setText(allDistance + "");
-
-            if (cursor.moveToLast()) {
-                double latitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LATITUDE));
-                double longitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LONGITUDE));
-                long times = cursor.getLong(cursor.getColumnIndex(LocationDbHelper.TIME));
-                insSpeed = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.INS_SPEED));
-                aveSpeed = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.AVG_SPEED));
-                kcal = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.KCAL));
-                float accuracy = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.ACCURACY));
-
-                updateTextViews(longitude, latitude, times, insSpeed, aveSpeed, kcal);
-                if (isFinishDBDraw == false) {
-                    Gps gps = PositionUtil.gps84_To_Gcj02(latitude, longitude);
-                    if (gps != null) {
-                        LatLng latLng = new LatLng(gps.getWgLon(), gps.getWgLat());
-                        points.add(latLng);
-                    }
-                } else {
-                    Gps gps = PositionUtil.gps84_To_Gcj02(latitude, longitude);
-                    if (gps != null) {
-                        drawLines(gps.getWgLon(), gps.getWgLat(), accuracy, true);
-                    }
-                }
-            }
-        }
-
-        @Override
-        public boolean deliverSelfNotifications() {
-            return true;
-        }
+        Cursor cursor = sqLiteQueryBuilder.query(sqLiteDatabase, projection, selection, selectionArgs, null, null, orderBy);
+        return cursor;
     }
 }

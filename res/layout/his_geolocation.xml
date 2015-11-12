@@ -4,7 +4,7 @@
                 android:layout_height="match_parent">
 
     <com.tencent.tencentmap.mapsdk.map.MapView
-            android:id="@+id/mapviewOverlay"
+            android:id="@+id/his_mapviewOverlay"
             android:layout_width="match_parent"
             android:layout_height="match_parent"/>
 
@@ -14,7 +14,7 @@
             android:orientation="vertical">
 
         <TextView
-                android:id="@+id/tvGPSStatus"
+                android:id="@+id/his_tvGPSStatus"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
@@ -22,7 +22,7 @@
                 android:textColor="#FF0000"/>
 
         <TextView
-                android:id="@+id/tvLocation"
+                android:id="@+id/his_tvLocation"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
@@ -36,7 +36,7 @@
                 android:orientation="horizontal">
 
             <TextView
-                    android:id="@+id/tvSatelliteNum"
+                    android:id="@+id/his_tvSatelliteNum"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
@@ -44,21 +44,21 @@
                     android:textColor="#FF0000"/>
 
             <TextView
-                    android:id="@+id/tvIntervalTime"
+                    android:id="@+id/his_tvIntervalTime"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
                     android:textColor="#FF0000"/>
 
             <TextView
-                    android:id="@+id/tvIntervalDistance"
+                    android:id="@+id/his_tvIntervalDistance"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
                     android:textColor="#FF0000"/>
 
             <TextView
-                    android:id="@+id/getIntervalTime"
+                    android:id="@+id/his_getIntervalTime"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
@@ -79,7 +79,7 @@
                     android:text="平均速度:"/>
 
             <TextView
-                    android:id="@+id/ave_speed"
+                    android:id="@+id/his_ave_speed"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
@@ -100,7 +100,7 @@
                     android:text="瞬时速度:"/>
 
             <TextView
-                    android:id="@+id/ins_speed"
+                    android:id="@+id/his_ins_speed"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
@@ -121,7 +121,7 @@
                     android:text="卡路里:"/>
 
             <TextView
-                    android:id="@+id/kal"
+                    android:id="@+id/his_kal"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
@@ -142,7 +142,7 @@
                     android:text="总共距离:"/>
 
             <TextView
-                    android:id="@+id/all_dis"
+                    android:id="@+id/his_all_dis"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
@@ -156,40 +156,18 @@
                 android:layout_gravity="center_horizontal"
                 android:orientation="horizontal">
 
-            <!--<Button-->
-            <!--android:id="@+id/btnStartSports"-->
-            <!--android:layout_width="wrap_content"-->
-            <!--android:layout_height="wrap_content"-->
-            <!--android:layout_gravity="center_horizontal"-->
-            <!--android:text="@string/start_sport"/>-->
-
             <Button
-                    android:id="@+id/startButton"
+                    android:id="@+id/his_share"
+                    android:text="分享运动数据"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_horizontal"
-                    android:text="开始"/>
-
-            <!--<Button-->
-            <!--android:id="@+id/btnShare"-->
-            <!--android:layout_width="wrap_content"-->
-            <!--android:layout_height="wrap_content"-->
-            <!--android:layout_gravity="center_horizontal"-->
-            <!--android:text="分享"/>-->
-
-            <!--<Button-->
-            <!--android:id="@+id/hisButton"-->
-            <!--android:layout_width="wrap_content"-->
-            <!--android:layout_height="wrap_content"-->
-            <!--android:layout_gravity="center_horizontal"-->
-            <!--android:text="历史记录"/>-->
+                    android:layout_height="wrap_content"/>
 
             <Button
                     android:id="@+id/exitButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
-                    android:text="退出记录"/>
+                    android:text="退出"/>
 
         </LinearLayout>
     </LinearLayout>
