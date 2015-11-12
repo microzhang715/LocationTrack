@@ -16,7 +16,6 @@ import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.util.Log;
 import android.view.Gravity;
-import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -30,7 +29,6 @@ import com.tencent.tencentmap.mapsdk.map.MapView;
 import com.tencent.tws.locationtrack.database.LocationDbHelper;
 import com.tencent.tws.locationtrack.database.SPUtils;
 import com.tencent.tws.locationtrack.util.Gps;
-import com.tencent.tws.locationtrack.util.LocationUtil;
 import com.tencent.tws.locationtrack.util.PositionUtil;
 import com.tencent.tws.locationtrack.views.CustomShareBoard;
 import com.tencent.tws.widget.BaseActivity;
@@ -72,19 +70,16 @@ public class HisLocationActivity extends BaseActivity {
     private BigDecimal lastLongitude;
     private long lastLocationTime = (long) 0;
 
-    private TextView tvAveSpeed;
-    private TextView tvInsSpeed;
-    private Button startButton;
-    private Button historyButton;
     private Button exitButton;
     private Button shareButton;
 
-    private TextView tvKal;
-    private TextView tvGPSStatus;
-    private TextView tvLocation;
-    private TextView getIntervalTime;
-    private TextView allDis;
-//    private DBContentObserver mDBContentObserver;
+    private TextView hisAveSpeed;
+    private TextView hisKal;
+    private TextView hisDis;
+
+    double hisSpeedValue = 0;
+    double hisKcalValue = 0;
+    double hisDisValue = 0;
 
     private Cursor cursor;
     double insSpeed = 0;
@@ -136,13 +131,9 @@ public class HisLocationActivity extends BaseActivity {
         mWakeLock = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, TAG);
         mWakeLock.acquire();
 
-        tvLocation = (TextView) findViewById(R.id.his_tvLocation);
-        tvGPSStatus = (TextView) findViewById(R.id.his_tvGPSStatus);
-        tvAveSpeed = (TextView) findViewById(R.id.his_ave_speed);
-        tvInsSpeed = (TextView) findViewById(R.id.his_ins_speed);
-        tvKal = (TextView) findViewById(R.id.his_kal);
-        allDis = (TextView) findViewById(R.id.his_all_dis);
-        getIntervalTime = (TextView) findViewById(R.id.his_getIntervalTime);
+        hisAveSpeed = (TextView) findViewById(R.id.his_ave_speed);
+        hisKal = (TextView) findViewById(R.id.his_kal);
+        hisDis = (TextView) findViewById(R.id.his_all_dis);
 
         //地图
         initMapView();
@@ -152,8 +143,6 @@ public class HisLocationActivity extends BaseActivity {
             Log.i(TAG, "get intentDbName=" + intentDbName);
             dbHelper = new LocationDbHelper(getApplicationContext(), dbName);
             sqLiteDatabase = dbHelper.getWritableDatabase();
-
-//            MyContentProvider.setDbHelper(dbHelper,dbName);
         } else {
             Toast.makeText(getApplicationContext(), "数据库文件不存在", Toast.LENGTH_SHORT).show();
         }
@@ -203,8 +192,10 @@ public class HisLocationActivity extends BaseActivity {
     }
 
     private void postShare() {
+
+        DecimalFormat myformat = new DecimalFormat("#0.00");
         // 设置分享内容
-        mController.setShareContent("瞬时速度=" + insSpeed + " 平均速度=" + aveSpeed + " 能量=" + kcal);
+        mController.setShareContent("平均速度=" + myformat.format(hisSpeedValue) + "km/h" + " 能量=" + myformat.format(hisKcalValue) + "kcal" + " 总共距离=" + myformat.format(hisDisValue) + "km");
         // 设置分享图片, 参数2为图片的url地址
         mController.setShareMedia(new UMImage(this, "http://i6.topit.me/6/5d/45/1131907198420455d6o.jpg"));
 
@@ -248,10 +239,16 @@ public class HisLocationActivity extends BaseActivity {
         String[] PROJECTION = new String[]{LocationDbHelper.ID, LocationDbHelper.LATITUDE, LocationDbHelper.LONGITUDE, LocationDbHelper.INS_SPEED, LocationDbHelper.BEARING, LocationDbHelper.ALTITUDE, LocationDbHelper.ACCURACY, LocationDbHelper.TIME, LocationDbHelper.DISTANCE, LocationDbHelper.AVG_SPEED, LocationDbHelper.KCAL,};
         cursor = query(PROJECTION, null, null, null);
 
+        long startTime = 0;
+        long lastTime = 0;
+
+        double allDis = 0;
         points.clear();
 
         Log.i(TAG, "dbDrawResume");
         if (cursor.moveToFirst()) {
+            startTime = cursor.getLong(cursor.getColumnIndex(LocationDbHelper.TIME));
+
             while (cursor.moveToNext()) {
                 double latitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LATITUDE));
                 double longitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LONGITUDE));
@@ -260,15 +257,32 @@ public class HisLocationActivity extends BaseActivity {
                 float aveSpeed = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.AVG_SPEED));
                 float kcal = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.KCAL));
                 float accuracy = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.ACCURACY));
+                float dis = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.DISTANCE));
+
+                allDis += dis;
 
                 Log.i(TAG, "latitude=" + latitude);
-                //updateTextViews(longitude, latitude, times, insSpeed, aveSpeed, kcal);
                 Gps gps = PositionUtil.gps84_To_Gcj02(latitude, longitude);
                 if (gps != null) {
                     drawLines(gps.getWgLon(), gps.getWgLat(), accuracy, true);
                 }
             }
         }
+
+        cursor.moveToLast();
+        lastTime = cursor.getLong(cursor.getColumnIndex(LocationDbHelper.TIME));
+
+        long deltTime = (lastTime - startTime) / 1000;
+        double aveSpeed = (allDis * 10) / (deltTime * 36f);
+        double allKcal = 60 * allDis * 1.036 / 1000;
+
+        Log.i(TAG, "allDis=" + allDis + " | allKcal=" + allKcal + " | aveSpeed=" + aveSpeed);
+
+        hisDisValue = allDis / 1000;
+        hisSpeedValue = aveSpeed;
+        hisKcalValue = allKcal;
+
+        updateTextViews(hisSpeedValue, hisKcalValue, hisDisValue);
     }
 
     @Override
@@ -402,23 +416,12 @@ public class HisLocationActivity extends BaseActivity {
 
     }
 
-    private void updateTextViews(double longitude, double latitude, long times, double insSpeed, double aveSpeed, double kal) {
-        tvLocation.setText("维度:" + latitude + ",经度:" + longitude + ",时间 :" + LocationUtil.convert(times));
-
-        if (lastLocationTime != times && lastLocationTime != 0) {
-            Log.i("kermit", "lastLocationTime=" + lastLocationTime);
-            Log.i("kermit", "times=" + times);
-            Log.i("kermit", "deltTimes=" + (times - lastLocationTime));
-            long deltTIme = (times - lastLocationTime) / 1000;
-            getIntervalTime.setText("   获取间隔时间：" + deltTIme);
-        }
-
-        lastLocationTime = times;
+    private void updateTextViews(double aveSpeed, double kal, double allDis) {
 
         DecimalFormat myformat = new DecimalFormat("#0.00");
-        tvInsSpeed.setText(myformat.format(insSpeed) + " km/h");
-        tvAveSpeed.setText(myformat.format(aveSpeed) + " km/h");
-        tvKal.setText(myformat.format(kal));
+        hisAveSpeed.setText(myformat.format(aveSpeed) + " km/h");
+        hisKal.setText(myformat.format(kal) + " kcal");
+        hisDis.setText(myformat.format(allDis) + "km");
     }
 
 
