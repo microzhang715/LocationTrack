@@ -9,6 +9,7 @@ import android.util.Log;
 import com.tencent.tws.locationtrack.database.LocationDbHelper;
 import com.tencent.tws.locationtrack.database.MyContentProvider;
 import com.tencent.tws.locationtrack.database.SPUtils;
+import com.tencent.tws.locationtrack.util.LocationUtil;
 
 /**
  * Created by microzhang on 2015/11/1.
@@ -94,6 +95,11 @@ public class MyTest extends AndroidTestCase {
 
 	public void testSP(){
 		SPUtils.writeSp(getContext(),"1111111");
+	}
+
+	public void testDate(){
+		long temp = 1447375101736l;
+		Log.i("kermit", "data=" + LocationUtil.convert(temp));
 	}
 }
 

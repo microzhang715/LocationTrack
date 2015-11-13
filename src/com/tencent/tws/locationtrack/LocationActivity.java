@@ -166,8 +166,18 @@ public class LocationActivity extends BaseActivity {
                 //设置退出标志位
                 SPUtils.setExitFlag(getApplicationContext(), true);
 
-                android.os.Process.killProcess(android.os.Process.myPid());    //获取PID
-                System.exit(0);   //常规java、c#的标准退出法，返回值为0代表正常退出
+                Intent intent = new Intent(Intent.ACTION_MAIN);
+                intent.addCategory(Intent.CATEGORY_HOME);
+                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                startActivity(intent);
+                android.os.Process.killProcess(android.os.Process.myPid());
+                System.exit(0);
+
+
+//                finish();
+//
+//                android.os.Process.killProcess(android.os.Process.myPid());    //获取PID
+//                System.exit(0);   //常规java、c#的标准退出法，返回值为0代表正常退出
             }
         });
 

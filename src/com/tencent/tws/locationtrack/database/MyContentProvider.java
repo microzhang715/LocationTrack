@@ -62,9 +62,14 @@ public class MyContentProvider extends ContentProvider {
     public boolean onCreate() {
         Log.i(TAG, "MyContentProvider onCreate");
 
-        String databaseName = System.currentTimeMillis() + LAST_DATABASE_NAME;
+        Date date = new Date();
+        Long time = date.getTime();
+        String databaseName = String.valueOf(time) + LAST_DATABASE_NAME;
+
+        Log.i(TAG, "time=" + time);
+        Log.i(TAG, "databaseName=" + databaseName);
         if (SPUtils.readSp(getContext()) != "" && SPUtils.readSp(getContext()) != "0") {//数据库名字存储了,打开这个数据库
-            Log.i(TAG, "open database");
+            Log.i(TAG, "open database=" + SPUtils.readSp(getContext()));
             dbHelper = new LocationDbHelper(getContext(), SPUtils.readSp(getContext()));
         } else {//创建新的数据
             Log.i(TAG, "new database");
@@ -73,7 +78,6 @@ public class MyContentProvider extends ContentProvider {
                 SPUtils.writeSp(getContext(), databaseName);
             }
         }
-
         return true;
     }
 

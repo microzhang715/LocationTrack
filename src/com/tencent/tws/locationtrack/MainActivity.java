@@ -57,6 +57,7 @@ public class MainActivity extends BaseActivity {
         Log.i(TAG, "onResume");
         Log.i(TAG, "exitFlag=" + SPUtils.readExitFlag(getApplicationContext()));
         if (!SPUtils.readExitFlag(getApplicationContext())) {
+            Log.i(TAG,"onResume  start activity");
             Intent i = new Intent(MainActivity.this, LocationActivity.class);
             startActivity(i);
         }
