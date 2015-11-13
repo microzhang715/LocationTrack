@@ -77,7 +77,7 @@
                 android:id="@+id/qzone"
                 android:layout_width="50dp"
                 android:layout_height="50dp"
-                android:background="@drawable/umeng_socialize_qzone_on"
+                android:background="@drawable/umeng_socialize_sina_on"
                 android:layout_centerInParent="true" />
         </RelativeLayout>
     </LinearLayout>

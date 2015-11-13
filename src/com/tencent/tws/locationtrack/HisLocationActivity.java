@@ -40,6 +40,7 @@ import com.umeng.socialize.media.UMImage;
 import com.umeng.socialize.sensor.controller.UMShakeService;
 import com.umeng.socialize.sensor.controller.impl.UMShakeServiceFactory;
 import com.umeng.socialize.sso.QZoneSsoHandler;
+import com.umeng.socialize.sso.SinaSsoHandler;
 import com.umeng.socialize.sso.UMQQSsoHandler;
 import com.umeng.socialize.weixin.controller.UMWXHandler;
 
@@ -193,11 +194,14 @@ public class HisLocationActivity extends BaseActivity {
         wxCircleHandler.setToCircle(true);
         wxCircleHandler.addToSocialSDK();
         //参数1为当前Activity， 参数2为开发者在QQ互联申请的APP ID，参数3为开发者在QQ互联申请的APP kEY.
-        QZoneSsoHandler qZoneSsoHandler = new QZoneSsoHandler(this, "100424468", "c7394704798a158208a74ab60104f0ba");
-        qZoneSsoHandler.addToSocialSDK();
+//        QZoneSsoHandler qZoneSsoHandler = new QZoneSsoHandler(this, "100424468", "c7394704798a158208a74ab60104f0ba");
+//        qZoneSsoHandler.addToSocialSDK();
         //参数1为当前Activity， 参数2为开发者在QQ互联申请的APP ID，参数3为开发者在QQ互联申请的APP kEY.
         UMQQSsoHandler qqSsoHandler = new UMQQSsoHandler(this, "100424468", "c7394704798a158208a74ab60104f0ba");
         qqSsoHandler.addToSocialSDK();
+
+        mController.getConfig().setSsoHandler(new SinaSsoHandler());
+
     }
 
     private void postShare() {
