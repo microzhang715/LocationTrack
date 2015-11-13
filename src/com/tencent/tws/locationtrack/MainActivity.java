@@ -8,7 +8,8 @@ import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.util.Log;
 import android.view.View;
-import android.widget.ImageButton;
+import android.widget.Button;
+import android.widget.TextView;
 import com.tencent.tws.locationtrack.database.SPUtils;
 import com.tencent.tws.widget.BaseActivity;
 
@@ -16,8 +17,10 @@ public class MainActivity extends BaseActivity {
     private static final String TAG = "MainActivity";
     WakeLock mWakeLock;
 
-    ImageButton locationButton;
-    ImageButton hisButton;
+    private Button locationButton;
+    private Button historyButton;
+    private TextView locationTV;
+    private TextView historyTV;
 
     public void onCreate(Bundle savedInstanceState) {
         // calls super, sets GUI
@@ -29,27 +32,35 @@ public class MainActivity extends BaseActivity {
         mWakeLock = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, TAG);
         mWakeLock.acquire();
 
-        locationButton = (ImageButton) findViewById(R.id.btn_location);
-        hisButton = (ImageButton) findViewById(R.id.btn_history);
+        locationButton = (Button) findViewById(R.id.btn_location);
+        locationTV = (TextView) findViewById(R.id.tv_location);
+        locationButton.setOnClickListener(new LocationClick());
+        locationTV.setOnClickListener(new LocationClick());
 
-
-        locationButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent i = new Intent(MainActivity.this, LocationActivity.class);
-                startActivity(i);
-            }
-        });
-
-        hisButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent i = new Intent(MainActivity.this, HistoryActivity.class);
-                startActivity(i);
-            }
-        });
+        historyButton = (Button) findViewById(R.id.btn_history);
+        historyTV = (TextView) findViewById(R.id.tv_history);
+        historyButton.setOnClickListener(new HistoryClick());
+        historyTV.setOnClickListener(new HistoryClick());
     }
 
+
+    class LocationClick implements View.OnClickListener {
+
+        @Override
+        public void onClick(View v) {
+            Intent i = new Intent(MainActivity.this, LocationActivity.class);
+            startActivity(i);
+        }
+    }
+
+    class HistoryClick implements View.OnClickListener {
+
+        @Override
+        public void onClick(View v) {
+            Intent i = new Intent(MainActivity.this, HistoryActivity.class);
+            startActivity(i);
+        }
+    }
 
     @Override
     protected void onResume() {
@@ -57,7 +68,7 @@ public class MainActivity extends BaseActivity {
         Log.i(TAG, "onResume");
         Log.i(TAG, "exitFlag=" + SPUtils.readExitFlag(getApplicationContext()));
         if (!SPUtils.readExitFlag(getApplicationContext())) {
-            Log.i(TAG,"onResume  start activity");
+            Log.i(TAG, "onResume  start activity");
             Intent i = new Intent(MainActivity.this, LocationActivity.class);
             startActivity(i);
         }
