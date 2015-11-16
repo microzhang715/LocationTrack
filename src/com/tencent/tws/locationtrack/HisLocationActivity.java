@@ -111,6 +111,7 @@ public class HisLocationActivity extends BaseActivity {
     protected float maxDistance;
     protected GeoPoint mapCenterPoint;
     private  PathOverlay pathOverlay;
+    private long TIME_TO_WAIT_IN_MS  = 3000;//时间设置过短 setZoom不生效，原因待查！
 
     // 分享初始化控制器
     final UMSocialService mController = UMServiceFactory.getUMSocialService("com.umeng.share");
@@ -256,6 +257,8 @@ public class HisLocationActivity extends BaseActivity {
 
     @Override
     protected void onResume() {
+    	mMapView.onPause();
+    	mMapView.onStop();
         mMapView.onResume();
         super.onResume();
         if (mMapView != null) {
@@ -271,8 +274,8 @@ public class HisLocationActivity extends BaseActivity {
             
             mMapView.addOverlay(new PointMarkLayout(locations.get(0), R.drawable.point_start));
             mMapView.addOverlay(new PointMarkLayout(locations.get(locations.size()-1), R.drawable.point_end));
-            mMapView.getController().animateTo(mapCenterPoint);
-//            mMapView.getMap().setZoom(getFixedZoomLevel());
+            mMapView.getController().setCenter(mapCenterPoint);
+            mMapView.postDelayed(waitForMapTimeTask, TIME_TO_WAIT_IN_MS); 
         }
 
         
@@ -348,6 +351,7 @@ public class HisLocationActivity extends BaseActivity {
     protected void onPause() {
         mMapView.onPause();
         super.onPause();
+        locations.clear();
         if (mWakeLock != null) {
             mWakeLock.release();
         }
@@ -409,7 +413,7 @@ public class HisLocationActivity extends BaseActivity {
         mMapView = (MapView) findViewById(R.id.his_mapviewOverlay);
         // mMapView.setBuiltInZoomControls(true);
 //        mMapView.getController().setZoom(50);
-        mMapView.getMap().setZoom(15);;
+        mMapView.getMap().setZoom(mMapView.getMap().getMaxZoomLevel());;
         Bitmap bmpMarker = BitmapFactory.decodeResource(getResources(), R.drawable.mark_location);
         mLocationOverlay = new LocationOverlay(bmpMarker);
         mMapView.addOverlay(mLocationOverlay);
@@ -578,9 +582,10 @@ public class HisLocationActivity extends BaseActivity {
 	 protected int getFixedZoomLevel() {
 	        int fixedLatitudeSpan = (int) ((rightBoundary - leftBoundary) * 1e6);
 	        int fixedLongitudeSpan = (int) ((topBoundary - bottomBoundary) * 1e6);
-
+//            int j =mMapView.getMap().getZoomLevel();
 	        for ( int i = mMapView.getMap().getMaxZoomLevel(); i > 0; i--) {
-	        	//mMapView.getMap().setZoom(i);;
+	        	mMapView.getMap().setZoom(i);
+//	        	j =mMapView.getMap().getZoomLevel();
 	            int latSpan = mMapView.getProjection().getLatitudeSpan();
 	            int longSpan = mMapView.getProjection().getLongitudeSpan();
 
@@ -591,6 +596,21 @@ public class HisLocationActivity extends BaseActivity {
 
 	        return mMapView.getMap().getMaxZoomLevel();
 	    }
+	 
+	 /**
+	     * Wait for mapview to become ready.
+	     */
+	    private Runnable waitForMapTimeTask = new Runnable() {
+	        public void run() {
+	            // If either is true we must wait.
+	            if(mMapView.getProjection().getLatitudeSpan() == 0 || mMapView.getProjection().getLongitudeSpan() == 360000000)
+	            	mMapView.postDelayed(this, TIME_TO_WAIT_IN_MS);
+	            else
+	            {
+	            	  mMapView.getMap().setZoom(getFixedZoomLevel());
+	            }
+	        }
+	    };
 	 
 	 private class PathOverlay extends Overlay {
 	        private Paint paint;
