@@ -11,6 +11,7 @@ import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
 
+import com.tencent.mapsdk.raster.model.GeoPoint;
 import com.tencent.mapsdk.raster.model.LatLng;
 import com.tencent.mapsdk.raster.model.Polyline;
 import com.tencent.mapsdk.raster.model.PolylineOptions;
@@ -34,6 +35,16 @@ public class DetailActivity extends BaseActivity{
 	
 	private Bitmap bmpPointStart;
 	private Bitmap bmpPointEnd;
+	
+    protected double topBoundary;
+    protected double leftBoundary;
+    protected double rightBoundary;
+    protected double bottomBoundary;
+
+    protected Location locationTopLeft;
+    protected Location locationBottomRight;
+    protected float maxDistance;
+    protected GeoPoint mapCenterPoint;
 	 @Override
 	    protected void onCreate(Bundle savedInstanceState) {
 	        super.onCreate(savedInstanceState);
@@ -53,7 +64,11 @@ public class DetailActivity extends BaseActivity{
 	        super.onStart();
 			locations = optimizePoints(locations);
 	        Gps gcj02GpsPointStart = PositionUtil.gps84_To_Gcj02(locations.get(0).getLatitude(), locations.get(0).getLongitude());
-	        setCenterPoint(gcj02GpsPointStart);
+	        
+	        getBoundary();
+	        mMapView.getController().setCenter(mapCenterPoint);
+	        mMapView.getController().setZoom(getFixedZoomLevel());
+//	        setCenterPoint(gcj02GpsPointStart);
 	           
 
 	        drawPolyline();
@@ -103,7 +118,7 @@ public class DetailActivity extends BaseActivity{
 	    private void initMapView() {
 			mMapView = (MapView) findViewById(R.id.mapview);
 			// mMapView.setBuiltInZoomControls(true);
-			mMapView.getController().setZoom(50);
+			//mMapView.getController().setZoom(50);
 
 //			Bitmap bmpMarker = BitmapFactory.decodeResource(getResources(),
 //					R.drawable.mark_location);
@@ -205,4 +220,65 @@ public class DetailActivity extends BaseActivity{
 		{
 			mMapView.getController().animateTo(LocationUtil.of(point));
 		}
+		
+		private void setCenterPoint(GeoPoint point)
+		{
+			mMapView.getController().animateTo(point);
+		}
+		protected void getBoundary() {
+	        leftBoundary = locations.get(0).getLatitude();
+	        bottomBoundary = locations.get(0).getLongitude();
+
+	        rightBoundary = locations.get(0).getLatitude();
+	        topBoundary = locations.get(0).getLongitude();
+
+	        for (Location location : locations) {
+	            if (leftBoundary > location.getLatitude()) {
+	                leftBoundary = location.getLatitude();
+	            }
+
+	            if (rightBoundary < location.getLatitude()) {
+	                rightBoundary = location.getLatitude();
+	            }
+
+	            if (topBoundary < location.getLongitude()) {
+	                topBoundary = location.getLongitude();
+	            }
+
+	            if (bottomBoundary > location.getLongitude()) {
+	                bottomBoundary = location.getLongitude();
+	            }
+	        }
+
+	        locationTopLeft = new Location("");
+	        locationTopLeft.setLongitude(topBoundary);
+	        locationTopLeft.setLatitude(leftBoundary);
+
+	        locationBottomRight = new Location("");
+	        locationBottomRight.setLongitude(bottomBoundary);
+	        locationBottomRight.setLatitude(rightBoundary);
+
+	        maxDistance = locationTopLeft.distanceTo(locationBottomRight);
+	        mapCenterPoint = new GeoPoint(
+	            (int) ((leftBoundary + (rightBoundary - leftBoundary) / 2) * 1e6),
+	            (int) ((bottomBoundary + (topBoundary - bottomBoundary) / 2) * 1e6)
+	        );
+	    }
+		
+		 protected int getFixedZoomLevel() {
+		        int fixedLatitudeSpan = (int) ((rightBoundary - leftBoundary) * 1e6);
+		        int fixedLongitudeSpan = (int) ((topBoundary - bottomBoundary) * 1e6);
+
+		        for (int i = mMapView.getMaxZoomLevel(); i > 0; i--) {
+		        	mMapView.getController().setZoom(i);
+		            int latSpan = mMapView.getLatitudeSpan();
+		            int longSpan = mMapView.getLongitudeSpan();
+
+		            if (latSpan > fixedLatitudeSpan && longSpan > fixedLongitudeSpan) {
+		                return i;
+		            }
+		        }
+
+		        return mMapView.getMaxZoomLevel();
+		    }
 }
