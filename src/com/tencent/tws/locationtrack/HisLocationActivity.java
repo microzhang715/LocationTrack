@@ -264,13 +264,17 @@ public class HisLocationActivity extends BaseActivity {
 
         //修改绘制逻辑，使用Overlay添加，减少绘制次数 at 20151116 by guccigu
         dbDrawResume();
-        getBoundary();
-        mMapView.addOverlay(pathOverlay);
-        
-        mMapView.addOverlay(new PointMarkLayout(locations.get(0), R.drawable.point_start));
-        mMapView.addOverlay(new PointMarkLayout(locations.get(locations.size()-1), R.drawable.point_end));
-        mMapView.getController().animateTo(mapCenterPoint);
-//        mMapView.getMap().setZoom(getFixedZoomLevel());
+        if(locations.size()>0)
+        {
+            getBoundary();
+            mMapView.addOverlay(pathOverlay);
+            
+            mMapView.addOverlay(new PointMarkLayout(locations.get(0), R.drawable.point_start));
+            mMapView.addOverlay(new PointMarkLayout(locations.get(locations.size()-1), R.drawable.point_end));
+            mMapView.getController().animateTo(mapCenterPoint);
+//            mMapView.getMap().setZoom(getFixedZoomLevel());
+        }
+
         
         setLocationInfo();
 
@@ -606,7 +610,7 @@ public class HisLocationActivity extends BaseActivity {
 	            paint.setStyle(Paint.Style.STROKE);
 	            paint.setStrokeJoin(Paint.Join.ROUND);
 	            paint.setStrokeCap(Paint.Cap.ROUND);
-	            paint.setStrokeWidth(5);
+	            paint.setStrokeWidth(10);
 	            paint.setAlpha(188);
 	        }
 

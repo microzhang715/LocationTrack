@@ -287,10 +287,14 @@ public class LocationActivity extends BaseActivity {
            
             //修改绘制逻辑，使用Overlay添加，减少绘制次数 at 20151116 by guccigu
             dbDrawResume();
-            pathOverlay = new PathOverlay();
-            getBoundary();
-            mMapView.addOverlay(pathOverlay);
-            mMapView.getController().animateTo(mapCenterPoint);
+            if(locations.size()>0)
+            {
+                pathOverlay = new PathOverlay();
+                getBoundary();
+                mMapView.addOverlay(pathOverlay);
+                mMapView.getController().animateTo(mapCenterPoint);
+            }
+
             isFinishDBDraw = true;
         }
 
@@ -648,7 +652,7 @@ public class LocationActivity extends BaseActivity {
             paint.setStyle(Paint.Style.STROKE);
             paint.setStrokeJoin(Paint.Join.ROUND);
             paint.setStrokeCap(Paint.Cap.ROUND);
-            paint.setStrokeWidth(5);
+            paint.setStrokeWidth(10);
             paint.setAlpha(188);
         }
 
