@@ -124,31 +124,34 @@ public class MyContentProvider extends ContentProvider {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         long rowId = db.insert(LocationDbHelper.TABLE_NAME, null, values);
         Uri resultUri = ContentUris.withAppendedId(MyContentProvider.CONTENT_URI, rowId);
-//		getContext().getContentResolver().notifyChange(resultUri, null);
         return resultUri;
+    }
 
-//		Cursor cursor = getLastDataItem(sqLiteDatabase, LocationDbHelper.TABLE_NAME);
-//		long rowId = 0;
-//
-//		if (cursor != null && cursor.moveToLast()) {
-//			long oldTimeStamp = cursor.getLong(cursor.getColumnIndex(LocationDbHelper.TIME));
-//			int recordId = cursor.getInt(cursor.getColumnIndex(LocationDbHelper.ID));
-//			long newTimeStamp = values.getAsLong(LocationDbHelper.TIME);
-//			if (isSameMinute(oldTimeStamp, newTimeStamp)) {
-//				String whereString = LocationDbHelper.ID + "=" + recordId;
-//				rowId = sqLiteDatabase.update(LocationDbHelper.TABLE_NAME, values, whereString, null);
-//			} else {
-//				rowId = sqLiteDatabase.insert(LocationDbHelper.TABLE_NAME, null, values);
-//			}
-//		}
-//
-//		if (rowId > 0) {
-//			Uri insertUserUri = ContentUris.withAppendedId(MyContentProvider.CONTENT_URI, rowId);
-//			getContext().getContentResolver().notifyChange(insertUserUri, null);
-//			return insertUserUri;
-//		} else {
-//			throw new IllegalArgumentException("Failed to insert row into" + uri);
-//		}
+    //批量插入数据库
+    @Override
+    public int bulkInsert(Uri uri, ContentValues[] values) {
+        int insertNum = 0;
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        db.beginTransaction();
+        try {
+            if (values != null && values.length > 0) {
+                for (int i = 0; i < values.length; i++) {
+                    long rowId = db.insert(LocationDbHelper.TABLE_NAME, null, values[i]);
+                    Log.i(TAG, "rowId=" + rowId);
+                    Uri resultUri = ContentUris.withAppendedId(MyContentProvider.CONTENT_URI, rowId);
+                    if (rowId != -1) {
+                        insertNum++;
+                    }
+                }
+            }
+            db.setTransactionSuccessful();
+        } catch (Exception e) {
+            db.endTransaction();
+            e.printStackTrace();
+        }
+        db.endTransaction();
+
+        return insertNum;
     }
 
     @Override
