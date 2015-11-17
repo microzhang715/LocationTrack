@@ -257,8 +257,6 @@ public class HisLocationActivity extends BaseActivity {
 
     @Override
     protected void onResume() {
-    	mMapView.onPause();
-    	mMapView.onStop();
         mMapView.onResume();
         super.onResume();
         if (mMapView != null) {
