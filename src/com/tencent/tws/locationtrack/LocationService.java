@@ -110,7 +110,8 @@ public class LocationService extends Service implements LocationListener {
                     @Override
                     public void run() {
                         ContentValues[] values = new ContentValues[LOCATION_QUEUE_SIZE];
-                        for (int i = 0; i < templocationQueue.size(); i++) {
+                        int count = templocationQueue.size();
+                        for (int i = 0; i < count; i++) {
                             if (templocationQueue.peek() != null) {
                                 Location tempLocation = templocationQueue.poll();
                                 values[i] = new ContentValues();
@@ -285,10 +286,10 @@ public class LocationService extends Service implements LocationListener {
                     //设置平均速度和卡路里
                     double avgSpeed = 0;
                     double kcal = 0;
-                    if (allDistance == 0 || lastLocationStartTime ==0 || firstLocationStartTime ==0){
+                    if (allDistance == 0 || lastLocationStartTime == 0 || firstLocationStartTime == 0) {
                         avgSpeed = 0;
                         kcal = 0;
-                    }else {
+                    } else {
                         avgSpeed = (allDistance * 3600) / (lastLocationStartTime - firstLocationStartTime);
                         kcal = 60 * allDistance * 1.036 / 1000;
                         Log.i(TAG, "avgSpeed=" + avgSpeed + " kcal=" + kcal);
