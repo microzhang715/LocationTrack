@@ -42,7 +42,7 @@ public class HistoryActivity extends Activity implements AdapterView.OnItemClick
     SQLiteDatabase sqLiteDatabase;
 
     static {
-        //¶¨Òå±ðÃû
+        //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         locationMaps = new HashMap<String, String>();
         locationMaps.put(LocationDbHelper.ID, LocationDbHelper.ID);
         locationMaps.put(LocationDbHelper.LATITUDE, LocationDbHelper.LATITUDE);
@@ -119,7 +119,7 @@ public class HistoryActivity extends Activity implements AdapterView.OnItemClick
             TextView infoTime = (TextView) rowView.findViewById(R.id.info_time);
             TextView infoDis = (TextView) rowView.findViewById(R.id.info_dis);
 
-            //ÉèÖÃÈÕÆÚ
+            //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
             try {
                 long time = Long.parseLong(dbNames.get(position));
                 dbName.setText(LocationUtil.convert(time));
@@ -127,7 +127,7 @@ public class HistoryActivity extends Activity implements AdapterView.OnItemClick
                 e.printStackTrace();
             }
 
-            //ÉèÖÃÊ±¼äºÍ¾àÀë
+            //ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½Í¾ï¿½ï¿½ï¿½
             DecimalFormat myformat = new DecimalFormat("#0.00");
             infoDis.setText(myformat.format(getAllDisInfo(dbNames.get(position))));
             infoTime.setText(myformat.format(getDeltTime(dbNames.get(position))));
@@ -155,7 +155,7 @@ public class HistoryActivity extends Activity implements AdapterView.OnItemClick
             lastTime = cursor.getLong(cursor.getColumnIndex(LocationDbHelper.TIME));
         }
 
-        double delt = (lastTime - startTime) / (1000 * 60f);//·ÖÖÓ
+        double delt = (lastTime - startTime) / (1000 * 60f);
         cursor.close();
         return delt;
     }
@@ -178,7 +178,7 @@ public class HistoryActivity extends Activity implements AdapterView.OnItemClick
             }
         }
         cursor.close();
-        return allDis / 1000; // ¹«Àï
+        return allDis / 1000;
     }
 
     public Cursor query(SQLiteDatabase sqLiteDatabase, String[] projection, String selection, String[] selectionArgs, String sortOrder) {

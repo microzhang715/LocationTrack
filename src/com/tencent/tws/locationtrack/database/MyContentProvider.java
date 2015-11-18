@@ -64,8 +64,8 @@ public class MyContentProvider extends ContentProvider {
 
         Date date = new Date();
         Long time = date.getTime();
-        String databaseName = String.valueOf(time) + LAST_DATABASE_NAME;
-
+//        String databaseName = String.valueOf(time) + LAST_DATABASE_NAME;
+        String databaseName ="1447332847341_location.db";
         Log.i(TAG, "time=" + time);
         Log.i(TAG, "databaseName=" + databaseName);
         if (SPUtils.readSp(getContext()) != "" && SPUtils.readSp(getContext()) != "0") {//数据库名字存储了,打开这个数据库
@@ -74,7 +74,8 @@ public class MyContentProvider extends ContentProvider {
         } else {//创建新的数据
             Log.i(TAG, "new database");
             if (databaseName != null && databaseName != "0") {
-                dbHelper = new LocationDbHelper(getContext(), databaseName);
+//                dbHelper = new LocationDbHelper(getContext(), databaseName);
+                dbHelper = new LocationDbHelper(getContext(), "1447332847341_location.db");
                 SPUtils.writeSp(getContext(), databaseName);
             }
         }

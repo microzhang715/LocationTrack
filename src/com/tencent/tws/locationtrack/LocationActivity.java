@@ -4,7 +4,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.database.ContentObserver;
 import android.database.Cursor;
-import android.graphics.*;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.location.GpsSatellite;
 import android.location.GpsStatus;
 import android.location.Location;
@@ -26,8 +27,6 @@ import com.tencent.mapsdk.raster.model.LatLng;
 import com.tencent.mapsdk.raster.model.Polyline;
 import com.tencent.mapsdk.raster.model.PolylineOptions;
 import com.tencent.tencentmap.mapsdk.map.MapView;
-import com.tencent.tencentmap.mapsdk.map.Overlay;
-import com.tencent.tencentmap.mapsdk.map.Projection;
 import com.tencent.tws.locationtrack.database.LocationDbHelper;
 import com.tencent.tws.locationtrack.database.MyContentProvider;
 import com.tencent.tws.locationtrack.database.SPUtils;
@@ -38,9 +37,7 @@ import com.tencent.tws.widget.BaseActivity;
 
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -92,8 +89,7 @@ public class LocationActivity extends BaseActivity {
     protected Location locationTopLeft;
     protected Location locationBottomRight;
     protected float maxDistance;
-    protected ArrayList<Gps> locations = new ArrayList<Gps>();
-    private PathOverlay pathOverlay;
+    protected Queue<Gps> resumeLocations = new LinkedList<>();
     protected GeoPoint mapCenterPoint;
 
     Intent serviceIntent;
@@ -103,6 +99,9 @@ public class LocationActivity extends BaseActivity {
     private static final int UPDATE_TEXT_VIEWS = 1;
     private static final int UPDATE_DRAW_LINES = 2;
     private static final int DRAW_RESUME = 3;
+
+
+    private static final int RESUME_ONCE_DRAW_POINTS = 500;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -198,21 +197,16 @@ public class LocationActivity extends BaseActivity {
 
                 case UPDATE_DRAW_LINES:
                     Bundle bundle1 = (Bundle) msg.obj;
+                    Log.i(TAG, "UPDATE_DRAW_LINES -----> longitude=" + bundle1.getDouble("longitude") + " latitude=" + bundle1.getDouble("latitude") + " accuracy=" + bundle1.getFloat("accuracy"));
                     drawLines(bundle1.getDouble("longitude"), bundle1.getDouble("latitude"), bundle1.getFloat("accuracy"));
                     break;
 
                 case DRAW_RESUME:
-                    if (locations.size() > 0) {
-                        pathOverlay = new PathOverlay();
-                        getBoundary();
-                        mMapView.addOverlay(pathOverlay);
-                        mMapView.getController().animateTo(mapCenterPoint);
-                    }
-
+                    //locations 中包含了所有需要绘制的点信息
+                    onResumeDrawImp();
                     isFinishDBDraw = true;
                     break;
                 default:
-
             }
         }
     };
@@ -253,8 +247,8 @@ public class LocationActivity extends BaseActivity {
                 mMapView.clearAllOverlays();
             }
 
-            //修改绘制逻辑，使用Overlay添加，减少绘制次数 at 20151116 by guccigu
-            dbDrawResume();
+            //将数据库文件读取到locations队列中，为真正的绘制流程做准备
+            readDbforDraw();
         }
 
         if (mWakeLock != null) {
@@ -263,7 +257,7 @@ public class LocationActivity extends BaseActivity {
     }
 
     //读取数据库，绘制数据库中所有数据
-    private void dbDrawResume() {
+    private void readDbforDraw() {
         fixedThreadExecutor.execute(new Runnable() {
             @Override
             public void run() {
@@ -273,14 +267,17 @@ public class LocationActivity extends BaseActivity {
                     cursor = getApplicationContext().getContentResolver().query(MyContentProvider.CONTENT_URI, PROJECTION, null, null, null);
 
                     points.clear();
-                    locations.clear();
+                    resumeLocations.clear();
 
                     if (cursor != null && cursor.getCount() > 0 && cursor.moveToFirst()) {
                         while (cursor.moveToNext()) {
                             double latitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LATITUDE));
                             double longitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LONGITUDE));
                             Gps gps = PositionUtil.gps84_To_Gcj02(latitude, longitude);
-                            locations.add(gps);
+                            if (gps != null) {
+                                //所有数据进入队列
+                                resumeLocations.offer(gps);
+                            }
                         }
                     }
 
@@ -372,8 +369,91 @@ public class LocationActivity extends BaseActivity {
         return ge;
     }
 
+    /**
+     * onResume的时候真正的绘制流程
+     * 每次绘制 RESUME_ONCE_DRAW_POINTS 个点 分批绘制
+     */
+    private void onResumeDrawImp() {
+        PolylineOptions lineOpt = new PolylineOptions();
+        lineOpt.color(0xAAFF0000);
+
+        if (resumeLocations.size() < RESUME_ONCE_DRAW_POINTS) {
+            //绘制全部数据
+            int count = resumeLocations.size();
+            LatLng t1Points[] = new LatLng[count];
+            for (int i = 0; i < count; i++) {
+                if (resumeLocations.peek() != null) {
+                    Gps gps = resumeLocations.poll();
+                    t1Points[i] = new LatLng(gps.getWgLat(), gps.getWgLon());
+                    if (t1Points[i] != null) {
+                        lineOpt.add(t1Points[i]);
+                    }
+
+                    if (i == (count - 1)) {
+                        mMapView.getController().animateTo(of(gps.getWgLat(), gps.getWgLon()));
+                        mLocationOverlay.setGeoCoords(of(gps.getWgLat(), gps.getWgLon()));
+                        mMapView.invalidate();
+                    }
+                }
+            }
+
+            Polyline line = mMapView.getMap().addPolyline(lineOpt);
+            Overlays.add(lineOpt);
+
+        } else {
+            //每次绘制 RESUME_ONCE_DRAW_POINTS 个点，分多次绘制
+            LatLng tPoints[] = new LatLng[RESUME_ONCE_DRAW_POINTS];
+            int count = (resumeLocations.size() % RESUME_ONCE_DRAW_POINTS == 0) ? (resumeLocations.size() % RESUME_ONCE_DRAW_POINTS) : (resumeLocations.size() % RESUME_ONCE_DRAW_POINTS + 1);
+            for (int i = 0; i < count - 1; i++) {
+                for (int j = 0; j < RESUME_ONCE_DRAW_POINTS; j++) {
+                    if (resumeLocations.peek() != null) {
+                        Gps gps = resumeLocations.poll();
+
+                        //绘制最后一个点的时候移动到对应的位置
+                        if (i == (count - 2)) {
+                            mMapView.getController().animateTo(of(gps.getWgLat(), gps.getWgLon()));
+                            mLocationOverlay.setGeoCoords(of(gps.getWgLat(), gps.getWgLon()));
+                            mMapView.invalidate();
+                        }
+
+                        tPoints[j] = new LatLng(gps.getWgLat(), gps.getWgLon());
+                        if (tPoints[j] != null) {
+                            lineOpt.add(tPoints[j]);
+                        }
+                    }
+                }
+                Polyline line = mMapView.getMap().addPolyline(lineOpt);
+                Overlays.add(lineOpt);
+            }
+
+            //绘制剩下的 <= 500个点
+            int restCount = resumeLocations.size();
+            LatLng t2Points[] = new LatLng[restCount];
+            for (int i = 0; i < restCount; i++) {
+                if (resumeLocations.peek() != null) {
+                    Gps gps = resumeLocations.poll();
+                    t2Points[i] = new LatLng(gps.getWgLat(), gps.getWgLon());
+                    if (t2Points[i] != null) {
+                        lineOpt.add(t2Points[i]);
+                    }
+
+                    //绘制最后一个点的时候移动到对应的位置
+                    if (i == (restCount - 1)) {
+                        mMapView.getController().animateTo(of(gps.getWgLat(), gps.getWgLon()));
+                        mLocationOverlay.setGeoCoords(of(gps.getWgLat(), gps.getWgLon()));
+                        mMapView.invalidate();
+                    }
+                }
+            }
+            Polyline line = mMapView.getMap().addPolyline(lineOpt);
+            Overlays.add(lineOpt);
+        }
+    }
+
 
     private void drawLines(double longitude, double latitude, float accuracy) {
+
+        Log.i(TAG, "points size = " + points.size());
         mMapView.getController().animateTo(of(latitude, longitude));
 
         mLocationOverlay.setAccuracy(accuracy);
@@ -609,98 +689,98 @@ public class LocationActivity extends BaseActivity {
         }
     }
 
-    protected void getBoundary() {
-        leftBoundary = locations.get(0).getWgLat();
-        bottomBoundary = locations.get(0).getWgLon();
+//    protected void getBoundary() {
+//        leftBoundary = locations.get(0).getWgLat();
+//        bottomBoundary = locations.get(0).getWgLon();
+//
+//        rightBoundary = locations.get(0).getWgLat();
+//        topBoundary = locations.get(0).getWgLon();
+//
+//        for (Gps location : locations) {
+//            if (leftBoundary > location.getWgLat()) {
+//                leftBoundary = location.getWgLat();
+//            }
+//
+//            if (rightBoundary < location.getWgLat()) {
+//                rightBoundary = location.getWgLat();
+//            }
+//
+//            if (topBoundary < location.getWgLon()) {
+//                topBoundary = location.getWgLon();
+//            }
+//
+//            if (bottomBoundary > location.getWgLon()) {
+//                bottomBoundary = location.getWgLon();
+//            }
+//        }
+//
+//        locationTopLeft = new Location("");
+//        locationTopLeft.setLongitude(topBoundary);
+//        locationTopLeft.setLatitude(leftBoundary);
+//
+//        locationBottomRight = new Location("");
+//        locationBottomRight.setLongitude(bottomBoundary);
+//        locationBottomRight.setLatitude(rightBoundary);
+//
+//        maxDistance = locationTopLeft.distanceTo(locationBottomRight);
+//        mapCenterPoint = new GeoPoint(
+//                (int) ((leftBoundary + (rightBoundary - leftBoundary) / 2) * 1e6),
+//                (int) ((bottomBoundary + (topBoundary - bottomBoundary) / 2) * 1e6)
+//        );
+//    }
 
-        rightBoundary = locations.get(0).getWgLat();
-        topBoundary = locations.get(0).getWgLon();
-
-        for (Gps location : locations) {
-            if (leftBoundary > location.getWgLat()) {
-                leftBoundary = location.getWgLat();
-            }
-
-            if (rightBoundary < location.getWgLat()) {
-                rightBoundary = location.getWgLat();
-            }
-
-            if (topBoundary < location.getWgLon()) {
-                topBoundary = location.getWgLon();
-            }
-
-            if (bottomBoundary > location.getWgLon()) {
-                bottomBoundary = location.getWgLon();
-            }
-        }
-
-        locationTopLeft = new Location("");
-        locationTopLeft.setLongitude(topBoundary);
-        locationTopLeft.setLatitude(leftBoundary);
-
-        locationBottomRight = new Location("");
-        locationBottomRight.setLongitude(bottomBoundary);
-        locationBottomRight.setLatitude(rightBoundary);
-
-        maxDistance = locationTopLeft.distanceTo(locationBottomRight);
-        mapCenterPoint = new GeoPoint(
-                (int) ((leftBoundary + (rightBoundary - leftBoundary) / 2) * 1e6),
-                (int) ((bottomBoundary + (topBoundary - bottomBoundary) / 2) * 1e6)
-        );
-    }
-
-    private class PathOverlay extends Overlay {
-        private Paint paint;
-        private Projection projection;
-        private static final int MIN_POINT_SPAN = 5;
-
-        public PathOverlay() {
-            setPaint();
-        }
-
-        private void setPaint() {
-            paint = new Paint();
-            paint.setAntiAlias(true);
-            paint.setDither(true);
-
-            paint.setColor(getResources().getColor(R.color.highlight));
-            paint.setStyle(Paint.Style.STROKE);
-            paint.setStrokeJoin(Paint.Join.ROUND);
-            paint.setStrokeCap(Paint.Cap.ROUND);
-            paint.setStrokeWidth(10);
-            paint.setAlpha(188);
-        }
-
-
-        @Override
-        public void draw(final Canvas canvas, final MapView mapView) {
-            this.projection = mapView.getProjection();
-
-            synchronized (canvas) {
-                final Path path = new Path();
-                final int maxWidth = mapView.getWidth();
-                final int maxHeight = mapView.getHeight();
-
-                Point lastGeoPoint = null;
-                for (Gps location : locations) {
-                    GeoPoint piont = new GeoPoint((int) (location.getWgLat() * 1e6), (int) (location.getWgLon() * 1e6));
-                    Point current = projection.toPixels(piont, null);
-
-                    if (lastGeoPoint != null && (lastGeoPoint.y < maxHeight && lastGeoPoint.x < maxWidth)) {
-/*                            if (Math.abs(current.x - lastGeoPoint.x) < MIN_POINT_SPAN
-                                || Math.abs(current.y - lastGeoPoint.y) < MIN_POINT_SPAN) {
-                                continue;
-                            } else {*/
-                        path.lineTo(current.x, current.y);
-                            /*                   }*/
-                    } else {
-                        path.moveTo(current.x, current.y);
-                    }
-                    lastGeoPoint = current;
-                }
-
-                canvas.drawPath(path, paint);
-            }
-        }
-    }
+//    private class PathOverlay extends Overlay {
+//        private Paint paint;
+//        private Projection projection;
+//        private static final int MIN_POINT_SPAN = 5;
+//
+//        public PathOverlay() {
+//            setPaint();
+//        }
+//
+//        private void setPaint() {
+//            paint = new Paint();
+//            paint.setAntiAlias(true);
+//            paint.setDither(true);
+//
+//            paint.setColor(getResources().getColor(R.color.highlight));
+//            paint.setStyle(Paint.Style.STROKE);
+//            paint.setStrokeJoin(Paint.Join.ROUND);
+//            paint.setStrokeCap(Paint.Cap.ROUND);
+//            paint.setStrokeWidth(10);
+//            paint.setAlpha(188);
+//        }
+//
+//
+//        @Override
+//        public void draw(final Canvas canvas, final MapView mapView) {
+//            this.projection = mapView.getProjection();
+//
+//            synchronized (canvas) {
+//                final Path path = new Path();
+//                final int maxWidth = mapView.getWidth();
+//                final int maxHeight = mapView.getHeight();
+//
+//                Point lastGeoPoint = null;
+//                for (Gps location : locations) {
+//                    GeoPoint piont = new GeoPoint((int) (location.getWgLat() * 1e6), (int) (location.getWgLon() * 1e6));
+//                    Point current = projection.toPixels(piont, null);
+//
+//                    if (lastGeoPoint != null && (lastGeoPoint.y < maxHeight && lastGeoPoint.x < maxWidth)) {
+///*                            if (Math.abs(current.x - lastGeoPoint.x) < MIN_POINT_SPAN
+//                                || Math.abs(current.y - lastGeoPoint.y) < MIN_POINT_SPAN) {
+//                                continue;
+//                            } else {*/
+//                        path.lineTo(current.x, current.y);
+//                            /*                   }*/
+//                    } else {
+//                        path.moveTo(current.x, current.y);
+//                    }
+//                    lastGeoPoint = current;
+//                }
+//
+//                canvas.drawPath(path, paint);
+//            }
+//        }
+//    }
 }
