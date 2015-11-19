@@ -98,8 +98,9 @@ public class LocationService extends Service implements LocationListener {
             //插入数据
             locationQueue.offer(location);
 
+            int ccount = locationQueue.size();
             //如果数据达到了就插入数据库
-            if (locationQueue.size() == LOCATION_QUEUE_SIZE) {
+            if (ccount == LOCATION_QUEUE_SIZE) {
 
                 //先把数据放到内存缓存中
                 while (locationQueue.peek() != null) {
