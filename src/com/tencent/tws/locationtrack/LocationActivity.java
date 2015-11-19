@@ -248,6 +248,7 @@ public class LocationActivity extends BaseActivity {
             }
 
             //将数据库文件读取到locations队列中，为真正的绘制流程做准备
+            Log.i(TAG,"readDbforDraw");
             readDbforDraw();
         }
 
@@ -279,6 +280,8 @@ public class LocationActivity extends BaseActivity {
                                 resumeLocations.offer(gps);
                             }
                         }
+
+                        Log.i(TAG, "resumeLocations.size()=" + resumeLocations.size());
                     }
 
                     handler.sendEmptyMessage(DRAW_RESUME);
@@ -374,12 +377,15 @@ public class LocationActivity extends BaseActivity {
      * 每次绘制 RESUME_ONCE_DRAW_POINTS 个点 分批绘制
      */
     private void onResumeDrawImp() {
-        PolylineOptions lineOpt = new PolylineOptions();
-        lineOpt.color(0xAAFF0000);
+        Log.i(TAG, "onResumeDrawImp");
 
-        if (resumeLocations.size() < RESUME_ONCE_DRAW_POINTS) {
+        int count = resumeLocations.size();
+
+        if (count < RESUME_ONCE_DRAW_POINTS) {
+            PolylineOptions lineOpt = new PolylineOptions();
+            lineOpt.color(0xAAFF0000);
+
             //绘制全部数据
-            int count = resumeLocations.size();
             LatLng t1Points[] = new LatLng[count];
             for (int i = 0; i < count; i++) {
                 if (resumeLocations.peek() != null) {
@@ -392,25 +398,28 @@ public class LocationActivity extends BaseActivity {
                     if (i == (count - 1)) {
                         mMapView.getController().animateTo(of(gps.getWgLat(), gps.getWgLon()));
                         mLocationOverlay.setGeoCoords(of(gps.getWgLat(), gps.getWgLon()));
-                        mMapView.invalidate();
+                        // mMapView.invalidate();
                     }
                 }
             }
 
             Polyline line = mMapView.getMap().addPolyline(lineOpt);
-            Overlays.add(lineOpt);
+            Overlays.add(line);
 
         } else {
             //每次绘制 RESUME_ONCE_DRAW_POINTS 个点，分多次绘制
             LatLng tPoints[] = new LatLng[RESUME_ONCE_DRAW_POINTS];
-            int count = (resumeLocations.size() % RESUME_ONCE_DRAW_POINTS == 0) ? (resumeLocations.size() % RESUME_ONCE_DRAW_POINTS) : (resumeLocations.size() % RESUME_ONCE_DRAW_POINTS + 1);
-            for (int i = 0; i < count - 1; i++) {
+            PolylineOptions lineOpt2 = new PolylineOptions();
+            lineOpt2.color(0xAAFF0000);
+
+            int count2 = (resumeLocations.size() % RESUME_ONCE_DRAW_POINTS == 0) ? (resumeLocations.size() % RESUME_ONCE_DRAW_POINTS) : (resumeLocations.size() % RESUME_ONCE_DRAW_POINTS + 1);
+            for (int i = 0; i < count2 - 1; i++) {
                 for (int j = 0; j < RESUME_ONCE_DRAW_POINTS; j++) {
                     if (resumeLocations.peek() != null) {
                         Gps gps = resumeLocations.poll();
 
                         //绘制最后一个点的时候移动到对应的位置
-                        if (i == (count - 2)) {
+                        if (i == (count2 - 2)) {
                             mMapView.getController().animateTo(of(gps.getWgLat(), gps.getWgLon()));
                             mLocationOverlay.setGeoCoords(of(gps.getWgLat(), gps.getWgLon()));
                             mMapView.invalidate();
@@ -418,15 +427,18 @@ public class LocationActivity extends BaseActivity {
 
                         tPoints[j] = new LatLng(gps.getWgLat(), gps.getWgLon());
                         if (tPoints[j] != null) {
-                            lineOpt.add(tPoints[j]);
+                            lineOpt2.add(tPoints[j]);
                         }
                     }
                 }
-                Polyline line = mMapView.getMap().addPolyline(lineOpt);
-                Overlays.add(lineOpt);
+                Polyline line = mMapView.getMap().addPolyline(lineOpt2);
+                Overlays.add(line);
             }
 
+
             //绘制剩下的 <= 500个点
+            PolylineOptions lineOpt3 = new PolylineOptions();
+            lineOpt3.color(0xAAFF0000);
             int restCount = resumeLocations.size();
             LatLng t2Points[] = new LatLng[restCount];
             for (int i = 0; i < restCount; i++) {
@@ -434,19 +446,19 @@ public class LocationActivity extends BaseActivity {
                     Gps gps = resumeLocations.poll();
                     t2Points[i] = new LatLng(gps.getWgLat(), gps.getWgLon());
                     if (t2Points[i] != null) {
-                        lineOpt.add(t2Points[i]);
+                        lineOpt3.add(t2Points[i]);
                     }
 
                     //绘制最后一个点的时候移动到对应的位置
                     if (i == (restCount - 1)) {
                         mMapView.getController().animateTo(of(gps.getWgLat(), gps.getWgLon()));
                         mLocationOverlay.setGeoCoords(of(gps.getWgLat(), gps.getWgLon()));
-                        mMapView.invalidate();
+                        //mMapView.invalidate();
                     }
                 }
             }
-            Polyline line = mMapView.getMap().addPolyline(lineOpt);
-            Overlays.add(lineOpt);
+            Polyline line = mMapView.getMap().addPolyline(lineOpt3);
+            Overlays.add(line);
         }
     }
 
@@ -587,6 +599,7 @@ public class LocationActivity extends BaseActivity {
                         Cursor cursor = getApplicationContext().getContentResolver().query(MyContentProvider.CONTENT_URI, PROJECTION, null, null, null);
                         if (cursor != null) {
                             int cursorCount = cursor.getCount();
+                            Log.i(TAG, "cursorCount = " + cursorCount);
 
                             //获取总距离
                             if (cursorCount > 0 && cursor.moveToFirst()) {
@@ -628,10 +641,9 @@ public class LocationActivity extends BaseActivity {
                                         points.add(latLng);
                                     }
                                 } else {
-                                    Log.i(TAG, "cursorCount = " + cursorCount);
                                     if (cursorCount > LocationService.LOCATION_QUEUE_SIZE) {
                                         for (int i = cursorCount - LocationService.LOCATION_QUEUE_SIZE; i < cursorCount; i++) {
-                                            Log.i(TAG, "cursorCount - i - LocationService.LOCATION_QUEUE_SIZE = " + String.valueOf(cursorCount - i - LocationService.LOCATION_QUEUE_SIZE));
+                                            Log.i(TAG, "cursorCount - LocationService.LOCATION_QUEUE_SIZE = " + String.valueOf(cursorCount - LocationService.LOCATION_QUEUE_SIZE));
                                             cursor.moveToPosition(i);
                                             Bundle drawLinesBundle = new Bundle();
                                             double tLatitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LATITUDE));

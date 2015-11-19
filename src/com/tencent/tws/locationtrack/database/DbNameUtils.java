@@ -50,11 +50,11 @@ public class DbNameUtils {
     }
 
     /**
-     * @param Path        搜索目录
-     * @param Extension   扩展名
-     * @param IsIterative 是否进入子文件夹
+     * @param Path        ??????
+     * @param Extension   ?????
+     * @param IsIterative ?????????????
      */
-    public ArrayList<String> getFiles(String Path, String Extension, boolean IsIterative)  //搜索目录，扩展名，是否进入子文件夹
+    public ArrayList<String> getFiles(String Path, String Extension, boolean IsIterative)  //??????????????????????????
     {
         ArrayList<String> lstFile = new ArrayList<String>();
 
@@ -64,16 +64,27 @@ public class DbNameUtils {
             for (int i = 0; i < files.length; i++) {
                 File f = files[i];
                 if (f.isFile()) {
-                    if (f.getPath().substring(f.getPath().length() - Extension.length()).equals(Extension))  //判断扩展名
+                    if (f.getPath().substring(f.getPath().length() - Extension.length()).equals(Extension))  //?卸??????
                         lstFile.add(f.getPath());
 
                     if (!IsIterative)
                         break;
-                } else if (f.isDirectory() && f.getPath().indexOf("/.") == -1)  //忽略点文件（隐藏文件/文件夹）
+                } else if (f.isDirectory() && f.getPath().indexOf("/.") == -1)
                     getFiles(f.getPath(), Extension, IsIterative);
             }
         }
 
         return lstFile;
+    }
+
+    public boolean deleteFile(String fulldbName) {
+        boolean flag = false;
+        File file = new File(fulldbName);
+        // 璺緞涓烘枃浠朵笖涓嶄负绌哄垯杩涜鍒犻櫎
+        if (file.isFile() && file.exists()) {
+            file.delete();
+            flag = true;
+        }
+        return flag;
     }
 }

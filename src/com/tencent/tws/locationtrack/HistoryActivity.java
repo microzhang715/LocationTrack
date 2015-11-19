@@ -42,7 +42,6 @@ public class HistoryActivity extends Activity implements AdapterView.OnItemClick
     SQLiteDatabase sqLiteDatabase;
 
     static {
-        //�������
         locationMaps = new HashMap<String, String>();
         locationMaps.put(LocationDbHelper.ID, LocationDbHelper.ID);
         locationMaps.put(LocationDbHelper.LATITUDE, LocationDbHelper.LATITUDE);
@@ -119,7 +118,6 @@ public class HistoryActivity extends Activity implements AdapterView.OnItemClick
             TextView infoTime = (TextView) rowView.findViewById(R.id.info_time);
             TextView infoDis = (TextView) rowView.findViewById(R.id.info_dis);
 
-            //��������
             try {
                 long time = Long.parseLong(dbNames.get(position));
                 dbName.setText(LocationUtil.convert(time));
