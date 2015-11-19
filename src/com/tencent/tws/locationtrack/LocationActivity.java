@@ -248,13 +248,15 @@ public class LocationActivity extends BaseActivity {
             }
 
             //将数据库文件读取到locations队列中，为真正的绘制流程做准备
-            Log.i(TAG,"readDbforDraw");
+            Log.i(TAG, "readDbforDraw");
             readDbforDraw();
         }
 
         if (mWakeLock != null) {
             mWakeLock.acquire();
         }
+
+
     }
 
     //读取数据库，绘制数据库中所有数据
@@ -357,7 +359,7 @@ public class LocationActivity extends BaseActivity {
     private void initMapView() {
         mMapView = (MapView) findViewById(R.id.mapviewOverlay);
         // mMapView.setBuiltInZoomControls(true);
-        mMapView.getController().setZoom(15);
+        mMapView.getController().setZoom(18);
 
         Bitmap bmpMarker = BitmapFactory.decodeResource(getResources(), R.drawable.mark_location);
         mLocationOverlay = new LocationOverlay(bmpMarker);
@@ -586,7 +588,6 @@ public class LocationActivity extends BaseActivity {
         @Override
         public void onChange(boolean selfChange) {
             super.onChange(selfChange);
-
             Log.i(TAG, "onChange~~~~");
             //子线程中去做数据库操作，更新UI
             fixedThreadExecutor.execute(new Runnable() {
