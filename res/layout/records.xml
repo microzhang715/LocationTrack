@@ -3,8 +3,25 @@
               android:orientation="vertical"
               android:layout_width="fill_parent"
               android:layout_height="fill_parent"
-        >
+>
 
+    <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+        <Button
+                android:id="@+id/backup_database"
+                android:text="备份数据库"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
+        <Button
+                android:id="@+id/clean_database"
+                android:text="清空数据库"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+    </LinearLayout>
 
     <ListView
             android:id="@+id/records_list"
@@ -13,5 +30,5 @@
             android:scrollingCache="false"
             android:fadingEdge="none"
             android:dividerHeight="1px"
-            />
+    />
 </LinearLayout>

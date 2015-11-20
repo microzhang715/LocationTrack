@@ -141,6 +141,7 @@ public class LocationActivity extends BaseActivity {
                 Log.i("LocationService", "LocationService 启动");
             }
         });
+
         if (SPUtils.readExitFlag(getApplicationContext()) == false) {
             serviceIntent = new Intent(getApplicationContext(), LocationService.class);
             startService(serviceIntent);
