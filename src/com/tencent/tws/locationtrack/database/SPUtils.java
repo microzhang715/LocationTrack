@@ -11,6 +11,8 @@ public class SPUtils {
     private static final String SP_NAME = "exit_sp";
     private static final String DB_NAME = "db_name";
     private static final String EXIT_FLAG = "exit_flag";
+    private static final String START_ACTIVITY = "start_activity";
+
 
     public static void writeSp(Context context, String dbName) {
         sp = context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE);
@@ -37,5 +39,15 @@ public class SPUtils {
         sp = context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE);
         boolean exitFlag = sp.getBoolean(EXIT_FLAG, true);
         return exitFlag;
+    }
+
+    public static void writeStartActivity(Context context, String activityName) {
+        sp = context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE);
+        sp.edit().putString(START_ACTIVITY, activityName).commit();
+    }
+
+    public static String readStartActivity(Context context) {
+        sp = context.getSharedPreferences(SP_NAME, Context.MODE_PRIVATE);
+        return sp.getString(START_ACTIVITY, "");
     }
 }

@@ -1,5 +1,6 @@
 package com.tencent.tws.locationtrack;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.database.ContentObserver;
@@ -41,7 +42,7 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class LocationActivity extends BaseActivity {
+public class LocationActivity extends Activity {
 
     private static final String TAG = "LocationActivity";
 

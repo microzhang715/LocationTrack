@@ -27,8 +27,10 @@ public class MainActivity extends BaseActivity {
 
     private Button locationButton;
     private Button historyButton;
+    private Button tencentLocationButton;
     private TextView locationTV;
     private TextView historyTV;
+    private TextView tencentTV;
 
     private ExecutorService fixedThreadExecutor = Executors.newFixedThreadPool(2);
     private DbNameUtils dbNameUtils;
@@ -55,6 +57,10 @@ public class MainActivity extends BaseActivity {
         historyButton.setOnClickListener(new HistoryClick());
         historyTV.setOnClickListener(new HistoryClick());
 
+//        tencentLocationButton = (Button) findViewById(R.id.btn_tencent_location);
+//        tencentTV = (TextView) findViewById(R.id.tv_tencent_location);
+//        tencentLocationButton.setOnClickListener(new TencentLocationClick());
+//        tencentTV.setOnClickListener(new TencentLocationClick());
     }
 
     private Runnable deletNoUseDb = new Runnable() {
@@ -85,7 +91,6 @@ public class MainActivity extends BaseActivity {
                             dbNameUtils.deleteFile(fName);
                         }
                     }
-
                 }
 
                 if (cursor != null) {
@@ -102,7 +107,9 @@ public class MainActivity extends BaseActivity {
         @Override
         public void onClick(View v) {
             Intent i = new Intent(MainActivity.this, LocationActivity.class);
+            SPUtils.writeStartActivity(getApplicationContext(), "LocationActivity");
             startActivity(i);
+
         }
     }
 
@@ -119,6 +126,16 @@ public class MainActivity extends BaseActivity {
         }
     }
 
+    class TencentLocationClick implements View.OnClickListener {
+
+        @Override
+        public void onClick(View v) {
+            Intent i = new Intent(MainActivity.this, TencentLocationActivity.class);
+            SPUtils.writeStartActivity(getApplicationContext(), "TencentLocationActivity");
+            startActivity(i);
+        }
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -126,13 +143,19 @@ public class MainActivity extends BaseActivity {
         Log.i(TAG, "exitFlag=" + SPUtils.readExitFlag(getApplicationContext()));
         if (!SPUtils.readExitFlag(getApplicationContext())) {
             Log.i(TAG, "onResume  start activity");
-            Intent i = new Intent(MainActivity.this, LocationActivity.class);
-            startActivity(i);
+            if (SPUtils.readStartActivity(getApplicationContext()).equals("LocationActivity")) {
+                Intent i = new Intent(MainActivity.this, LocationActivity.class);
+                startActivity(i);
+            } else if (SPUtils.readStartActivity(getApplicationContext()).equals("TencentLocationActivity")) {
+                Intent i = new Intent(MainActivity.this, TencentLocationActivity.class);
+                startActivity(i);
+            }
         }
 
         if (mWakeLock != null) {
             mWakeLock.acquire();
         }
+
     }
 
     @Override
