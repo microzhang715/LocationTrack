@@ -29,8 +29,8 @@ public class LocationService extends Service implements LocationListener {
     private static final String TAG = "LocationService";
     private LocationManager mLocationManager;
 
-    private static final int INTERVAL_TIME = 1000;
-    private static final int INTERVAL_DISTANCE = 10;
+    private static final int INTERVAL_TIME = 10000;
+    private static final int INTERVAL_DISTANCE = 15;
 
     //用于记录所有点信息
     private Queue<Location> locationQueue = new LinkedList<Location>();
@@ -103,8 +103,14 @@ public class LocationService extends Service implements LocationListener {
             if (ccount == LOCATION_QUEUE_SIZE) {
 
                 //先把数据放到内存缓存中
-                while (locationQueue.peek() != null) {
-                    templocationQueue.offer(locationQueue.poll());
+//                while (locationQueue.peek() != null) {
+//                    templocationQueue.offer(locationQueue.poll());
+//                }
+
+                for (int k = 0; k < LOCATION_QUEUE_SIZE; k++) {
+                    if (locationQueue.peek() != null) {
+                        templocationQueue.offer(locationQueue.poll());
+                    }
                 }
 
                 singleThreadExecutor.execute(new Runnable() {
