@@ -11,6 +11,8 @@ import android.location.GpsStatus;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.util.Log;
@@ -50,6 +52,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class HisLocationActivity extends BaseActivity {
 
@@ -86,12 +90,13 @@ public class HisLocationActivity extends BaseActivity {
     double hisKcalValue = 0;
     double hisDisValue = 0;
 
-    private Cursor cursor;
+    //    private Cursor cursor;
     double insSpeed = 0;
     double aveSpeed = 0;
     double kcal = 0;
 
     protected ArrayList<Gps> locations = new ArrayList<Gps>();
+    protected ArrayList<Gps> resultlocations = new ArrayList<Gps>();
     protected double topBoundary;
     protected double leftBoundary;
     protected double rightBoundary;
@@ -122,6 +127,8 @@ public class HisLocationActivity extends BaseActivity {
     private static HashMap<String, String> locationMaps;
     SQLiteDatabase sqLiteDatabase;
 
+    private ExecutorService fixedThreadExecutor = Executors.newFixedThreadPool(2);
+    private static final int UPDATE_VIEWS = 1;
 
     static {
         //定义别名
@@ -199,6 +206,33 @@ public class HisLocationActivity extends BaseActivity {
         });
     }
 
+    private Handler handler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            switch (msg.what) {
+                case UPDATE_VIEWS:
+                    Bundle bundle = (Bundle) msg.obj;
+                    double hisDisValue = bundle.getDouble("hisDisValue");
+                    double hisSpeedValue = bundle.getDouble("hisSpeedValue");
+                    double hisKcalValue = bundle.getDouble("hisKcalValue");
+                    Log.i(TAG, "UPDATE_VIEWS:" + " hisSpeedValue=" + hisSpeedValue + " hisKcalValue=" + hisKcalValue + " hisDisValue=" + hisDisValue);
+                    updateTextViews(hisSpeedValue, hisKcalValue, hisDisValue);
+
+                    if (locations.size() > 0) {
+                        getBoundary();
+                        mMapView.addOverlay(pathOverlay);
+
+                        mMapView.addOverlay(new PointMarkLayout(locations.get(0), R.drawable.point_start));
+                        mMapView.addOverlay(new PointMarkLayout(locations.get(locations.size() - 1), R.drawable.point_end));
+                        mMapView.getController().setCenter(mapCenterPoint);
+                        mMapView.postDelayed(waitForMapTimeTask, TIME_TO_WAIT_IN_MS);
+                    }
+                    break;
+            }
+        }
+    };
+
     private void initSharePlatform() {
         //在相应的地方要注册Handler才可以相应事件
         // 添加微信平台
@@ -256,15 +290,6 @@ public class HisLocationActivity extends BaseActivity {
 
         //修改绘制逻辑，使用Overlay添加，减少绘制次数 at 20151116 by guccigu
         dbDrawResume();
-        if (locations.size() > 0) {
-            getBoundary();
-            mMapView.addOverlay(pathOverlay);
-
-            mMapView.addOverlay(new PointMarkLayout(locations.get(0), R.drawable.point_start));
-            mMapView.addOverlay(new PointMarkLayout(locations.get(locations.size() - 1), R.drawable.point_end));
-            mMapView.getController().setCenter(mapCenterPoint);
-            mMapView.postDelayed(waitForMapTimeTask, TIME_TO_WAIT_IN_MS);
-        }
 
 
         setLocationInfo();
@@ -283,56 +308,77 @@ public class HisLocationActivity extends BaseActivity {
 
     //读取数据库，绘制数据库中所有数据
     private void dbDrawResume() {
-        String[] PROJECTION = new String[]{LocationDbHelper.ID, LocationDbHelper.LATITUDE, LocationDbHelper.LONGITUDE, LocationDbHelper.INS_SPEED, LocationDbHelper.BEARING, LocationDbHelper.ALTITUDE, LocationDbHelper.ACCURACY, LocationDbHelper.TIME, LocationDbHelper.DISTANCE, LocationDbHelper.AVG_SPEED, LocationDbHelper.KCAL,};
-        cursor = query(PROJECTION, null, null, null);
 
-        long startTime = 0;
-        long lastTime = 0;
+        fixedThreadExecutor.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Cursor cursor = null;
+                    String[] PROJECTION = new String[]{LocationDbHelper.ID, LocationDbHelper.LATITUDE, LocationDbHelper.LONGITUDE, LocationDbHelper.INS_SPEED, LocationDbHelper.BEARING, LocationDbHelper.ALTITUDE, LocationDbHelper.ACCURACY, LocationDbHelper.TIME, LocationDbHelper.DISTANCE, LocationDbHelper.AVG_SPEED, LocationDbHelper.KCAL,};
+                    cursor = query(PROJECTION, null, null, null);
 
-        double allDis = 0;
-        points.clear();
+                    long startTime = 0;
+                    long lastTime = 0;
 
-        Log.i(TAG, "dbDrawResume");
-        if (cursor.moveToFirst()) {
-            startTime = cursor.getLong(cursor.getColumnIndex(LocationDbHelper.TIME));
+                    double allDis = 0;
+                    points.clear();
 
-            while (cursor.moveToNext()) {
-                double latitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LATITUDE));
-                double longitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LONGITUDE));
-                long times = cursor.getLong(cursor.getColumnIndex(LocationDbHelper.TIME));
-                double insSpeed = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.INS_SPEED));
-                float aveSpeed = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.AVG_SPEED));
-                float kcal = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.KCAL));
-                float accuracy = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.ACCURACY));
-                float dis = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.DISTANCE));
+                    Log.i(TAG, "dbDrawResume");
+                    if (cursor != null && cursor.moveToFirst()) {
+                        startTime = cursor.getLong(cursor.getColumnIndex(LocationDbHelper.TIME));
 
-                allDis += dis;
+                        while (cursor.moveToNext()) {
+                            double latitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LATITUDE));
+                            double longitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LONGITUDE));
+                            long times = cursor.getLong(cursor.getColumnIndex(LocationDbHelper.TIME));
+                            double insSpeed = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.INS_SPEED));
+                            float aveSpeed = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.AVG_SPEED));
+                            float kcal = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.KCAL));
+                            float accuracy = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.ACCURACY));
+                            float dis = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.DISTANCE));
 
-                Log.i(TAG, "latitude=" + latitude);
-                Gps gps = PositionUtil.gps84_To_Gcj02(latitude, longitude);
-                locations.add(gps);
-//                if (gps != null) {
-//                    drawLines(gps.getWgLon(), gps.getWgLat(), accuracy, true);
-//                }
+                            allDis += dis;
+
+                            Log.i(TAG, "latitude=" + latitude);
+                            Gps gps = PositionUtil.gps84_To_Gcj02(latitude, longitude);
+                            locations.add(gps);
+                        }
+
+                        //resultlocations = optimizeGpsPoints(locations);
+                    }
+
+                    if (cursor != null && cursor.getCount() != 0) {
+                        cursor.moveToLast();
+                        lastTime = cursor.getLong(cursor.getColumnIndex(LocationDbHelper.TIME));
+
+                        long deltTime = (lastTime - startTime) / 1000;
+                        double aveSpeed = (allDis * 10) / (deltTime * 36f);
+                        double allKcal = 60 * allDis * 1.036 / 1000;
+
+                        Log.i(TAG, "allDis=" + allDis + " | allKcal=" + allKcal + " | aveSpeed=" + aveSpeed);
+
+                        hisDisValue = allDis / 1000;
+                        hisSpeedValue = aveSpeed;
+                        hisKcalValue = allKcal;
+
+                        Message msg = Message.obtain();
+                        msg.what = UPDATE_VIEWS;
+                        Bundle bundle = new Bundle();
+                        bundle.putDouble("hisDisValue", hisDisValue);
+                        bundle.putDouble("hisSpeedValue", hisSpeedValue);
+                        bundle.putDouble("hisKcalValue", hisKcalValue);
+                        msg.obj = bundle;
+                        handler.sendMessage(msg);
+                    }
+
+                    if (cursor != null) {
+                        cursor.close();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
-        }
-
-        if (cursor.getCount() != 0) {
-            cursor.moveToLast();
-            lastTime = cursor.getLong(cursor.getColumnIndex(LocationDbHelper.TIME));
-
-            long deltTime = (lastTime - startTime) / 1000;
-            double aveSpeed = (allDis * 10) / (deltTime * 36f);
-            double allKcal = 60 * allDis * 1.036 / 1000;
-
-            Log.i(TAG, "allDis=" + allDis + " | allKcal=" + allKcal + " | aveSpeed=" + aveSpeed);
-
-            hisDisValue = allDis / 1000;
-            hisSpeedValue = aveSpeed;
-            hisKcalValue = allKcal;
-
-            updateTextViews(hisSpeedValue, hisKcalValue, hisDisValue);
-        }
+        });
     }
 
     @Override
@@ -349,9 +395,6 @@ public class HisLocationActivity extends BaseActivity {
     protected void onDestroy() {
         mMapView.onDestroy();
         super.onDestroy();
-        if (cursor != null) {
-            cursor.close();
-        }
 
         if (locationManager != null) {
             locationManager.removeGpsStatusListener(statusListener);
@@ -627,7 +670,6 @@ public class HisLocationActivity extends BaseActivity {
         public void draw(final Canvas canvas, final MapView mapView) {
             this.projection = mapView.getProjection();
 
-            Log.i(TAG, "draw--------------overlay");
             synchronized (canvas) {
                 final Path path = new Path();
                 final int maxWidth = mapView.getWidth();
@@ -640,11 +682,11 @@ public class HisLocationActivity extends BaseActivity {
 
                     if (lastGeoPoint != null && (lastGeoPoint.y < maxHeight && lastGeoPoint.x < maxWidth)) {
     /*                            if (Math.abs(current.x - lastGeoPoint.x) < MIN_POINT_SPAN
-	                                || Math.abs(current.y - lastGeoPoint.y) < MIN_POINT_SPAN) {
+                                    || Math.abs(current.y - lastGeoPoint.y) < MIN_POINT_SPAN) {
 	                                continue;
 	                            } else {*/
                         path.lineTo(current.x, current.y);
-	                            /*                   }*/
+                                /*                   }*/
                     } else {
                         path.moveTo(current.x, current.y);
                     }
@@ -683,5 +725,70 @@ public class HisLocationActivity extends BaseActivity {
 
             return;
         }
+    }
+
+    public ArrayList<Gps> optimizeGpsPoints(ArrayList<Gps> inPoint) {
+        int size = inPoint.size();
+        ArrayList<Location> outPoint;
+
+        int i;
+        if (size < 5) {
+            return inPoint;
+        } else {
+            // Latitude
+            inPoint.get(0)
+                    .setWgLat((3.0 * inPoint.get(0).getWgLat() + 2.0
+                            * inPoint.get(1).getWgLat() + inPoint.get(2).getWgLat() - inPoint
+                            .get(4).getWgLat()) / 5.0);
+            inPoint.get(1)
+                    .setWgLat((4.0 * inPoint.get(0).getWgLat() + 3.0
+                            * inPoint.get(1).getWgLat() + 2
+                            * inPoint.get(2).getWgLat() + inPoint.get(3).getWgLat()) / 10.0);
+
+            inPoint.get(size - 2).setWgLat(
+                    (4.0 * inPoint.get(size - 1).getWgLat() + 3.0
+                            * inPoint.get(size - 2).getWgLat() + 2
+                            * inPoint.get(size - 3).getWgLat() + inPoint.get(
+                            size - 4).getWgLat()) / 10.0);
+            inPoint.get(size - 1).setWgLat(
+                    (3.0 * inPoint.get(size - 1).getWgLat() + 2.0
+                            * inPoint.get(size - 2).getWgLat()
+                            + inPoint.get(size - 3).getWgLat() - inPoint.get(
+                            size - 5).getWgLat()) / 5.0);
+
+            // Longitude
+            inPoint.get(0)
+                    .setWgLon((3.0 * inPoint.get(0).getWgLon() + 2.0
+                            * inPoint.get(1).getWgLon() + inPoint.get(2).getWgLon() - inPoint
+                            .get(4).getWgLon()) / 5.0);
+            inPoint.get(1)
+                    .setWgLon((4.0 * inPoint.get(0).getWgLon() + 3.0
+                            * inPoint.get(1).getWgLon() + 2
+                            * inPoint.get(2).getWgLon() + inPoint.get(3).getWgLon()) / 10.0);
+
+            inPoint.get(size - 2).setWgLon(
+                    (4.0 * inPoint.get(size - 1).getWgLon() + 3.0
+                            * inPoint.get(size - 2).getWgLon() + 2
+                            * inPoint.get(size - 3).getWgLon() + inPoint.get(
+                            size - 4).getWgLon()) / 10.0);
+            inPoint.get(size - 1).setWgLon(
+                    (3.0 * inPoint.get(size - 1).getWgLon() + 2.0
+                            * inPoint.get(size - 2).getWgLon()
+                            + inPoint.get(size - 3).getWgLon() - inPoint.get(
+                            size - 5).getWgLon()) / 5.0);
+            for (i = 2; i < size - 2; i++) {
+                // Latitude
+                inPoint.get(i)
+                        .setWgLat((4.0 * inPoint.get(i - 1).getWgLat() + 3.0
+                                * inPoint.get(i).getWgLat() + 2
+                                * inPoint.get(i + 1).getWgLat() + inPoint.get(i + 2).getWgLat()) / 10.0);
+                // Longitude
+                inPoint.get(i)
+                        .setWgLon((4.0 * inPoint.get(i - 1).getWgLon() + 3.0
+                                * inPoint.get(i).getWgLon() + 2
+                                * inPoint.get(i + 1).getWgLon() + inPoint.get(i + 2).getWgLon()) / 10.0);
+            }
+        }
+        return inPoint;
     }
 }
