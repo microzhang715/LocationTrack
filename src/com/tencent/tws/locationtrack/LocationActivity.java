@@ -34,7 +34,6 @@ import com.tencent.tws.locationtrack.database.SPUtils;
 import com.tencent.tws.locationtrack.util.Gps;
 import com.tencent.tws.locationtrack.util.LocationUtil;
 import com.tencent.tws.locationtrack.util.PositionUtil;
-import com.tencent.tws.widget.BaseActivity;
 
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
@@ -640,7 +639,7 @@ public class LocationActivity extends Activity {
                                 if (isFinishDBDraw == false) {
                                     Gps gps = PositionUtil.gps84_To_Gcj02(latitude, longitude);
                                     if (gps != null) {
-                                        LatLng latLng = new LatLng(gps.getWgLon(), gps.getWgLat());
+                                        LatLng latLng = new LatLng(gps.getWgLat(), gps.getWgLon());
                                         points.add(latLng);
                                     }
                                 } else {
