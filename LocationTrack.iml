@@ -11,7 +11,9 @@
   </component>
   <component name="FacetManager">
     <facet type="android" name="Android">
-      <configuration />
+      <configuration>
+        <option name="UPDATE_PROPERTY_FILES" value="true" />
+      </configuration>
     </facet>
   </component>
   <component name="NewModuleRootManager" inherit-compiler-output="false">
@@ -23,7 +25,6 @@
     </content>
     <orderEntry type="jdk" jdkName="Android API 20 Platform" jdkType="Android SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module" module-name="twsWearableSupportLib" />
     <orderEntry type="library" name="TencentLocationSDK_v4.3.0_r196568_151014_1433" level="project" />
     <orderEntry type="library" name="TencentMapSDK_Raster_v1.1.2.15850" level="project" />
     <orderEntry type="library" name="weixin" level="project" />
