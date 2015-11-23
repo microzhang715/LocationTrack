@@ -1,5 +1,6 @@
 package com.tencent.tws.locationtrack;
 
+import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.location.Location;
@@ -14,11 +15,10 @@ import com.tencent.tws.locationtrack.record.Archiver;
 import com.tencent.tws.locationtrack.util.Gps;
 import com.tencent.tws.locationtrack.util.LocationUtil;
 import com.tencent.tws.locationtrack.util.PositionUtil;
-import com.tencent.tws.widget.BaseActivity;
 
 import java.util.ArrayList;
 
-public class DetailActivity extends BaseActivity {
+public class DetailActivity extends Activity {
 
     private Archiver archiver;
 
@@ -207,8 +207,6 @@ public class DetailActivity extends BaseActivity {
         }
         return inPoint;
     }
-
-
 
 
     private void setCenterPoint(Gps point) {

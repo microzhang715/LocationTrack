@@ -1,5 +1,6 @@
 package com.tencent.tws.locationtrack;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
@@ -34,7 +35,6 @@ import com.tencent.tws.locationtrack.database.SPUtils;
 import com.tencent.tws.locationtrack.util.Gps;
 import com.tencent.tws.locationtrack.util.PositionUtil;
 import com.tencent.tws.locationtrack.views.CustomShareBoard;
-import com.tencent.tws.widget.BaseActivity;
 import com.umeng.scrshot.UMScrShotController;
 import com.umeng.scrshot.adapter.UMAppAdapter;
 import com.umeng.socialize.controller.UMServiceFactory;
@@ -55,7 +55,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class HisLocationActivity extends BaseActivity {
+public class HisLocationActivity extends Activity {
 
     private static final String TAG = "HisLocationActivity";
 
