@@ -171,7 +171,14 @@ public class LocationService extends Service implements LocationListener {
                                         lastLocationStartTime = currentTime;
                                     }
 
-                                    double avgSpeed = (allDistance * 3600) / (lastLocationStartTime - firstLocationStartTime);
+                                    double avgSpeed = 0;
+
+                                    if (lastLocationStartTime != firstLocationStartTime) {
+                                        avgSpeed = (allDistance * 3600) / (lastLocationStartTime - firstLocationStartTime);
+                                    } else {
+                                        avgSpeed = 0;
+                                    }
+
                                     double kcal = 60 * allDistance * 1.036 / 1000;
 
                                     //平均速度和卡路里写入数据库
