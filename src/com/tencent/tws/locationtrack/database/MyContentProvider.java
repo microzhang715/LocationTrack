@@ -68,15 +68,15 @@ public class MyContentProvider extends ContentProvider {
 //        String databaseName = "1447332847341_location.db";
         Log.i(TAG, "time=" + time);
         Log.i(TAG, "databaseName=" + databaseName);
-        if (SPUtils.readSp(getContext()) != "" && SPUtils.readSp(getContext()) != "0") {//数据库名字存储了,打开这个数据库
-            Log.i(TAG, "open database=" + SPUtils.readSp(getContext()));
-            dbHelper = new LocationDbHelper(getContext(), SPUtils.readSp(getContext()));
+        if (SPUtils.readDBName(getContext()) != "" && SPUtils.readDBName(getContext()) != "0") {//数据库名字存储了,打开这个数据库
+            Log.i(TAG, "open database=" + SPUtils.readDBName(getContext()));
+            dbHelper = new LocationDbHelper(getContext(), SPUtils.readDBName(getContext()));
         } else {//创建新的数据
             Log.i(TAG, "new database");
             if (databaseName != null && databaseName != "0") {
                 dbHelper = new LocationDbHelper(getContext(), databaseName);
 //                dbHelper = new LocationDbHelper(getContext(), "1447332847341_location.db");
-                SPUtils.writeSp(getContext(), databaseName);
+                SPUtils.writeDBName(getContext(), databaseName);
             }
         }
         return true;

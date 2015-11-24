@@ -98,7 +98,7 @@ public class MyTest extends AndroidTestCase {
     }
 
     public void testSP() {
-        SPUtils.writeSp(getContext(), "1111111");
+        SPUtils.writeDBName(getContext(), "1111111");
     }
 
     public void testDate() {

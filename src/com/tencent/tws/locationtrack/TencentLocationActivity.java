@@ -123,7 +123,7 @@ public class TencentLocationActivity extends Activity {
                 serviceIntent = new Intent(getApplicationContext(), TencentLocationService.class);
                 startService(serviceIntent);
                 startButton.setEnabled(false);
-                SPUtils.setExitFlag(getApplicationContext(), false);
+                SPUtils.writeExitFlag(getApplicationContext(), false);
 
                 Log.i("LocationService", "LocationService 启动");
             }
@@ -141,14 +141,14 @@ public class TencentLocationActivity extends Activity {
         exitButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                SPUtils.clearSp(getApplicationContext());
+                SPUtils.clearDBName(getApplicationContext());
 
                 if (serviceIntent != null) {
                     stopService(serviceIntent);
                 }
 
                 //设置退出标志位
-                SPUtils.setExitFlag(getApplicationContext(), true);
+                SPUtils.writeExitFlag(getApplicationContext(), true);
 
                 Intent intent = new Intent(Intent.ACTION_MAIN);
                 intent.addCategory(Intent.CATEGORY_HOME);
@@ -229,7 +229,7 @@ public class TencentLocationActivity extends Activity {
         super.onResume();
 
         Log.i(TAG, "onResume");
-        if (SPUtils.readSp(getApplicationContext()) != "") {//数据库是存在的
+        if (SPUtils.readDBName(getApplicationContext()) != "") {//数据库是存在的
             if (mMapView != null) {
                 Log.i(TAG, "clearAllOverlays");
                 mMapView.clearAllOverlays();

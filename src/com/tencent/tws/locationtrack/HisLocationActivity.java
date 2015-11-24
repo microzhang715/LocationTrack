@@ -184,7 +184,7 @@ public class HisLocationActivity extends Activity {
         exitButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                SPUtils.clearSp(getApplicationContext());
+                SPUtils.clearDBName(getApplicationContext());
 
                 if (serviceIntent != null) {
                     stopService(serviceIntent);

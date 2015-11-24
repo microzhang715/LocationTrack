@@ -37,6 +37,7 @@ public class MainActivity extends Activity {
     private static LocationDbHelper dbHelper;
     private static final int POINTS_TO_DELETE = 2;
 
+
     public void onCreate(Bundle savedInstanceState) {
         // calls super, sets GUI
         super.onCreate(savedInstanceState);
@@ -62,6 +63,7 @@ public class MainActivity extends Activity {
         tencentLocationButton.setOnClickListener(new TencentLocationClick());
         tencentTV.setOnClickListener(new TencentLocationClick());
     }
+
 
     private Runnable deletNoUseDb = new Runnable() {
         @Override
@@ -96,6 +98,11 @@ public class MainActivity extends Activity {
                 if (cursor != null) {
                     cursor.close();
                 }
+
+                //启动历史记录的Activity
+                Intent i = new Intent(MainActivity.this, HistoryActivity.class);
+                startActivity(i);
+
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -117,12 +124,8 @@ public class MainActivity extends Activity {
 
         @Override
         public void onClick(View v) {
-            Intent i = new Intent(MainActivity.this, HistoryActivity.class);
-
             //启动的时候检查数据库文件，如果是空数据库直接删除掉
             fixedThreadExecutor.execute(deletNoUseDb);
-
-            startActivity(i);
         }
     }
 

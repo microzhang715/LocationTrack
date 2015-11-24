@@ -68,9 +68,7 @@ public class LocationActivity extends Activity {
     private TextView tvAveSpeed;
     private TextView tvInsSpeed;
     private Button startButton;
-    private Button historyButton;
     private Button exitButton;
-    private Button shareButton;
 
     private TextView tvKal;
     private TextView tvGPSStatus;
@@ -79,8 +77,18 @@ public class LocationActivity extends Activity {
     private TextView allDis;
     private DBContentObserver mDBContentObserver;
 
+    protected Queue<Gps> resumeLocations = new LinkedList<>();
+    Intent locationServiceIntent;
+    private ExecutorService fixedThreadExecutor = Executors.newFixedThreadPool(2);
     private boolean isFinishDBDraw = true;
 
+    private static final int UPDATE_TEXT_VIEWS = 1;
+    private static final int UPDATE_DRAW_LINES = 2;
+    private static final int DRAW_RESUME = 3;
+
+    private static final int RESUME_ONCE_DRAW_POINTS = 500;
+
+    //临时未用的
     protected double topBoundary;
     protected double leftBoundary;
     protected double rightBoundary;
@@ -89,19 +97,8 @@ public class LocationActivity extends Activity {
     protected Location locationTopLeft;
     protected Location locationBottomRight;
     protected float maxDistance;
-    protected Queue<Gps> resumeLocations = new LinkedList<>();
     protected GeoPoint mapCenterPoint;
 
-    Intent serviceIntent;
-
-    private ExecutorService fixedThreadExecutor = Executors.newFixedThreadPool(2);
-
-    private static final int UPDATE_TEXT_VIEWS = 1;
-    private static final int UPDATE_DRAW_LINES = 2;
-    private static final int DRAW_RESUME = 3;
-
-
-    private static final int RESUME_ONCE_DRAW_POINTS = 500;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -134,20 +131,27 @@ public class LocationActivity extends Activity {
         startButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //启动后台服务获取地理信息
-                serviceIntent = new Intent(getApplicationContext(), LocationService.class);
-                startService(serviceIntent);
+                //清空退出标志
+                SPUtils.writeExitFlag(getApplicationContext(), false);
+                //按钮状态改变
                 startButton.setEnabled(false);
-                SPUtils.setExitFlag(getApplicationContext(), false);
+                exitButton.setEnabled(true);
 
+                //启动后台服务获取地理信息
+                locationServiceIntent = new Intent(getApplicationContext(), LocationService.class);
+                startService(locationServiceIntent);
                 Log.i("LocationService", "LocationService 启动");
             }
         });
 
+        //activity被杀掉重新进来的时候不需要再次点击开始按钮,自动重新启动服务
         if (SPUtils.readExitFlag(getApplicationContext()) == false) {
-            serviceIntent = new Intent(getApplicationContext(), LocationService.class);
-            startService(serviceIntent);
+            locationServiceIntent = new Intent(getApplicationContext(), LocationService.class);
+            startService(locationServiceIntent);
+
+            //改变按钮状态
             startButton.setEnabled(false);
+            exitButton.setEnabled(true);
         }
 
 
@@ -155,21 +159,25 @@ public class LocationActivity extends Activity {
         exitButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                SPUtils.clearSp(getApplicationContext());
+                //清除数据库
+                SPUtils.clearDBName(getApplicationContext());
 
-                if (serviceIntent != null) {
-                    stopService(serviceIntent);
+                if (locationServiceIntent != null) {
+                    stopService(locationServiceIntent);
                 }
 
                 //设置退出标志位
-                SPUtils.setExitFlag(getApplicationContext(), true);
+                SPUtils.writeExitFlag(getApplicationContext(), true);
+                //退出当前Activity
+                finish();
 
-                Intent intent = new Intent(Intent.ACTION_MAIN);
-                intent.addCategory(Intent.CATEGORY_HOME);
-                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                startActivity(intent);
-                android.os.Process.killProcess(android.os.Process.myPid());
-                System.exit(0);
+                //结束掉当前进程
+//                Intent intent = new Intent(Intent.ACTION_MAIN);
+//                intent.addCategory(Intent.CATEGORY_HOME);
+//                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+//                startActivity(intent);
+//                android.os.Process.killProcess(android.os.Process.myPid());
+//                System.exit(0);
             }
         });
 
@@ -217,9 +225,11 @@ public class LocationActivity extends Activity {
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         switch (event.getKeyCode()) {
             case KeyEvent.KEYCODE_BACK:
-
-                Toast.makeText(getApplicationContext(), "运动界面下，请退出后再返回", Toast.LENGTH_SHORT).show();
-                return true;
+                if (SPUtils.readExitFlag(getApplicationContext()) == false) { //已经开始轨迹定位且没有退出，只能通过点击按钮退出
+                    Toast.makeText(getApplicationContext(), "正在记录轨迹，点击退出按钮结束轨迹记录", Toast.LENGTH_SHORT).show();
+                    return true;
+                }
+                break;
         }
         return super.onKeyDown(keyCode, event);
     }
@@ -243,7 +253,7 @@ public class LocationActivity extends Activity {
         super.onResume();
 
         Log.i(TAG, "onResume");
-        if (SPUtils.readSp(getApplicationContext()) != "") {//数据库是存在的
+        if (SPUtils.readDBName(getApplicationContext()) != "") {//数据库是存在的
             if (mMapView != null) {
                 Log.i(TAG, "clearAllOverlays");
                 mMapView.clearAllOverlays();
