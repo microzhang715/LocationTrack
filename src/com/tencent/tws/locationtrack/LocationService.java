@@ -29,7 +29,7 @@ public class LocationService extends Service implements LocationListener {
     private static final String TAG = "LocationService";
     private LocationManager mLocationManager;
 
-    private static final int INTERVAL_TIME = 5000;
+    private static final int INTERVAL_TIME = 1000;
     private static final int INTERVAL_DISTANCE = 10;
 
     //用于记录所有点信息

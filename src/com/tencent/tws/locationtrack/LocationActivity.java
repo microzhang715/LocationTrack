@@ -88,6 +88,8 @@ public class LocationActivity extends Activity {
 
     private static final int RESUME_ONCE_DRAW_POINTS = 500;
 
+    private static final int ZOOM_LEVER = 18;
+
     //临时未用的
     protected double topBoundary;
     protected double leftBoundary;
@@ -267,8 +269,6 @@ public class LocationActivity extends Activity {
         if (mWakeLock != null) {
             mWakeLock.acquire();
         }
-
-
     }
 
     //读取数据库，绘制数据库中所有数据
@@ -371,7 +371,7 @@ public class LocationActivity extends Activity {
     private void initMapView() {
         mMapView = (MapView) findViewById(R.id.mapviewOverlay);
         // mMapView.setBuiltInZoomControls(true);
-        mMapView.getController().setZoom(18);
+        mMapView.getController().setZoom(ZOOM_LEVER);
 
         Bitmap bmpMarker = BitmapFactory.decodeResource(getResources(), R.drawable.mark_location);
         mLocationOverlay = new LocationOverlay(bmpMarker);

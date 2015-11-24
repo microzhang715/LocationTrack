@@ -77,9 +77,8 @@ public class TencentLocationActivity extends Activity {
 
     private boolean isFinishDBDraw = true;
     protected Queue<LatLng> resumeLocations = new LinkedList<>();
-    protected GeoPoint mapCenterPoint;
 
-    Intent serviceIntent;
+    Intent tencentLocationServiceIntent;
 
     private ExecutorService fixedThreadExecutor = Executors.newFixedThreadPool(2);
 
@@ -87,8 +86,19 @@ public class TencentLocationActivity extends Activity {
     private static final int UPDATE_DRAW_LINES = 2;
     private static final int DRAW_RESUME = 3;
 
-
     private static final int RESUME_ONCE_DRAW_POINTS = 500;
+
+    private static final int ZOOM_LEVER = 18;
+    //临时未用的
+    protected double topBoundary;
+    protected double leftBoundary;
+    protected double rightBoundary;
+    protected double bottomBoundary;
+    protected Location locationTopLeft;
+    protected Location locationBottomRight;
+    protected float maxDistance;
+    protected GeoPoint mapCenterPoint;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -110,52 +120,59 @@ public class TencentLocationActivity extends Activity {
 
         //地图
         initMapView();
-
         //初始化观察者
         initContentObserver();
 
-        //开始按钮
+        //按钮
         startButton = (Button) findViewById(R.id.tencent_startButton);
+        exitButton = (Button) findViewById(R.id.tencent_exitButton);
+
+
         startButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //启动后台服务获取地理信息
-                serviceIntent = new Intent(getApplicationContext(), TencentLocationService.class);
-                startService(serviceIntent);
+                SPUtils.writeTencentExitFlag(getApplicationContext(), false);
+                //按钮状态改变
                 startButton.setEnabled(false);
-                SPUtils.writeExitFlag(getApplicationContext(), false);
+                exitButton.setEnabled(true);
 
-                Log.i("LocationService", "LocationService 启动");
+                //启动后台服务获取地理信息
+                tencentLocationServiceIntent = new Intent(getApplicationContext(), TencentLocationService.class);
+                startService(tencentLocationServiceIntent);
+                Log.i(TAG, "TencentLocationActivity 启动");
             }
         });
 
+        //activity被杀掉重新进来的时候不需要再次点击开始按钮,自动重新启动服务
         if (SPUtils.readExitFlag(getApplicationContext()) == false) {
-            serviceIntent = new Intent(getApplicationContext(), TencentLocationService.class);
-            startService(serviceIntent);
+            tencentLocationServiceIntent = new Intent(getApplicationContext(), TencentLocationService.class);
+            startService(tencentLocationServiceIntent);
+
+            //改变按钮状态
             startButton.setEnabled(false);
+            exitButton.setEnabled(true);
         }
 
-
-        //退出按钮
-        exitButton = (Button) findViewById(R.id.tencent_exitButton);
         exitButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 SPUtils.clearDBName(getApplicationContext());
 
-                if (serviceIntent != null) {
-                    stopService(serviceIntent);
+                if (tencentLocationServiceIntent != null) {
+                    stopService(tencentLocationServiceIntent);
                 }
 
                 //设置退出标志位
-                SPUtils.writeExitFlag(getApplicationContext(), true);
+                SPUtils.writeTencentExitFlag(getApplicationContext(), true);
+                //退出当前Activity
+                finish();
 
-                Intent intent = new Intent(Intent.ACTION_MAIN);
-                intent.addCategory(Intent.CATEGORY_HOME);
-                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                startActivity(intent);
-                android.os.Process.killProcess(android.os.Process.myPid());
-                System.exit(0);
+//                Intent intent = new Intent(Intent.ACTION_MAIN);
+//                intent.addCategory(Intent.CATEGORY_HOME);
+//                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+//                startActivity(intent);
+//                android.os.Process.killProcess(android.os.Process.myPid());
+//                System.exit(0);
             }
         });
 
@@ -203,9 +220,11 @@ public class TencentLocationActivity extends Activity {
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         switch (event.getKeyCode()) {
             case KeyEvent.KEYCODE_BACK:
-
-                Toast.makeText(getApplicationContext(), "运动界面下，请退出后再返回", Toast.LENGTH_SHORT).show();
-                return true;
+                if (SPUtils.readTencentExitFlag(getApplicationContext()) == false) { //已经开始轨迹定位且没有退出，只能通过点击按钮退出
+                    Toast.makeText(getApplicationContext(), "正在记录轨迹，点击退出按钮结束轨迹记录", Toast.LENGTH_SHORT).show();
+                    return true;
+                }
+                break;
         }
         return super.onKeyDown(keyCode, event);
     }
@@ -243,8 +262,6 @@ public class TencentLocationActivity extends Activity {
         if (mWakeLock != null) {
             mWakeLock.acquire();
         }
-
-
     }
 
     //读取数据库，绘制数据库中所有数据
@@ -348,7 +365,7 @@ public class TencentLocationActivity extends Activity {
     private void initMapView() {
         mMapView = (MapView) findViewById(R.id.tencent_mapviewOverlay);
         // mMapView.setBuiltInZoomControls(true);
-        mMapView.getController().setZoom(18);
+        mMapView.getController().setZoom(ZOOM_LEVER);
 
         Bitmap bmpMarker = BitmapFactory.decodeResource(getResources(), R.drawable.mark_location);
         mLocationOverlay = new LocationOverlay(bmpMarker);
@@ -356,7 +373,6 @@ public class TencentLocationActivity extends Activity {
 
         Overlays = new ArrayList<Object>();
     }
-
 
     private static GeoPoint of(double latitude, double longitude) {
         GeoPoint ge = new GeoPoint((int) (latitude * 1E6), (int) (longitude * 1E6));
