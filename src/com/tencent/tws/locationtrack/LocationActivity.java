@@ -129,6 +129,8 @@ public class LocationActivity extends Activity {
 
         //开始按钮
         startButton = (Button) findViewById(R.id.startButton);
+        exitButton = (Button) findViewById(R.id.exitButton);
+
         startButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -150,7 +152,6 @@ public class LocationActivity extends Activity {
 
 
         //退出按钮
-        exitButton = (Button) findViewById(R.id.exitButton);
         exitButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

@@ -31,10 +31,7 @@ import com.tencent.tencentmap.mapsdk.map.MapView;
 import com.tencent.tws.locationtrack.database.LocationDbHelper;
 import com.tencent.tws.locationtrack.database.MyContentProvider;
 import com.tencent.tws.locationtrack.database.SPUtils;
-import com.tencent.tws.locationtrack.util.Gps;
 import com.tencent.tws.locationtrack.util.LocationUtil;
-import com.tencent.tws.locationtrack.util.PositionUtil;
-import com.tencent.tws.widget.BaseActivity;
 
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
@@ -79,7 +76,7 @@ public class TencentLocationActivity extends Activity {
     private DBContentObserver mDBContentObserver;
 
     private boolean isFinishDBDraw = true;
-    protected Queue<Gps> resumeLocations = new LinkedList<>();
+    protected Queue<LatLng> resumeLocations = new LinkedList<>();
     protected GeoPoint mapCenterPoint;
 
     Intent serviceIntent;
@@ -260,18 +257,19 @@ public class TencentLocationActivity extends Activity {
                     String[] PROJECTION = new String[]{LocationDbHelper.ID, LocationDbHelper.LATITUDE, LocationDbHelper.LONGITUDE, LocationDbHelper.INS_SPEED, LocationDbHelper.BEARING, LocationDbHelper.ALTITUDE, LocationDbHelper.ACCURACY, LocationDbHelper.TIME, LocationDbHelper.DISTANCE, LocationDbHelper.AVG_SPEED, LocationDbHelper.KCAL,};
                     cursor = getApplicationContext().getContentResolver().query(MyContentProvider.CONTENT_URI, PROJECTION, null, null, null);
 
-                    points.clear();
+//                    points.clear();
                     resumeLocations.clear();
 
                     if (cursor != null && cursor.getCount() > 0 && cursor.moveToFirst()) {
                         while (cursor.moveToNext()) {
                             double latitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LATITUDE));
                             double longitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LONGITUDE));
-                            Gps gps = PositionUtil.gps84_To_Gcj02(latitude, longitude);
-                            if (gps != null) {
-                                //所有数据进入队列
-                                resumeLocations.offer(gps);
-                            }
+                            LatLng latLng = new LatLng(latitude, longitude);
+                            //Gps gps = PositionUtil.gps84_To_Gcj02(latitude, longitude);
+                            //if (gps != null) {
+                            //所有数据进入队列
+                            resumeLocations.offer(latLng);
+                            //}
                         }
 
                         Log.i(TAG, "resumeLocations.size()=" + resumeLocations.size());
@@ -382,15 +380,16 @@ public class TencentLocationActivity extends Activity {
             LatLng t1Points[] = new LatLng[count];
             for (int i = 0; i < count; i++) {
                 if (resumeLocations.peek() != null) {
-                    Gps gps = resumeLocations.poll();
-                    t1Points[i] = new LatLng(gps.getWgLat(), gps.getWgLon());
+                    //Gps gps = resumeLocations.poll();
+                    LatLng latLng = resumeLocations.poll();
+                    t1Points[i] = latLng;
                     if (t1Points[i] != null) {
                         lineOpt.add(t1Points[i]);
                     }
 
                     if (i == (count - 1)) {
-                        mMapView.getController().animateTo(of(gps.getWgLat(), gps.getWgLon()));
-                        mLocationOverlay.setGeoCoords(of(gps.getWgLat(), gps.getWgLon()));
+                        mMapView.getController().animateTo(of(latLng.getLatitude(), latLng.getLongitude()));
+                        mLocationOverlay.setGeoCoords(of(latLng.getLatitude(), latLng.getLongitude()));
                         // mMapView.invalidate();
                     }
                 }
@@ -409,16 +408,17 @@ public class TencentLocationActivity extends Activity {
             for (int i = 0; i < count2 - 1; i++) {
                 for (int j = 0; j < RESUME_ONCE_DRAW_POINTS; j++) {
                     if (resumeLocations.peek() != null) {
-                        Gps gps = resumeLocations.poll();
+                        //Gps gps = resumeLocations.poll();
+                        LatLng latLng = resumeLocations.poll();
 
                         //绘制最后一个点的时候移动到对应的位置
                         if (i == (count2 - 2)) {
-                            mMapView.getController().animateTo(of(gps.getWgLat(), gps.getWgLon()));
-                            mLocationOverlay.setGeoCoords(of(gps.getWgLat(), gps.getWgLon()));
+                            mMapView.getController().animateTo(of(latLng.getLatitude(), latLng.getLongitude()));
+                            mLocationOverlay.setGeoCoords(of(latLng.getLatitude(), latLng.getLongitude()));
                             mMapView.invalidate();
                         }
 
-                        tPoints[j] = new LatLng(gps.getWgLat(), gps.getWgLon());
+                        tPoints[j] = new LatLng(latLng.getLatitude(), latLng.getLongitude());
                         if (tPoints[j] != null) {
                             lineOpt2.add(tPoints[j]);
                         }
@@ -436,16 +436,18 @@ public class TencentLocationActivity extends Activity {
             LatLng t2Points[] = new LatLng[restCount];
             for (int i = 0; i < restCount; i++) {
                 if (resumeLocations.peek() != null) {
-                    Gps gps = resumeLocations.poll();
-                    t2Points[i] = new LatLng(gps.getWgLat(), gps.getWgLon());
+                    // Gps gps = resumeLocations.poll();
+                    LatLng latLng = resumeLocations.poll();
+
+                    t2Points[i] = latLng;
                     if (t2Points[i] != null) {
                         lineOpt3.add(t2Points[i]);
                     }
 
                     //绘制最后一个点的时候移动到对应的位置
                     if (i == (restCount - 1)) {
-                        mMapView.getController().animateTo(of(gps.getWgLat(), gps.getWgLon()));
-                        mLocationOverlay.setGeoCoords(of(gps.getWgLat(), gps.getWgLon()));
+                        mMapView.getController().animateTo(of(latLng.getLatitude(), latLng.getLongitude()));
+                        mLocationOverlay.setGeoCoords(of(latLng.getLatitude(), latLng.getLongitude()));
                         //mMapView.invalidate();
                     }
                 }
@@ -627,11 +629,11 @@ public class TencentLocationActivity extends Activity {
 
 
                                 if (isFinishDBDraw == false) {
-                                    Gps gps = PositionUtil.gps84_To_Gcj02(latitude, longitude);
-                                    if (gps != null) {
-                                        LatLng latLng = new LatLng(gps.getWgLon(), gps.getWgLat());
-                                        points.add(latLng);
-                                    }
+                                    //Gps gps = PositionUtil.gps84_To_Gcj02(latitude, latitude);
+                                    //if (gps != null) {
+                                    LatLng latLng = new LatLng(latitude, longitude);
+                                    points.add(latLng);
+                                    //}
                                 } else {
                                     if (cursorCount > LocationService.LOCATION_QUEUE_SIZE) {
                                         for (int i = cursorCount - LocationService.LOCATION_QUEUE_SIZE; i < cursorCount; i++) {
@@ -641,35 +643,35 @@ public class TencentLocationActivity extends Activity {
                                             double tLatitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LATITUDE));
                                             double tLongtiude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LONGITUDE));
                                             Log.i(TAG, "tLatitude=" + tLatitude + " tLongtiude=" + tLongtiude);
-                                            Gps gps = PositionUtil.gps84_To_Gcj02(tLatitude, tLongtiude);
-                                            if (gps != null) {
-                                                drawLinesBundle.putDouble("longitude", gps.getWgLon());
-                                                drawLinesBundle.putDouble("latitude", gps.getWgLat());
-                                                drawLinesBundle.putFloat("accuracy", cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.ACCURACY)));
-
-                                                Message msg1 = Message.obtain();
-                                                msg1.what = UPDATE_DRAW_LINES;
-                                                msg1.obj = drawLinesBundle;
-                                                handler.sendMessage(msg1);
-                                            }
-                                        }
-                                    } else {
-                                        cursor.moveToLast();
-
-                                        double tLatitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LATITUDE));
-                                        double tLongtiude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LONGITUDE));
-                                        Gps gps = PositionUtil.gps84_To_Gcj02(tLatitude, tLongtiude);
-                                        if (gps != null) {
-                                            Bundle drawLinesBundle = new Bundle();
-                                            drawLinesBundle.putDouble("longitude", gps.getWgLon());
-                                            drawLinesBundle.putDouble("latitude", gps.getWgLat());
+                                            //Gps gps = PositionUtil.gps84_To_Gcj02(tLatitude, tLongtiude);
+                                            //if (gps != null) {
+                                            drawLinesBundle.putDouble("longitude", tLongtiude);
+                                            drawLinesBundle.putDouble("latitude", tLatitude);
                                             drawLinesBundle.putFloat("accuracy", cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.ACCURACY)));
 
                                             Message msg1 = Message.obtain();
                                             msg1.what = UPDATE_DRAW_LINES;
                                             msg1.obj = drawLinesBundle;
                                             handler.sendMessage(msg1);
+                                            //}
                                         }
+                                    } else {
+                                        cursor.moveToLast();
+
+                                        double tLatitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LATITUDE));
+                                        double tLongtiude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LONGITUDE));
+                                        //Gps gps = PositionUtil.gps84_To_Gcj02(tLatitude, tLongtiude);
+                                        //if (gps != null) {
+                                        Bundle drawLinesBundle = new Bundle();
+                                        drawLinesBundle.putDouble("longitude", tLongtiude);
+                                        drawLinesBundle.putDouble("latitude", tLatitude);
+                                        drawLinesBundle.putFloat("accuracy", cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.ACCURACY)));
+
+                                        Message msg1 = Message.obtain();
+                                        msg1.what = UPDATE_DRAW_LINES;
+                                        msg1.obj = drawLinesBundle;
+                                        handler.sendMessage(msg1);
+                                        //}
 
                                     }
                                 }

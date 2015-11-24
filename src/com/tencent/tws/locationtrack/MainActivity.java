@@ -1,5 +1,6 @@
 package com.tencent.tws.locationtrack;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
@@ -15,13 +16,12 @@ import android.widget.TextView;
 import com.tencent.tws.locationtrack.database.DbNameUtils;
 import com.tencent.tws.locationtrack.database.LocationDbHelper;
 import com.tencent.tws.locationtrack.database.SPUtils;
-import com.tencent.tws.widget.BaseActivity;
 
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class MainActivity extends BaseActivity {
+public class MainActivity extends Activity {
     private static final String TAG = "MainActivity";
     WakeLock mWakeLock;
 
@@ -57,10 +57,10 @@ public class MainActivity extends BaseActivity {
         historyButton.setOnClickListener(new HistoryClick());
         historyTV.setOnClickListener(new HistoryClick());
 
-//        tencentLocationButton = (Button) findViewById(R.id.btn_tencent_location);
-//        tencentTV = (TextView) findViewById(R.id.tv_tencent_location);
-//        tencentLocationButton.setOnClickListener(new TencentLocationClick());
-//        tencentTV.setOnClickListener(new TencentLocationClick());
+        tencentLocationButton = (Button) findViewById(R.id.btn_tencent_location);
+        tencentTV = (TextView) findViewById(R.id.tv_tencent_location);
+        tencentLocationButton.setOnClickListener(new TencentLocationClick());
+        tencentTV.setOnClickListener(new TencentLocationClick());
     }
 
     private Runnable deletNoUseDb = new Runnable() {

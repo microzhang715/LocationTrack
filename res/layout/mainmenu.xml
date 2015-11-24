@@ -40,29 +40,29 @@
 
     </LinearLayout>
 
-    <!--<LinearLayout-->
-            <!--android:orientation="horizontal"-->
-            <!--android:layout_width="match_parent"-->
-            <!--android:layout_height="wrap_content">-->
+    <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
 
-        <!--<Button-->
-                <!--android:id="@+id/btn_tencent_location"-->
-                <!--android:layout_width="80dp"-->
-                <!--android:layout_height="80dp"-->
-                <!--android:layout_marginTop="2dp"-->
-                <!--android:layout_marginBottom="10dp"-->
-                <!--android:background="@drawable/map_logo"/>-->
+        <Button
+                android:id="@+id/btn_tencent_location"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:layout_marginTop="2dp"
+                android:layout_marginBottom="10dp"
+                android:background="@drawable/map_logo"/>
 
-        <!--<TextView-->
-                <!--android:id="@+id/tv_tencent_location"-->
-                <!--android:text="腾讯定位"-->
-                <!--android:textSize="30sp"-->
-                <!--android:textColor="#ff000000"-->
-                <!--android:paddingTop="20dp"-->
-                <!--android:layout_marginLeft="50dp"-->
-                <!--android:layout_width="match_parent"-->
-                <!--android:layout_height="match_parent"/>-->
-    <!--</LinearLayout>-->
+        <TextView
+                android:id="@+id/tv_tencent_location"
+                android:text="腾讯定位"
+                android:textSize="30sp"
+                android:textColor="#ff000000"
+                android:paddingTop="20dp"
+                android:layout_marginLeft="50dp"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"/>
+    </LinearLayout>
 
     <LinearLayout
             android:orientation="horizontal"
