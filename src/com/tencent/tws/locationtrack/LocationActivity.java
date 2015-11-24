@@ -45,31 +45,27 @@ public class LocationActivity extends Activity {
 
     private static final String TAG = "LocationActivity";
 
-    protected LocationManager locationManager;
-    protected Context context;
+    private LocationManager locationManager;
+    private Context context;
+    WakeLock mWakeLock;
 
     private MapView mMapView;
     private LocationOverlay mLocationOverlay;
     private List<Object> Overlays;
 
-    WakeLock mWakeLock;
-
     List<LatLng> points = new ArrayList<LatLng>();
     List<LatLng> points_tem = new ArrayList<LatLng>();
 
-    int mSatelliteNum;
-    private ArrayList<GpsSatellite> numSatelliteList = new ArrayList<>();
-
-    private final static int ACCURACY = 3;
     private BigDecimal lastLatitude;
     private BigDecimal lastLongitude;
     private long lastLocationTime = (long) 0;
 
-    private TextView tvAveSpeed;
-    private TextView tvInsSpeed;
+    //按钮
     private Button startButton;
     private Button exitButton;
-
+    //ui控件更新
+    private TextView tvAveSpeed;
+    private TextView tvInsSpeed;
     private TextView tvKal;
     private TextView tvGPSStatus;
     private TextView tvLocation;
@@ -77,29 +73,33 @@ public class LocationActivity extends Activity {
     private TextView allDis;
     private DBContentObserver mDBContentObserver;
 
+    int mSatelliteNum;
     protected Queue<Gps> resumeLocations = new LinkedList<>();
-    Intent locationServiceIntent;
+    private ArrayList<GpsSatellite> numSatelliteList = new ArrayList<>();
     private ExecutorService fixedThreadExecutor = Executors.newFixedThreadPool(2);
+    Intent locationServiceIntent;
     private boolean isFinishDBDraw = true;
 
+    //每次绘制的点数
+    private static final int RESUME_ONCE_DRAW_POINTS = 500;
+    //初始化缩放级别
+    private static final int ZOOM_LEVER = 18;
+    private final static int ACCURACY = 3;
+
+    //handle的msg
     private static final int UPDATE_TEXT_VIEWS = 1;
     private static final int UPDATE_DRAW_LINES = 2;
     private static final int DRAW_RESUME = 3;
 
-    private static final int RESUME_ONCE_DRAW_POINTS = 500;
-
-    private static final int ZOOM_LEVER = 18;
-
     //临时未用的
-    protected double topBoundary;
-    protected double leftBoundary;
-    protected double rightBoundary;
-    protected double bottomBoundary;
-
-    protected Location locationTopLeft;
-    protected Location locationBottomRight;
-    protected float maxDistance;
-    protected GeoPoint mapCenterPoint;
+    private double topBoundary;
+    private double leftBoundary;
+    private double rightBoundary;
+    private double bottomBoundary;
+    private Location locationTopLeft;
+    private Location locationBottomRight;
+    private float maxDistance;
+    private GeoPoint mapCenterPoint;
 
 
     @Override
@@ -155,7 +155,6 @@ public class LocationActivity extends Activity {
             startButton.setEnabled(false);
             exitButton.setEnabled(true);
         }
-
 
         //退出按钮
         exitButton.setOnClickListener(new View.OnClickListener() {
@@ -372,6 +371,7 @@ public class LocationActivity extends Activity {
         mMapView = (MapView) findViewById(R.id.mapviewOverlay);
         // mMapView.setBuiltInZoomControls(true);
         mMapView.getController().setZoom(ZOOM_LEVER);
+//        mMapView.setDrawingCacheEnabled(true);
 
         Bitmap bmpMarker = BitmapFactory.decodeResource(getResources(), R.drawable.mark_location);
         mLocationOverlay = new LocationOverlay(bmpMarker);
@@ -448,7 +448,6 @@ public class LocationActivity extends Activity {
                 Polyline line = mMapView.getMap().addPolyline(lineOpt2);
                 Overlays.add(line);
             }
-
 
             //绘制剩下的 <= 500个点
             PolylineOptions lineOpt3 = new PolylineOptions();
