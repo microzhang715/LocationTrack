@@ -9,11 +9,14 @@ import android.util.Log;
 import com.tencent.tws.locationtrack.database.LocationDbHelper;
 import com.tencent.tws.locationtrack.database.MyContentProvider;
 import com.tencent.tws.locationtrack.database.SPUtils;
+import com.tencent.tws.locationtrack.douglas.Douglas;
+import com.tencent.tws.locationtrack.douglas.Point;
+import com.tencent.tws.locationtrack.util.Gps;
 import com.tencent.tws.locationtrack.util.LocationUtil;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.util.*;
 
 /**
  * Created by microzhang on 2015/11/1.
@@ -130,6 +133,46 @@ public class MyTest extends AndroidTestCase {
         }
 
         getContext().getContentResolver().bulkInsert(MyContentProvider.CONTENT_URI, values);
+    }
+
+    private Queue<Gps> resumeLocations = new LinkedList<>();
+    private List<Point> listPoints = new ArrayList<>();
+    private int myCount = 0;
+
+    public void testDDouglas() {
+        Cursor cursor = null;
+        try {
+            String[] PROJECTION = new String[]{LocationDbHelper.ID, LocationDbHelper.LATITUDE, LocationDbHelper.LONGITUDE, LocationDbHelper.INS_SPEED, LocationDbHelper.BEARING, LocationDbHelper.ALTITUDE, LocationDbHelper.ACCURACY, LocationDbHelper.TIME, LocationDbHelper.DISTANCE, LocationDbHelper.AVG_SPEED, LocationDbHelper.KCAL,};
+            cursor = getContext().getContentResolver().query(MyContentProvider.CONTENT_URI, PROJECTION, null, null, null);
+            if (cursor != null && cursor.getCount() > 0 && cursor.moveToFirst()) {
+                int index = 0;
+                while (cursor.moveToNext()) {
+                    double latitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LATITUDE));
+                    double longitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LONGITUDE));
+                    int id = cursor.getInt(cursor.getColumnIndex(LocationDbHelper.ID));
+                    Point tmpPoint = new Point(latitude, longitude, index++);
+                    listPoints.add(tmpPoint);
+                }
+                Log.i("kermit1", "listPoints.size()=" + listPoints.size());
+
+                Douglas douglas = new Douglas(listPoints);
+                douglas.compress(listPoints.get(0), listPoints.get(listPoints.size() - 1));
+
+                for (int i = 0; i < douglas.points.size(); i++) {
+                    Point p = douglas.points.get(i);
+                    if (p.getIndex() > -1) {
+                        myCount++;
+                    }
+                }
+                Log.i("kermit1", "douglas.points.size()=" + myCount);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        if (cursor != null) {
+            cursor.close();
+        }
     }
 }
 
