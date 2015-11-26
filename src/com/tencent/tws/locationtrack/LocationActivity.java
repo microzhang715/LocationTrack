@@ -503,6 +503,7 @@ public class LocationActivity extends Activity {
             Log.i("kermit", "deltTimes=" + (times - lastLocationTime));
             long deltTIme = (times - lastLocationTime) / 1000;
             getIntervalTime.setText("   获取间隔时间：" + deltTIme);
+            Log.i(TAG, "获取间隔时间：" + deltTIme);
         }
 
         lastLocationTime = times;
@@ -620,7 +621,7 @@ public class LocationActivity extends Activity {
                                 } else {
                                     if (cursorCount > LocationService.LOCATION_QUEUE_SIZE) {
                                         for (int i = cursorCount - LocationService.LOCATION_QUEUE_SIZE; i < cursorCount; i++) {
-                                            Log.i(TAG, "cursorCount - LocationService.LOCATION_QUEUE_SIZE = " + String.valueOf(cursorCount - LocationService.LOCATION_QUEUE_SIZE));
+//                                            Log.i(TAG, "cursorCount - LocationService.LOCATION_QUEUE_SIZE = " + String.valueOf(cursorCount - LocationService.LOCATION_QUEUE_SIZE));
                                             cursor.moveToPosition(i);
                                             Bundle drawLinesBundle = new Bundle();
                                             double tLatitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LATITUDE));
