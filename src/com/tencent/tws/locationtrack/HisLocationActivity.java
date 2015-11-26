@@ -549,8 +549,8 @@ public class HisLocationActivity extends Activity {
             }
             mSatelliteNum = numSatelliteList.size();
             String strSatelliteNum = this.getString(R.string.satellite_num) + mSatelliteNum;
-            TextView tv = (TextView) findViewById(R.id.tvSatelliteNum);
-            tv.setText(strSatelliteNum);
+//            TextView tv = (TextView) findViewById(R.id.tvSatelliteNum1);
+//            tv.setText(strSatelliteNum);
 
         } else if (event == GpsStatus.GPS_EVENT_STARTED) {
             // 定位启动

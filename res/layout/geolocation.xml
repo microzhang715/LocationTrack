@@ -36,7 +36,6 @@
                 android:orientation="horizontal">
 
             <TextView
-                    android:id="@+id/tvSatelliteNum"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
@@ -44,14 +43,7 @@
                     android:textColor="#FF0000"/>
 
             <TextView
-                    android:id="@+id/tvIntervalTime"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_horizontal"
-                    android:textColor="#FF0000"/>
-
-            <TextView
-                    android:id="@+id/tvIntervalDistance"
+                    android:id="@+id/tvSatelliteNum"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"

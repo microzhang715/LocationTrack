@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
@@ -13,6 +14,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 import com.tencent.tws.locationtrack.database.DbNameUtils;
 import com.tencent.tws.locationtrack.database.LocationDbHelper;
 import com.tencent.tws.locationtrack.database.SPUtils;
@@ -37,6 +39,7 @@ public class MainActivity extends Activity {
     private static LocationDbHelper dbHelper;
     private static final int POINTS_TO_DELETE = 2;
 
+    private LocationManager mLocationManager;
 
     public void onCreate(Bundle savedInstanceState) {
         // calls super, sets GUI
@@ -62,8 +65,18 @@ public class MainActivity extends Activity {
         tencentTV = (TextView) findViewById(R.id.tv_tencent_location);
         tencentLocationButton.setOnClickListener(new TencentLocationClick());
         tencentTV.setOnClickListener(new TencentLocationClick());
+
+        //此处用于判断GPS状态
+        mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        if (!mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {//GPS打开状态
+            Toast.makeText(getApplicationContext(), "GPS未开启，请打开GPS", Toast.LENGTH_SHORT).show();
+        }
     }
 
+    private void sendGpsBroadcast(String action) {
+        Intent intent = new Intent(action);
+        sendBroadcast(intent);
+    }
 
     private Runnable deletNoUseDb = new Runnable() {
         @Override
@@ -142,6 +155,8 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+
+
         Log.i(TAG, "onResume");
         Log.i(TAG, "exitFlag=" + SPUtils.readExitFlag(getApplicationContext()));
         if (!SPUtils.readExitFlag(getApplicationContext())) {

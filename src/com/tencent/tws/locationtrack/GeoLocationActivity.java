@@ -92,10 +92,10 @@ public class GeoLocationActivity extends Activity implements LocationListener {
         intervalTime = intent.getLongExtra("intervalTime", 1000);
         intervalDistance = intent.getIntExtra("intervalDistance", 10);
 
-        TextView tvIntervalTime = (TextView) findViewById(R.id.tvIntervalTime);
-        TextView tvIntervalDistance = (TextView) findViewById(R.id.tvIntervalDistance);
-        tvIntervalTime.setText("定位时间间隔： " + String.valueOf(intervalTime / 1000));
-        tvIntervalDistance.setText("定位距离间隔： " + String.valueOf(intervalDistance));
+//        TextView tvIntervalTime = (TextView) findViewById(R.id.tvIntervalTime);
+//        TextView tvIntervalDistance = (TextView) findViewById(R.id.tvIntervalDistance);
+//        tvIntervalTime.setText("定位时间间隔： " + String.valueOf(intervalTime / 1000));
+//        tvIntervalDistance.setText("定位距离间隔： " + String.valueOf(intervalDistance));
 
         PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
         mWakeLock = pm.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, TAG);

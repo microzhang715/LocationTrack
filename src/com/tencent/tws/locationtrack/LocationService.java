@@ -3,10 +3,7 @@ package com.tencent.tws.locationtrack;
 import android.app.Service;
 import android.content.*;
 import android.database.Cursor;
-import android.location.Criteria;
-import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
+import android.location.*;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
@@ -15,6 +12,8 @@ import com.tencent.tws.locationtrack.database.LocationDbHelper;
 import com.tencent.tws.locationtrack.database.MyContentProvider;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.ExecutorService;
@@ -59,6 +58,12 @@ public class LocationService extends Service implements LocationListener {
 
     public static Location extLocation = null;
 
+    private ArrayList<GpsSatellite> numSatelliteList = new ArrayList<>();
+
+    //广播定义相关
+    public static final String UPDATE_SATELLITE_NUM = "com.tencent.locationtrack.update_satellite_num";
+    public static final String STAELLITE_EXTR = "satellite_num";
+
     @Override
     public IBinder onBind(Intent intent) {
         return null;
@@ -93,8 +98,45 @@ public class LocationService extends Service implements LocationListener {
         registerReceiver(mScreenBroadcastReceiver, filter);
 
         mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, INTERVAL_TIME_SCREEN_ON, INTERVAL_DISTANCE_SCREEN_ON, this);
+        mLocationManager.addGpsStatusListener(statusListener);
+
         return super.onStartCommand(intent, flags, startId);
     }
+
+
+    GpsStatus.Listener statusListener = new GpsStatus.Listener() {
+        @Override
+        public void onGpsStatusChanged(int event) {
+            GpsStatus status = mLocationManager.getGpsStatus(null);
+            if (status != null) {
+                switch (event) {
+                    case GpsStatus.GPS_EVENT_SATELLITE_STATUS:
+                        // 获取最大的卫星数（这个只是一个预设值）
+                        int maxSatellites = status.getMaxSatellites();
+                        Iterator<GpsSatellite> it = status.getSatellites().iterator();
+                        numSatelliteList.clear();
+                        // 记录实际的卫星数目
+                        int count = 0;
+                        while (it.hasNext() && count <= maxSatellites) {
+                            // 保存卫星的数据到一个队列，用于刷新界面
+                            GpsSatellite s = it.next();
+                            numSatelliteList.add(s);
+                            count++;
+                        }
+                        int mSatelliteNum = numSatelliteList.size();
+
+                        //发送广播到前台更新GPS数量的显示
+                        sendGpsBroadcast(UPDATE_SATELLITE_NUM, mSatelliteNum);
+
+                        break;
+                    case GpsStatus.GPS_EVENT_STARTED://启动GPS定位
+                        break;
+                    case GpsStatus.GPS_EVENT_STOPPED://停止GPS定位
+                        break;
+                }
+            }
+        }
+    };
 
     @Override
     public void onDestroy() {
@@ -134,7 +176,7 @@ public class LocationService extends Service implements LocationListener {
 
     @Override
     public void onProviderEnabled(String provider) {
-
+        //GPS打开的时候调用
     }
 
     @Override
@@ -363,6 +405,11 @@ public class LocationService extends Service implements LocationListener {
         });
     }
 
+    private void sendGpsBroadcast(String action, int num) {
+        Intent intent = new Intent(action);
+        intent.putExtra(STAELLITE_EXTR, num);
+        sendBroadcast(intent);
+    }
 
     /**
      * 返回查询条件

@@ -1,12 +1,12 @@
 package com.tencent.tws.locationtrack;
 
 import android.app.Activity;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.database.ContentObserver;
 import android.database.Cursor;
-import android.location.GpsSatellite;
-import android.location.GpsStatus;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
@@ -31,9 +31,11 @@ import com.tencent.tws.locationtrack.util.Gps;
 import com.tencent.tws.locationtrack.util.LocationUtil;
 import com.tencent.tws.locationtrack.util.PositionUtil;
 
-import java.math.BigDecimal;
 import java.text.DecimalFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -54,8 +56,6 @@ public class LocationActivity extends Activity {
     List<LatLng> points = new ArrayList<LatLng>();
     List<LatLng> points_tem = new ArrayList<LatLng>();
 
-    private BigDecimal lastLatitude;
-    private BigDecimal lastLongitude;
     private long lastLocationTime = (long) 0;
 
     //按钮
@@ -69,11 +69,12 @@ public class LocationActivity extends Activity {
     private TextView tvLocation;
     private TextView getIntervalTime;
     private TextView allDis;
+    private TextView satelliteNum;
     private DBContentObserver mDBContentObserver;
 
-    int mSatelliteNum;
+    //    int mSatelliteNum;
     protected Queue<Gps> resumeLocations = new LinkedList<>();
-    private ArrayList<GpsSatellite> numSatelliteList = new ArrayList<>();
+    //    private ArrayList<GpsSatellite> numSatelliteList = new ArrayList<>();
     private ExecutorService fixedThreadExecutor = Executors.newFixedThreadPool(2);
     Intent locationServiceIntent;
     private boolean isFinishDBDraw = true;
@@ -88,7 +89,7 @@ public class LocationActivity extends Activity {
     private static final int UPDATE_TEXT_VIEWS = 1;
     private static final int UPDATE_DRAW_LINES = 2;
     private static final int DRAW_RESUME = 3;
-
+//    private static final int UPDATE_SATELLITE_NUM = 4;
     //临时未用的
 //	private double topBoundary;
 //	private double leftBoundary;
@@ -117,10 +118,10 @@ public class LocationActivity extends Activity {
         tvKal = (TextView) findViewById(R.id.kal);
         allDis = (TextView) findViewById(R.id.all_dis);
         getIntervalTime = (TextView) findViewById(R.id.getIntervalTime);
+        satelliteNum = (TextView) findViewById(R.id.tvSatelliteNum);
 
         //地图
         initMapView();
-
         //初始化观察者
         initContentObserver();
 
@@ -180,16 +181,24 @@ public class LocationActivity extends Activity {
             }
         });
 
+        //注册GPS状态监听广播
+        registerGpsStatusReceiver();
 
         //判断GPS是否打开
-        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-            tvGPSStatus.setText("GPS已打开");
-        } else {
-            tvGPSStatus.setText("GPS已关闭");
-        }
+//        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+//        if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+//            tvGPSStatus.setText("GPS已打开");
+//        } else {
+//            tvGPSStatus.setText("GPS已关闭");
+//        }
         //注册GPS监听回调
-        locationManager.addGpsStatusListener(statusListener);
+//        locationManager.addGpsStatusListener(statusListener);
+    }
+
+    private void registerGpsStatusReceiver() {
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(LocationService.UPDATE_SATELLITE_NUM);
+        registerReceiver(myGpsStateReceiver, filter);
     }
 
     private Handler handler = new Handler() {
@@ -214,6 +223,12 @@ public class LocationActivity extends Activity {
                     //locations 中包含了所有需要绘制的点信息
                     onResumeDrawImp();
                     break;
+
+//                case UPDATE_SATELLITE_NUM:
+//                    int num = msg.arg1;
+//                    if (satelliteNum != null) {
+//                        satelliteNum.setText(num + "");
+//                    }
                 default:
             }
         }
@@ -344,9 +359,12 @@ public class LocationActivity extends Activity {
         mMapView.onDestroy();
         super.onDestroy();
 
-        if (locationManager != null) {
-            locationManager.removeGpsStatusListener(statusListener);
+        if (myGpsStateReceiver != null) {
+            unregisterReceiver(myGpsStateReceiver);
         }
+//        if (locationManager != null) {
+//            locationManager.removeGpsStatusListener(statusListener);
+//        }
 
         if (mWakeLock != null) {
             mWakeLock.release();
@@ -516,45 +534,59 @@ public class LocationActivity extends Activity {
     }
 
 
-    private final GpsStatus.Listener statusListener = new GpsStatus.Listener() {
+//    private final GpsStatus.Listener statusListener = new GpsStatus.Listener() {
+//        @Override
+//        public void onGpsStatusChanged(int event) {
+//            // TODO Auto-generated method stub
+//            // GPS状态变化时的回调，获取当前状态
+//            GpsStatus status = locationManager.getGpsStatus(null);
+//            // 获取卫星相关数据
+//            GetGPSStatus(event, status);
+//        }
+//
+//    };
+//
+//    private void GetGPSStatus(int event, GpsStatus status) {
+//        if (status == null) {
+//        } else if (event == GpsStatus.GPS_EVENT_SATELLITE_STATUS) {
+//            // 获取最大的卫星数（这个只是一个预设值）
+//            int maxSatellites = status.getMaxSatellites();
+//            Iterator<GpsSatellite> it = status.getSatellites().iterator();
+//            numSatelliteList.clear();
+//            // 记录实际的卫星数目
+//            int count = 0;
+//            while (it.hasNext() && count <= maxSatellites) {
+//                // 保存卫星的数据到一个队列，用于刷新界面
+//                GpsSatellite s = it.next();
+//                numSatelliteList.add(s);
+//                count++;
+//            }
+//            mSatelliteNum = numSatelliteList.size();
+//            String strSatelliteNum = this.getString(R.string.satellite_num) + mSatelliteNum;
+//            TextView tv = (TextView) findViewById(R.id.tvSatelliteNum);
+//            tv.setText(strSatelliteNum);
+//
+//        } else if (event == GpsStatus.GPS_EVENT_STARTED) {
+//            // 定位启动
+//        } else if (event == GpsStatus.GPS_EVENT_STOPPED) {
+//            // 定位结束
+//        }
+//    }
+
+    BroadcastReceiver myGpsStateReceiver = new BroadcastReceiver() {
         @Override
-        public void onGpsStatusChanged(int event) {
-            // TODO Auto-generated method stub
-            // GPS状态变化时的回调，获取当前状态
-            GpsStatus status = locationManager.getGpsStatus(null);
-            // 获取卫星相关数据
-            GetGPSStatus(event, status);
-        }
-
-    };
-
-    private void GetGPSStatus(int event, GpsStatus status) {
-        if (status == null) {
-        } else if (event == GpsStatus.GPS_EVENT_SATELLITE_STATUS) {
-            // 获取最大的卫星数（这个只是一个预设值）
-            int maxSatellites = status.getMaxSatellites();
-            Iterator<GpsSatellite> it = status.getSatellites().iterator();
-            numSatelliteList.clear();
-            // 记录实际的卫星数目
-            int count = 0;
-            while (it.hasNext() && count <= maxSatellites) {
-                // 保存卫星的数据到一个队列，用于刷新界面
-                GpsSatellite s = it.next();
-                numSatelliteList.add(s);
-                count++;
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            switch (action) {
+                case LocationService.UPDATE_SATELLITE_NUM://前台更新GPS卫星的数量
+                    int num = intent.getIntExtra(LocationService.STAELLITE_EXTR, 0);
+                    if (satelliteNum != null) {
+                        satelliteNum.setText(num + "");
+                    }
+                    break;
             }
-            mSatelliteNum = numSatelliteList.size();
-            String strSatelliteNum = this.getString(R.string.satellite_num) + mSatelliteNum;
-            TextView tv = (TextView) findViewById(R.id.tvSatelliteNum);
-            tv.setText(strSatelliteNum);
-
-        } else if (event == GpsStatus.GPS_EVENT_STARTED) {
-            // 定位启动
-        } else if (event == GpsStatus.GPS_EVENT_STOPPED) {
-            // 定位结束
         }
-    }
-
+    };
 
     private class DBContentObserver extends ContentObserver {
 
