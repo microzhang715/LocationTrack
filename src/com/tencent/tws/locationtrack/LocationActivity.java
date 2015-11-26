@@ -369,10 +369,8 @@ public class LocationActivity extends Activity {
         tencentMap = mMapView.getMap();
 
         if (LocationService.extLocation != null) {//定位到最新位置
-            //tencentMap.animateTo(new LatLng(LocationService.extLocation.getLatitude(), LocationService.extLocation.getLongitude()));
             tencentMap.setCenter(new LatLng(LocationService.extLocation.getLatitude(), LocationService.extLocation.getLongitude()));
             tencentMap.setZoom(ZOOM_LEVER);
-//				mMapView.getController().setZoom(ZOOM_LEVER);
         }
 
 
@@ -381,12 +379,6 @@ public class LocationActivity extends Activity {
         }
 
         Overlays = new ArrayList<Object>();
-    }
-
-
-    private static GeoPoint of(double latitude, double longitude) {
-        GeoPoint ge = new GeoPoint((int) (latitude * 1E6), (int) (longitude * 1E6));
-        return ge;
     }
 
     /**
@@ -413,7 +405,7 @@ public class LocationActivity extends Activity {
 
                         //绘制最后一个点的时候移动到对应的位置
                         if (i == (count2 - 2)) {
-                            mMapView.getController().animateTo(of(gps.getWgLat(), gps.getWgLon()));
+                            tencentMap.animateTo(new LatLng(gps.getWgLat(), gps.getWgLon()));
                             marker.setPosition(new LatLng(gps.getWgLat(), gps.getWgLon()));
                         }
 
@@ -450,7 +442,7 @@ public class LocationActivity extends Activity {
                 }
 
                 if (i == (count - 1)) {
-                    mMapView.getController().animateTo(of(gps.getWgLat(), gps.getWgLon()));
+                    tencentMap.animateTo(new LatLng(gps.getWgLat(), gps.getWgLon()));
                     marker.setPosition(new LatLng(gps.getWgLat(), gps.getWgLon()));
                 }
             }
@@ -464,7 +456,7 @@ public class LocationActivity extends Activity {
     private void drawLines(double longitude, double latitude, float accuracy) {
 
         Log.i(TAG, "points size = " + points.size());
-        mMapView.getController().animateTo(of(latitude, longitude));
+        tencentMap.animateTo(new LatLng(latitude, longitude));
         marker.setPosition(new LatLng(latitude, longitude));
 
         if (longitude > 0 && latitude > 0) {
