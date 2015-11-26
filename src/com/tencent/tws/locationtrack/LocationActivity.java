@@ -79,7 +79,7 @@ public class LocationActivity extends Activity {
     private boolean isFinishDBDraw = true;
 
     //每次绘制的点数
-	private static final int RESUME_ONCE_DRAW_POINTS = 500;
+    private static final int RESUME_ONCE_DRAW_POINTS = 500;
     //初始化缩放级别
     private static final int ZOOM_LEVER = 18;
     private final static int ACCURACY = 3;
@@ -279,6 +279,7 @@ public class LocationActivity extends Activity {
                 Cursor cursor = null;
                 try {
                     resumeLocations.clear();
+                    listPoints.clear();
                     int index = 0;
 
                     String[] PROJECTION = new String[]{LocationDbHelper.ID, LocationDbHelper.LATITUDE, LocationDbHelper.LONGITUDE, LocationDbHelper.INS_SPEED, LocationDbHelper.BEARING, LocationDbHelper.ALTITUDE, LocationDbHelper.ACCURACY, LocationDbHelper.TIME, LocationDbHelper.DISTANCE, LocationDbHelper.AVG_SPEED, LocationDbHelper.KCAL,};
@@ -291,11 +292,13 @@ public class LocationActivity extends Activity {
                             Point tmpPoint = new Point(latitude, longitude, index++);
                             listPoints.add(tmpPoint);
 
-//							Gps gps = PositionUtil.gps84_To_Gcj02(latitude, longitude);
-//							if (gps != null) {
-//								//所有数据进入队列
-//								resumeLocations.offer(gps);
-//							}
+//                            if (cursor.getCount()<500){
+//                                Gps gps = PositionUtil.gps84_To_Gcj02(latitude, longitude);
+//                                if (gps != null) {
+//                                    //所有数据进入队列
+//                                    resumeLocations.offer(gps);
+//                                }
+//                            }
                         }
 
                         Log.i("kermit1", "listPoints.size()=" + listPoints.size());
