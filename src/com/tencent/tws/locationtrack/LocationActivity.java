@@ -282,6 +282,8 @@ public class LocationActivity extends Activity {
         if (mWakeLock != null) {
             mWakeLock.acquire();
         }
+
+        sendStatusBroadcast("onResume");
     }
 
     private List<Point> listPoints = new ArrayList<>();
@@ -316,7 +318,7 @@ public class LocationActivity extends Activity {
 //                            }
                         }
 
-                        Log.i("kermit1", "listPoints.size()=" + listPoints.size());
+                        Log.i(TAG, "listPoints.size()=" + listPoints.size());
                         //对数据进行压缩处理
                         Douglas douglas = new Douglas(listPoints);
                         douglas.compress(listPoints.get(0), listPoints.get(listPoints.size() - 1));
@@ -330,7 +332,6 @@ public class LocationActivity extends Activity {
                                 }
                             }
                         }
-                        Log.i("kermit1", "resumeLocations.size()=" + resumeLocations.size());
                         Log.i(TAG, "resumeLocations.size()=" + resumeLocations.size());
                     }
                     handler.sendEmptyMessage(DRAW_RESUME);
@@ -347,6 +348,7 @@ public class LocationActivity extends Activity {
 
     @Override
     protected void onPause() {
+        Log.i(TAG, "onPause");
         mMapView.onPause();
         super.onPause();
         if (mWakeLock != null) {
@@ -356,27 +358,26 @@ public class LocationActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        Log.i(TAG, "onDestroy");
         mMapView.onDestroy();
         super.onDestroy();
 
         if (myGpsStateReceiver != null) {
             unregisterReceiver(myGpsStateReceiver);
         }
-//        if (locationManager != null) {
-//            locationManager.removeGpsStatusListener(statusListener);
-//        }
 
         if (mWakeLock != null) {
             mWakeLock.release();
         }
-
-        //记录最后一个轨迹点
     }
 
     @Override
     protected void onStop() {
+        Log.i(TAG, "onStop");
         mMapView.onStop();
         super.onStop();
+
+        sendStatusBroadcast("onStop");
     }
 
     private void initMapView() {
@@ -533,45 +534,14 @@ public class LocationActivity extends Activity {
         allDis.setText(allDistance + " m");
     }
 
+    public static final String ACTIVITY_STATUS_CHANGE = "com.tencent.tws.locationtrack.activity_status_change";
+    public static final String STATUS = "status";
 
-//    private final GpsStatus.Listener statusListener = new GpsStatus.Listener() {
-//        @Override
-//        public void onGpsStatusChanged(int event) {
-//            // TODO Auto-generated method stub
-//            // GPS状态变化时的回调，获取当前状态
-//            GpsStatus status = locationManager.getGpsStatus(null);
-//            // 获取卫星相关数据
-//            GetGPSStatus(event, status);
-//        }
-//
-//    };
-//
-//    private void GetGPSStatus(int event, GpsStatus status) {
-//        if (status == null) {
-//        } else if (event == GpsStatus.GPS_EVENT_SATELLITE_STATUS) {
-//            // 获取最大的卫星数（这个只是一个预设值）
-//            int maxSatellites = status.getMaxSatellites();
-//            Iterator<GpsSatellite> it = status.getSatellites().iterator();
-//            numSatelliteList.clear();
-//            // 记录实际的卫星数目
-//            int count = 0;
-//            while (it.hasNext() && count <= maxSatellites) {
-//                // 保存卫星的数据到一个队列，用于刷新界面
-//                GpsSatellite s = it.next();
-//                numSatelliteList.add(s);
-//                count++;
-//            }
-//            mSatelliteNum = numSatelliteList.size();
-//            String strSatelliteNum = this.getString(R.string.satellite_num) + mSatelliteNum;
-//            TextView tv = (TextView) findViewById(R.id.tvSatelliteNum);
-//            tv.setText(strSatelliteNum);
-//
-//        } else if (event == GpsStatus.GPS_EVENT_STARTED) {
-//            // 定位启动
-//        } else if (event == GpsStatus.GPS_EVENT_STOPPED) {
-//            // 定位结束
-//        }
-//    }
+    private void sendStatusBroadcast(String status) {
+        Intent intent = new Intent(ACTIVITY_STATUS_CHANGE);
+        intent.putExtra(STATUS, status);
+        sendBroadcast(intent);
+    }
 
     BroadcastReceiver myGpsStateReceiver = new BroadcastReceiver() {
         @Override
@@ -710,99 +680,4 @@ public class LocationActivity extends Activity {
             return true;
         }
     }
-
-//    protected void getBoundary() {
-//        leftBoundary = locations.get(0).getWgLat();
-//        bottomBoundary = locations.get(0).getWgLon();
-//
-//        rightBoundary = locations.get(0).getWgLat();
-//        topBoundary = locations.get(0).getWgLon();
-//
-//        for (Gps location : locations) {
-//            if (leftBoundary > location.getWgLat()) {
-//                leftBoundary = location.getWgLat();
-//            }
-//
-//            if (rightBoundary < location.getWgLat()) {
-//                rightBoundary = location.getWgLat();
-//            }
-//
-//            if (topBoundary < location.getWgLon()) {
-//                topBoundary = location.getWgLon();
-//            }
-//
-//            if (bottomBoundary > location.getWgLon()) {
-//                bottomBoundary = location.getWgLon();
-//            }
-//        }
-//
-//        locationTopLeft = new Location("");
-//        locationTopLeft.setLongitude(topBoundary);
-//        locationTopLeft.setLatitude(leftBoundary);
-//
-//        locationBottomRight = new Location("");
-//        locationBottomRight.setLongitude(bottomBoundary);
-//        locationBottomRight.setLatitude(rightBoundary);
-//
-//        maxDistance = locationTopLeft.distanceTo(locationBottomRight);
-//        mapCenterPoint = new GeoPoint(
-//                (int) ((leftBoundary + (rightBoundary - leftBoundary) / 2) * 1e6),
-//                (int) ((bottomBoundary + (topBoundary - bottomBoundary) / 2) * 1e6)
-//        );
-//    }
-
-//    private class PathOverlay extends Overlay {
-//        private Paint paint;
-//        private Projection projection;
-//        private static final int MIN_POINT_SPAN = 5;
-//
-//        public PathOverlay() {
-//            setPaint();
-//        }
-//
-//        private void setPaint() {
-//            paint = new Paint();
-//            paint.setAntiAlias(true);
-//            paint.setDither(true);
-//
-//            paint.setColor(getResources().getColor(R.color.highlight));
-//            paint.setStyle(Paint.Style.STROKE);
-//            paint.setStrokeJoin(Paint.Join.ROUND);
-//            paint.setStrokeCap(Paint.Cap.ROUND);
-//            paint.setStrokeWidth(10);
-//            paint.setAlpha(188);
-//        }
-//
-//
-//        @Override
-//        public void draw(final Canvas canvas, final MapView mapView) {
-//            this.projection = mapView.getProjection();
-//
-//            synchronized (canvas) {
-//                final Path path = new Path();
-//                final int maxWidth = mapView.getWidth();
-//                final int maxHeight = mapView.getHeight();
-//
-//                Point lastGeoPoint = null;
-//                for (Gps location : locations) {
-//                    GeoPoint piont = new GeoPoint((int) (location.getWgLat() * 1e6), (int) (location.getWgLon() * 1e6));
-//                    Point current = projection.toPixels(piont, null);
-//
-//                    if (lastGeoPoint != null && (lastGeoPoint.y < maxHeight && lastGeoPoint.x < maxWidth)) {
-///*                            if (Math.abs(current.x - lastGeoPoint.x) < MIN_POINT_SPAN
-//                                || Math.abs(current.y - lastGeoPoint.y) < MIN_POINT_SPAN) {
-//                                continue;
-//                            } else {*/
-//                        path.lineTo(current.x, current.y);
-//                            /*                   }*/
-//                    } else {
-//                        path.moveTo(current.x, current.y);
-//                    }
-//                    lastGeoPoint = current;
-//                }
-//
-//                canvas.drawPath(path, paint);
-//            }
-//        }
-//    }
 }

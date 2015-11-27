@@ -26,10 +26,10 @@ public class LocationService extends Service implements LocationListener {
     private static final String TAG = "LocationService";
     private LocationManager mLocationManager;
 
-    private static final int INTERVAL_TIME_SCREEN_ON = 1000;
-    private static final int INTERVAL_DISTANCE_SCREEN_ON = 1;
-    private static final int INTERVAL_TIME_SCREEN_OFF = 5000;
-    private static final int INTERVAL_DISTANCE_SCREEN_OFF = 10;
+    private static final int INTERVAL_TIME_QUICK = 1000;
+    private static final int INTERVAL_DISTANCE_QUICK = 1;
+    private static final int INTERVAL_TIME_SLOW = 5000;
+    private static final int INTERVAL_DISTANCE_SLOW = 10;
 
     //用于记录所有点信息
     private Queue<Location> locationQueue = new LinkedList<Location>();
@@ -91,13 +91,14 @@ public class LocationService extends Service implements LocationListener {
 
         //注册亮屏灭屏广播处理
         final IntentFilter filter = new IntentFilter();
-        filter.addAction(Intent.ACTION_SCREEN_OFF);
-        filter.addAction(Intent.ACTION_SCREEN_ON);
-        filter.addAction(Intent.ACTION_USER_PRESENT);
-        filter.addAction(Intent.ACTION_CLOSE_SYSTEM_DIALOGS);
+//        filter.addAction(Intent.ACTION_SCREEN_OFF);
+//        filter.addAction(Intent.ACTION_SCREEN_ON);
+//        filter.addAction(Intent.ACTION_USER_PRESENT);
+//        filter.addAction(Intent.ACTION_CLOSE_SYSTEM_DIALOGS);
+        filter.addAction(LocationActivity.ACTIVITY_STATUS_CHANGE);
         registerReceiver(mScreenBroadcastReceiver, filter);
 
-        mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, INTERVAL_TIME_SCREEN_ON, INTERVAL_DISTANCE_SCREEN_ON, this);
+        mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, INTERVAL_TIME_QUICK, INTERVAL_DISTANCE_QUICK, this);
         mLocationManager.addGpsStatusListener(statusListener);
 
         return super.onStartCommand(intent, flags, startId);
@@ -161,11 +162,18 @@ public class LocationService extends Service implements LocationListener {
                 insertNotif(location);
             }
 
-            //if (extLocation != null && isBetterLocation(extLocation, location)) {
-            operatePoint(location);
-            //}
+            //对于异常数据首先进行过滤处理再进入数据库
+            if (lastLongitude != 0 && lastLatitude != 0) {
+                float insSpeed = location.getSpeed();
+                float accuracy = location.getAccuracy();
+                double dis = getDistanceBetween2Point(lastLatitude, lastLongitude, location.getLatitude(), location.getLongitude());
 
-            extLocation = location;
+                //这个地方的数据需要测试后进行调整
+                if (insSpeed > 0 && accuracy < 50 && dis > 0) {
+                    operatePoint(location);
+                    extLocation = location;
+                }
+            }
         }
     }
 
@@ -192,12 +200,6 @@ public class LocationService extends Service implements LocationListener {
             int ccount = locationQueue.size();
             //如果数据达到了就插入数据库
             if (ccount >= LOCATION_QUEUE_SIZE) {
-
-                //先把数据放到内存缓存中
-//                while (locationQueue.peek() != null) {
-//                    templocationQueue.offer(locationQueue.poll());
-//                }
-
                 for (int k = 0; k < LOCATION_QUEUE_SIZE; k++) {
                     if (locationQueue.peek() != null) {
                         templocationQueue.offer(locationQueue.poll());
@@ -245,12 +247,12 @@ public class LocationService extends Service implements LocationListener {
                                             for (int j = 0; j < cursor.getCount(); j++) {
                                                 cursor.moveToPosition(j);
                                                 allDistance += cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.DISTANCE));
-                                                Log.i(TAG, "allDistance1 = " + allDistance);
+                                                //Log.i(TAG, "allDistance1 = " + allDistance);
                                             }
                                         } else {
                                             if (lastLongitude != 0 && lastLatitude != 0) {
                                                 allDistance += getDistanceBetween2Point(lastLatitude, lastLongitude, tempLocation.getLatitude(), tempLocation.getLongitude());
-                                                Log.i(TAG, "allDistance2 = " + allDistance);
+                                                //Log.i(TAG, "allDistance2 = " + allDistance);
                                             }
                                         }
 
@@ -411,11 +413,7 @@ public class LocationService extends Service implements LocationListener {
         sendBroadcast(intent);
     }
 
-    /**
-     * 返回查询条件
-     *
-     * @return
-     */
+
     private Criteria getCriteria() {
         Criteria criteria = new Criteria();
         //设置定位精确度 Criteria.ACCURACY_COARSE比较粗略，Criteria.ACCURACY_FINE则比较精细
@@ -439,22 +437,23 @@ public class LocationService extends Service implements LocationListener {
             Log.d(TAG, "onReceive");
             String action = intent.getAction();
 
-            if (Intent.ACTION_SCREEN_ON.equals(action)) {
-                if (mLocationManager != null) {
-                    Log.i(TAG, "screen on and register");
-                    mLocationManager.removeUpdates(LocationService.this);
-                    mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, INTERVAL_TIME_SCREEN_ON, INTERVAL_DISTANCE_SCREEN_ON, LocationService.this);
-                }
-            } else if (Intent.ACTION_SCREEN_OFF.equals(action)) {
-                if (mLocationManager != null) {
-                    Log.i(TAG, "screen off and register");
-                    mLocationManager.removeUpdates(LocationService.this);
-                    mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, INTERVAL_TIME_SCREEN_OFF, INTERVAL_DISTANCE_SCREEN_OFF, LocationService.this);
-                }
-            } else if (Intent.ACTION_USER_PRESENT.equals(action)) {
-                Log.d(TAG, "screen unlock");
-            } else if (Intent.ACTION_CLOSE_SYSTEM_DIALOGS.equals(intent.getAction())) {
-                Log.i(TAG, " receive Intent.ACTION_CLOSE_SYSTEM_DIALOGS");
+            switch (action) {
+                case LocationActivity.ACTIVITY_STATUS_CHANGE:
+                    String status = intent.getStringExtra(LocationActivity.STATUS);
+                    if ("onResume".equals(status)) {
+                        if (mLocationManager != null) {
+                            Log.i(TAG, "activity onResume");
+                            mLocationManager.removeUpdates(LocationService.this);
+                            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, INTERVAL_TIME_QUICK, INTERVAL_DISTANCE_QUICK, LocationService.this);
+                        }
+                    } else if ("onStop".equals(status)) {
+                        if (mLocationManager != null) {
+                            Log.i(TAG, "activity onStop");
+                            mLocationManager.removeUpdates(LocationService.this);
+                            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, INTERVAL_TIME_SLOW, INTERVAL_DISTANCE_SLOW, LocationService.this);
+                        }
+                    }
+                    break;
             }
         }
     };

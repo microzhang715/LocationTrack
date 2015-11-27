@@ -8,7 +8,6 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.graphics.*;
 import android.location.GpsSatellite;
-import android.location.GpsStatus;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
@@ -22,7 +21,6 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
-import com.tencent.map.geolocation.TencentLocation;
 import com.tencent.mapsdk.raster.model.GeoPoint;
 import com.tencent.mapsdk.raster.model.LatLng;
 import com.tencent.mapsdk.raster.model.Polyline;
@@ -50,7 +48,6 @@ import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -89,11 +86,6 @@ public class HisLocationActivity extends Activity {
     double hisSpeedValue = 0;
     double hisKcalValue = 0;
     double hisDisValue = 0;
-
-    //    private Cursor cursor;
-    double insSpeed = 0;
-    double aveSpeed = 0;
-    double kcal = 0;
 
     protected ArrayList<Gps> locations = new ArrayList<Gps>();
     protected ArrayList<Gps> resultlocations = new ArrayList<Gps>();
@@ -306,6 +298,8 @@ public class HisLocationActivity extends Activity {
 
     }
 
+//    private long lastTime = 0;
+
     //读取数据库，绘制数据库中所有数据
     private void dbDrawResume() {
 
@@ -327,6 +321,7 @@ public class HisLocationActivity extends Activity {
                     if (cursor != null && cursor.moveToFirst()) {
                         startTime = cursor.getLong(cursor.getColumnIndex(LocationDbHelper.TIME));
 
+
                         while (cursor.moveToNext()) {
                             double latitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LATITUDE));
                             double longitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LONGITUDE));
@@ -343,8 +338,6 @@ public class HisLocationActivity extends Activity {
                             Gps gps = PositionUtil.gps84_To_Gcj02(latitude, longitude);
                             locations.add(gps);
                         }
-
-                        //resultlocations = optimizeGpsPoints(locations);
                     }
 
                     if (cursor != null && cursor.getCount() != 0) {
@@ -396,10 +389,6 @@ public class HisLocationActivity extends Activity {
         mMapView.onDestroy();
         super.onDestroy();
 
-        if (locationManager != null) {
-            locationManager.removeGpsStatusListener(statusListener);
-        }
-
         if (mWakeLock != null) {
             mWakeLock.release();
         }
@@ -409,35 +398,6 @@ public class HisLocationActivity extends Activity {
     protected void onStop() {
         mMapView.onStop();
         super.onStop();
-    }
-
-
-    private boolean filter(TencentLocation location) {
-        BigDecimal longitude = (new BigDecimal(location.getLongitude())).setScale(ACCURACY, BigDecimal.ROUND_HALF_UP);
-
-        BigDecimal latitude = (new BigDecimal(location.getLatitude())).setScale(ACCURACY, BigDecimal.ROUND_HALF_UP);
-
-        if (latitude.equals(lastLatitude) && longitude.equals(lastLongitude)) {
-            return false;
-        }
-
-        lastLatitude = latitude;
-        lastLongitude = longitude;
-        return true;
-    }
-
-    private boolean filter(Location location) {
-        BigDecimal longitude = (new BigDecimal(location.getLongitude())).setScale(ACCURACY, BigDecimal.ROUND_HALF_UP);
-
-        BigDecimal latitude = (new BigDecimal(location.getLatitude())).setScale(ACCURACY, BigDecimal.ROUND_HALF_UP);
-
-        if (latitude.equals(lastLatitude) && longitude.equals(lastLongitude)) {
-            return false;
-        }
-
-        lastLatitude = latitude;
-        lastLongitude = longitude;
-        return true;
     }
 
     private void initMapView() {
@@ -519,45 +479,6 @@ public class HisLocationActivity extends Activity {
         hisDis.setText(myformat.format(allDis) + "km");
     }
 
-
-    private final GpsStatus.Listener statusListener = new GpsStatus.Listener() {
-        @Override
-        public void onGpsStatusChanged(int event) {
-            // TODO Auto-generated method stub
-            // GPS状态变化时的回调，获取当前状态
-            GpsStatus status = locationManager.getGpsStatus(null);
-            // 获取卫星相关数据
-            GetGPSStatus(event, status);
-        }
-
-    };
-
-    private void GetGPSStatus(int event, GpsStatus status) {
-        if (status == null) {
-        } else if (event == GpsStatus.GPS_EVENT_SATELLITE_STATUS) {
-            // 获取最大的卫星数（这个只是一个预设值）
-            int maxSatellites = status.getMaxSatellites();
-            Iterator<GpsSatellite> it = status.getSatellites().iterator();
-            numSatelliteList.clear();
-            // 记录实际的卫星数目
-            int count = 0;
-            while (it.hasNext() && count <= maxSatellites) {
-                // 保存卫星的数据到一个队列，用于刷新界面
-                GpsSatellite s = it.next();
-                numSatelliteList.add(s);
-                count++;
-            }
-            mSatelliteNum = numSatelliteList.size();
-            String strSatelliteNum = this.getString(R.string.satellite_num) + mSatelliteNum;
-//            TextView tv = (TextView) findViewById(R.id.tvSatelliteNum1);
-//            tv.setText(strSatelliteNum);
-
-        } else if (event == GpsStatus.GPS_EVENT_STARTED) {
-            // 定位启动
-        } else if (event == GpsStatus.GPS_EVENT_STOPPED) {
-            // 定位结束
-        }
-    }
 
     public Cursor query(String[] projection, String selection, String[] selectionArgs, String sortOrder) {
         SQLiteDatabase sqLiteDatabase = dbHelper.getWritableDatabase();
