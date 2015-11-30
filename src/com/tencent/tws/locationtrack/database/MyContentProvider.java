@@ -1,9 +1,6 @@
 package com.tencent.tws.locationtrack.database;
 
-import android.content.ContentProvider;
-import android.content.ContentUris;
-import android.content.ContentValues;
-import android.content.UriMatcher;
+import android.content.*;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteQueryBuilder;
@@ -80,6 +77,11 @@ public class MyContentProvider extends ContentProvider {
             }
         }
         return true;
+    }
+    public static void createNewDB(Context context, long time) {
+        String databaseName = String.valueOf(time) + LAST_DATABASE_NAME;
+        dbHelper = new LocationDbHelper(context, databaseName);
+		SPUtils.writeDBName(getContext(), databaseName);
     }
 
     @Override

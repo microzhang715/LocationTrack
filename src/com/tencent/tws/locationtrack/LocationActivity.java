@@ -7,7 +7,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.ContentObserver;
 import android.database.Cursor;
-import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -42,16 +41,12 @@ import java.util.concurrent.Executors;
 public class LocationActivity extends Activity {
 
     private static final String TAG = "LocationActivity";
-
-    private LocationManager locationManager;
-    private Context context;
     WakeLock mWakeLock;
 
     private MapView mMapView;
     private TencentMap tencentMap;
     private List<Object> Overlays;
     private Marker marker;
-
 
     List<LatLng> points = new ArrayList<LatLng>();
     List<LatLng> points_tem = new ArrayList<LatLng>();
@@ -83,22 +78,12 @@ public class LocationActivity extends Activity {
     private static final int RESUME_ONCE_DRAW_POINTS = 500;
     //初始化缩放级别
     private static final int ZOOM_LEVER = 18;
-    private final static int ACCURACY = 3;
 
     //handle的msg
     private static final int UPDATE_TEXT_VIEWS = 1;
     private static final int UPDATE_DRAW_LINES = 2;
     private static final int DRAW_RESUME = 3;
-//    private static final int UPDATE_SATELLITE_NUM = 4;
-    //临时未用的
-//	private double topBoundary;
-//	private double leftBoundary;
-//	private double rightBoundary;
-//	private double bottomBoundary;
-//	private Location locationTopLeft;
-//	private Location locationBottomRight;
-//	private float maxDistance;
-//	private GeoPoint mapCenterPoint;
+
 
 
     @Override
@@ -138,6 +123,9 @@ public class LocationActivity extends Activity {
                 startButton.setEnabled(false);
                 exitButton.setEnabled(true);
 
+                long currentTime = System.currentTimeMillis();
+                Log.i(TAG, "currentTime=" + currentTime + "  convert=" + LocationUtil.convert(currentTime));
+                MyContentProvider.createNewDB(getApplicationContext(), currentTime);
                 //启动后台服务获取地理信息
                 locationServiceIntent = new Intent(getApplicationContext(), LocationService.class);
                 startService(locationServiceIntent);
@@ -215,7 +203,7 @@ public class LocationActivity extends Activity {
 
                 case UPDATE_DRAW_LINES:
                     Bundle bundle1 = (Bundle) msg.obj;
-                    Log.i(TAG, "UPDATE_DRAW_LINES -----> longitude=" + bundle1.getDouble("longitude") + " latitude=" + bundle1.getDouble("latitude") + " accuracy=" + bundle1.getFloat("accuracy"));
+                    //Log.i(TAG, "UPDATE_DRAW_LINES -----> longitude=" + bundle1.getDouble("longitude") + " latitude=" + bundle1.getDouble("latitude") + " accuracy=" + bundle1.getFloat("accuracy"));
                     drawLines(bundle1.getDouble("longitude"), bundle1.getDouble("latitude"), bundle1.getFloat("accuracy"));
                     break;
 
@@ -474,7 +462,7 @@ public class LocationActivity extends Activity {
 
     private void drawLines(double longitude, double latitude, float accuracy) {
 
-        Log.i(TAG, "points size = " + points.size());
+        //Log.i(TAG, "points size = " + points.size());
         tencentMap.animateTo(new LatLng(latitude, longitude));
         marker.setPosition(new LatLng(latitude, longitude));
 
@@ -500,7 +488,7 @@ public class LocationActivity extends Activity {
             Overlays.add(line);
         }
 
-        Log.i(TAG, "points.size() = " + points.size());
+        //Log.i(TAG, "points.size() = " + points.size());
     }
 
     private void drawLinePoints() {
@@ -522,7 +510,7 @@ public class LocationActivity extends Activity {
             Log.i("kermit", "deltTimes=" + (times - lastLocationTime));
             long deltTIme = (times - lastLocationTime) / 1000;
             getIntervalTime.setText("   获取间隔时间：" + deltTIme);
-            Log.i(TAG, "获取间隔时间：" + deltTIme);
+            //Log.i(TAG, "获取间隔时间：" + deltTIme);
         }
 
         lastLocationTime = times;
@@ -567,7 +555,7 @@ public class LocationActivity extends Activity {
         @Override
         public void onChange(boolean selfChange) {
             super.onChange(selfChange);
-            Log.i(TAG, "onChange~~~~");
+            //Log.i(TAG, "onChange~~~~");
             //子线程中去做数据库操作，更新UI
             fixedThreadExecutor.execute(new Runnable() {
                 @Override
@@ -579,7 +567,7 @@ public class LocationActivity extends Activity {
                         Cursor cursor = getApplicationContext().getContentResolver().query(MyContentProvider.CONTENT_URI, PROJECTION, null, null, null);
                         if (cursor != null) {
                             int cursorCount = cursor.getCount();
-                            Log.i(TAG, "cursorCount = " + cursorCount);
+                            //Log.i(TAG, "cursorCount = " + cursorCount);
 
                             //获取总距离
                             if (cursorCount > 0 && cursor.moveToFirst()) {
@@ -628,7 +616,7 @@ public class LocationActivity extends Activity {
                                             Bundle drawLinesBundle = new Bundle();
                                             double tLatitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LATITUDE));
                                             double tLongtiude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LONGITUDE));
-                                            Log.i(TAG, "tLatitude=" + tLatitude + " tLongtiude=" + tLongtiude);
+                                            //Log.i(TAG, "tLatitude=" + tLatitude + " tLongtiude=" + tLongtiude);
                                             Gps gps = PositionUtil.gps84_To_Gcj02(tLatitude, tLongtiude);
                                             if (gps != null) {
                                                 drawLinesBundle.putDouble("longitude", gps.getWgLon());
