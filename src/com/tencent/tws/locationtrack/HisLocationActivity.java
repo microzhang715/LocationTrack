@@ -2,14 +2,14 @@ package com.tencent.tws.locationtrack;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteQueryBuilder;
-import android.graphics.*;
-import android.location.GpsSatellite;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Point;
 import android.location.Location;
-import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -28,8 +28,11 @@ import com.tencent.mapsdk.raster.model.PolylineOptions;
 import com.tencent.tencentmap.mapsdk.map.MapView;
 import com.tencent.tencentmap.mapsdk.map.Overlay;
 import com.tencent.tencentmap.mapsdk.map.Projection;
+import com.tencent.tencentmap.mapsdk.map.TencentMap;
 import com.tencent.tws.locationtrack.database.LocationDbHelper;
 import com.tencent.tws.locationtrack.database.SPUtils;
+import com.tencent.tws.locationtrack.douglas.Douglas;
+import com.tencent.tws.locationtrack.douglas.DouglasPoint;
 import com.tencent.tws.locationtrack.util.Gps;
 import com.tencent.tws.locationtrack.util.PositionUtil;
 import com.tencent.tws.locationtrack.views.CustomShareBoard;
@@ -44,11 +47,8 @@ import com.umeng.socialize.sso.SinaSsoHandler;
 import com.umeng.socialize.sso.UMQQSsoHandler;
 import com.umeng.socialize.weixin.controller.UMWXHandler;
 
-import java.math.BigDecimal;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -56,25 +56,13 @@ public class HisLocationActivity extends Activity {
 
     private static final String TAG = "HisLocationActivity";
 
-    protected LocationManager locationManager;
     protected Context context;
 
     private MapView mMapView;
-    private LocationOverlay mLocationOverlay;
+    private TencentMap tencentMap;
     private List<Object> Overlays;
 
     WakeLock mWakeLock;
-
-    List<LatLng> points = new ArrayList<LatLng>();
-    List<LatLng> points_tem = new ArrayList<LatLng>();
-
-    int mSatelliteNum;
-    private ArrayList<GpsSatellite> numSatelliteList = new ArrayList<>();
-
-    private final static int ACCURACY = 3;
-    private BigDecimal lastLatitude;
-    private BigDecimal lastLongitude;
-    private long lastLocationTime = (long) 0;
 
     private Button exitButton;
     private Button shareButton;
@@ -87,8 +75,6 @@ public class HisLocationActivity extends Activity {
     double hisKcalValue = 0;
     double hisDisValue = 0;
 
-    protected ArrayList<Gps> locations = new ArrayList<Gps>();
-    protected ArrayList<Gps> resultlocations = new ArrayList<Gps>();
     protected double topBoundary;
     protected double leftBoundary;
     protected double rightBoundary;
@@ -97,8 +83,7 @@ public class HisLocationActivity extends Activity {
     protected Location locationTopLeft;
     protected Location locationBottomRight;
     protected float maxDistance;
-    protected GeoPoint mapCenterPoint;
-    private PathOverlay pathOverlay;
+    protected Gps mapCenterPoint;
     private long TIME_TO_WAIT_IN_MS = 3000;//时间设置过短 setZoom不生效，原因待查！
 
     // 分享初始化控制器
@@ -106,14 +91,10 @@ public class HisLocationActivity extends Activity {
     UMShakeService mShakeController = UMShakeServiceFactory.getShakeService("com.umeng.share");
     Bitmap shareBitmap = null;
 
-
     // wx967daebe835fbeac是你在微信开发平台注册应用的AppID, 这里需要替换成你注册的AppID
     private static final String WEIXIN_APP_ID = "wx967daebe835fbeac";
     private static final String WEIXIN_APP_SECRET = "5fa9e68ca3970e87a1f83e563c8dcbce";
 
-    Intent serviceIntent;
-
-    public static final String LAST_DATABASE_NAME = "_location.db";
     private static LocationDbHelper dbHelper;
 
     private static HashMap<String, String> locationMaps;
@@ -121,6 +102,14 @@ public class HisLocationActivity extends Activity {
 
     private ExecutorService fixedThreadExecutor = Executors.newFixedThreadPool(2);
     private static final int UPDATE_VIEWS = 1;
+
+    //用户记录所有的点的集合
+    private List<DouglasPoint> listPoints = new ArrayList<>();
+    //过滤后的点
+    private Queue<Gps> resumeLocations = new LinkedList<>();
+    private static final int DRAW_RESUME = 3;
+    //每次绘制的点数
+    private static final int RESUME_ONCE_DRAW_POINTS = 500;
 
     static {
         //定义别名
@@ -157,6 +146,7 @@ public class HisLocationActivity extends Activity {
 
         //地图
         initMapView();
+
         String intentDbName = getIntent().getStringExtra("fulldbName");
         if (intentDbName != null && !intentDbName.equals("")) {
             String dbName = getIntent().getStringExtra("fulldbName");
@@ -169,21 +159,13 @@ public class HisLocationActivity extends Activity {
             Toast.makeText(getApplicationContext(), "数据库文件不存在", Toast.LENGTH_SHORT).show();
         }
 
-        pathOverlay = new PathOverlay();
-
         //退出按钮
         exitButton = (Button) findViewById(R.id.exitButton);
         exitButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 SPUtils.clearDBName(getApplicationContext());
-
-                if (serviceIntent != null) {
-                    stopService(serviceIntent);
-                }
-
-                android.os.Process.killProcess(android.os.Process.myPid());    //获取PID
-                System.exit(0);   //常规java、c#的标准退出法，返回值为0代表正常退出
+                finish();
             }
         });
 
@@ -210,20 +192,95 @@ public class HisLocationActivity extends Activity {
                     double hisKcalValue = bundle.getDouble("hisKcalValue");
                     Log.i(TAG, "UPDATE_VIEWS:" + " hisSpeedValue=" + hisSpeedValue + " hisKcalValue=" + hisKcalValue + " hisDisValue=" + hisDisValue);
                     updateTextViews(hisSpeedValue, hisKcalValue, hisDisValue);
+                    break;
 
-                    if (locations.size() > 0) {
-                        getBoundary();
-                        mMapView.addOverlay(pathOverlay);
-
-                        mMapView.addOverlay(new PointMarkLayout(locations.get(0), R.drawable.point_start));
-                        mMapView.addOverlay(new PointMarkLayout(locations.get(locations.size() - 1), R.drawable.point_end));
-                        mMapView.getController().setCenter(mapCenterPoint);
-                        mMapView.postDelayed(waitForMapTimeTask, TIME_TO_WAIT_IN_MS);
-                    }
+                case DRAW_RESUME:
+                    onResumeDrawImp();
                     break;
             }
         }
     };
+
+
+    /**
+     * onResume的时候真正的绘制流程
+     * 每次绘制 RESUME_ONCE_DRAW_POINTS 个点 分批绘制
+     */
+    private void onResumeDrawImp() {
+        Log.i(TAG, "onResumeDrawImp");
+        getBoundary();
+
+        if (listPoints != null && listPoints.size() > 0) {
+
+            //绘制起点和终点的Marker
+            mMapView.addOverlay(new PointMarkLayout(PositionUtil.gps84_To_Gcj02(listPoints.get(0)), R.drawable.point_start));
+            mMapView.addOverlay(new PointMarkLayout(PositionUtil.gps84_To_Gcj02(listPoints.get(listPoints.size() - 1)), R.drawable.point_end));
+            //移动到屏幕中心点
+            Gps centGps = PositionUtil.gps84_To_Gcj02(mapCenterPoint.getWgLat(), mapCenterPoint.getWgLon());
+            handler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    tencentMap.animateTo(new LatLng(centGps.getWgLat(), centGps.getWgLon()));
+                    tencentMap.setZoom(getFixedZoomLevel());
+                }
+            }, 1000);
+            Log.i(TAG, "getFixedZoomLevel=" + getFixedZoomLevel());
+
+//            mMapView.postDelayed(waitForMapTimeTask, TIME_TO_WAIT_IN_MS);
+        } else {
+            Log.i(TAG, "listPoints.size()=" + listPoints.size());
+        }
+
+        int count = resumeLocations.size();
+
+        if (count < RESUME_ONCE_DRAW_POINTS) {
+            drawResumePoints(count);
+        } else {
+            //每次绘制 RESUME_ONCE_DRAW_POINTS 个点，分多次绘制
+            LatLng tPoints[] = new LatLng[RESUME_ONCE_DRAW_POINTS];
+            PolylineOptions lineOpt2 = new PolylineOptions();
+            lineOpt2.color(0xAAFF0000);
+
+            int count2 = (resumeLocations.size() % RESUME_ONCE_DRAW_POINTS == 0) ? (resumeLocations.size() % RESUME_ONCE_DRAW_POINTS) : (resumeLocations.size() % RESUME_ONCE_DRAW_POINTS + 1);
+            for (int i = 0; i < count2 - 1; i++) {
+                for (int j = 0; j < RESUME_ONCE_DRAW_POINTS; j++) {
+                    if (resumeLocations.peek() != null) {
+                        Gps gps = resumeLocations.poll();
+                        tPoints[j] = new LatLng(gps.getWgLat(), gps.getWgLon());
+                        if (tPoints[j] != null) {
+                            lineOpt2.add(tPoints[j]);
+                        }
+                    }
+                }
+                Polyline line = tencentMap.addPolyline(lineOpt2);
+                Overlays.add(line);
+            }
+
+            //绘制剩下的 <= 500个点
+            int restCount = resumeLocations.size();
+            drawResumePoints(restCount);
+        }
+    }
+
+    //绘制小于500个点的方法
+    private void drawResumePoints(int count) {
+        PolylineOptions lineOpt = new PolylineOptions();
+        lineOpt.color(0xAAFF0000);
+        //绘制全部数据
+        LatLng latlngPoints[] = new LatLng[count];
+        for (int i = 0; i < count; i++) {
+            if (resumeLocations.peek() != null) {
+                Gps gps = resumeLocations.poll();
+                latlngPoints[i] = new LatLng(gps.getWgLat(), gps.getWgLon());
+                if (latlngPoints[i] != null) {
+                    lineOpt.add(latlngPoints[i]);
+                }
+            }
+        }
+        Polyline line = tencentMap.addPolyline(lineOpt);
+        Overlays.add(line);
+    }
+
 
     private void initSharePlatform() {
         //在相应的地方要注册Handler才可以相应事件
@@ -280,95 +337,106 @@ public class HisLocationActivity extends Activity {
             mMapView.clearAllOverlays();
         }
 
-        //修改绘制逻辑，使用Overlay添加，减少绘制次数 at 20151116 by guccigu
-        dbDrawResume();
-
-
-        setLocationInfo();
+        //子线程读取数据到集合中
+        readDbforDraw();
 
         Log.i(TAG, "onResume");
-
 
         if (mWakeLock != null) {
             mWakeLock.acquire();
         }
     }
 
-    private void setLocationInfo() {
 
-    }
-
-//    private long lastTime = 0;
-
-    //读取数据库，绘制数据库中所有数据
-    private void dbDrawResume() {
+    private void readDbforDraw() {
+        Log.i(TAG, "readDbforDraw");
 
         fixedThreadExecutor.execute(new Runnable() {
             @Override
             public void run() {
+
+                Cursor cursor = null;
                 try {
-                    Cursor cursor = null;
-                    String[] PROJECTION = new String[]{LocationDbHelper.ID, LocationDbHelper.LATITUDE, LocationDbHelper.LONGITUDE, LocationDbHelper.INS_SPEED, LocationDbHelper.BEARING, LocationDbHelper.ALTITUDE, LocationDbHelper.ACCURACY, LocationDbHelper.TIME, LocationDbHelper.DISTANCE, LocationDbHelper.AVG_SPEED, LocationDbHelper.KCAL,};
-                    cursor = query(PROJECTION, null, null, null);
+                    resumeLocations.clear();
+                    listPoints.clear();
+
+                    int index = 0;
 
                     long startTime = 0;
                     long lastTime = 0;
-
                     double allDis = 0;
-                    points.clear();
 
-                    Log.i(TAG, "dbDrawResume");
-                    if (cursor != null && cursor.moveToFirst()) {
+                    String[] PROJECTION = new String[]{LocationDbHelper.ID, LocationDbHelper.LATITUDE, LocationDbHelper.LONGITUDE, LocationDbHelper.INS_SPEED, LocationDbHelper.BEARING, LocationDbHelper.ALTITUDE, LocationDbHelper.ACCURACY, LocationDbHelper.TIME, LocationDbHelper.DISTANCE, LocationDbHelper.AVG_SPEED, LocationDbHelper.KCAL,};
+                    //获取数据的cursor
+                    cursor = query(PROJECTION, null, null, null);
+
+                    Log.i(TAG, "cursor.getCount() = " + cursor.getCount());
+                    if (cursor.getCount() > 0 && cursor.moveToFirst()) {
+                        //获取起始时间点
                         startTime = cursor.getLong(cursor.getColumnIndex(LocationDbHelper.TIME));
+                        Log.i(TAG, "startTime=" + startTime);
 
-
-                        while (cursor.moveToNext()) {
+                        //把所有点记录在集合里面
+                        do {
                             double latitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LATITUDE));
                             double longitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LONGITUDE));
-                            long times = cursor.getLong(cursor.getColumnIndex(LocationDbHelper.TIME));
-                            double insSpeed = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.INS_SPEED));
-                            float aveSpeed = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.AVG_SPEED));
-                            float kcal = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.KCAL));
-                            float accuracy = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.ACCURACY));
                             float dis = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.DISTANCE));
 
+                            DouglasPoint tmpPoint = new DouglasPoint(latitude, longitude, index++);
+                            listPoints.add(tmpPoint);
+
                             allDis += dis;
+                        } while (cursor.moveToNext());
 
-                            Log.i(TAG, "latitude=" + latitude);
-                            Gps gps = PositionUtil.gps84_To_Gcj02(latitude, longitude);
-                            locations.add(gps);
+                        //计算 平均速度 卡路里 距离 发到主线程中
+                        if (cursor != null && cursor.getCount() != 0) {
+                            cursor.moveToLast();
+                            lastTime = cursor.getLong(cursor.getColumnIndex(LocationDbHelper.TIME));
+
+                            long deltTime = (lastTime - startTime) / 1000;
+                            double aveSpeed = (allDis * 10) / (deltTime * 36f);
+                            double allKcal = 60 * allDis * 1.036 / 1000;
+
+                            Log.i(TAG, "allDis=" + allDis + " | allKcal=" + allKcal + " | aveSpeed=" + aveSpeed);
+
+                            hisDisValue = allDis / 1000;
+                            hisSpeedValue = aveSpeed;
+                            hisKcalValue = allKcal;
+
+                            Message msg = Message.obtain();
+                            msg.what = UPDATE_VIEWS;
+                            Bundle bundle = new Bundle();
+                            bundle.putDouble("hisDisValue", hisDisValue);
+                            bundle.putDouble("hisSpeedValue", hisSpeedValue);
+                            bundle.putDouble("hisKcalValue", hisKcalValue);
+                            msg.obj = bundle;
+                            handler.sendMessage(msg);
                         }
+
+                        Log.i(TAG, "压缩前 : listPoints.size()=" + listPoints.size());
+                        //对数据进行压缩处理
+                        Douglas douglas = new Douglas(listPoints);
+                        douglas.compress(listPoints.get(0), listPoints.get(listPoints.size() - 1));
+                        for (int i = 0; i < douglas.douglasPoints.size(); i++) {
+                            DouglasPoint p = douglas.douglasPoints.get(i);
+                            if (p.getIndex() > -1) {
+                                Gps gps = PositionUtil.gps84_To_Gcj02(p.getLatitude(), p.getLongitude());
+                                if (gps != null) {
+                                    //所有数据进入队列
+                                    resumeLocations.offer(gps);
+                                }
+                            }
+                        }
+                        Log.i(TAG, "压缩后 : resumeLocations.size()=" + resumeLocations.size());
                     }
 
-                    if (cursor != null && cursor.getCount() != 0) {
-                        cursor.moveToLast();
-                        lastTime = cursor.getLong(cursor.getColumnIndex(LocationDbHelper.TIME));
-
-                        long deltTime = (lastTime - startTime) / 1000;
-                        double aveSpeed = (allDis * 10) / (deltTime * 36f);
-                        double allKcal = 60 * allDis * 1.036 / 1000;
-
-                        Log.i(TAG, "allDis=" + allDis + " | allKcal=" + allKcal + " | aveSpeed=" + aveSpeed);
-
-                        hisDisValue = allDis / 1000;
-                        hisSpeedValue = aveSpeed;
-                        hisKcalValue = allKcal;
-
-                        Message msg = Message.obtain();
-                        msg.what = UPDATE_VIEWS;
-                        Bundle bundle = new Bundle();
-                        bundle.putDouble("hisDisValue", hisDisValue);
-                        bundle.putDouble("hisSpeedValue", hisSpeedValue);
-                        bundle.putDouble("hisKcalValue", hisKcalValue);
-                        msg.obj = bundle;
-                        handler.sendMessage(msg);
-                    }
-
-                    if (cursor != null) {
-                        cursor.close();
-                    }
+                    handler.sendEmptyMessage(DRAW_RESUME);
                 } catch (Exception e) {
                     e.printStackTrace();
+                }
+
+                if (cursor != null) {
+                    cursor.close();
                 }
             }
         });
@@ -378,7 +446,6 @@ public class HisLocationActivity extends Activity {
     protected void onPause() {
         mMapView.onPause();
         super.onPause();
-        locations.clear();
         if (mWakeLock != null) {
             mWakeLock.release();
         }
@@ -402,73 +469,11 @@ public class HisLocationActivity extends Activity {
 
     private void initMapView() {
         mMapView = (MapView) findViewById(R.id.his_mapviewOverlay);
-        // mMapView.setBuiltInZoomControls(true);
-//        mMapView.getController().setZoom(50);
-        mMapView.getMap().setZoom(mMapView.getMap().getMaxZoomLevel());
-        ;
-        Bitmap bmpMarker = BitmapFactory.decodeResource(getResources(), R.drawable.mark_location);
-        mLocationOverlay = new LocationOverlay(bmpMarker);
-        mMapView.addOverlay(mLocationOverlay);
+        tencentMap = mMapView.getMap();
+        Log.i(TAG, "getMaxZoomLevel=" + tencentMap.getMaxZoomLevel());
+        tencentMap.setZoom(tencentMap.getMaxZoomLevel());
 
         Overlays = new ArrayList<Object>();
-    }
-
-
-    private static GeoPoint of(double latitude, double longitude) {
-        GeoPoint ge = new GeoPoint((int) (latitude * 1E6), (int) (longitude * 1E6));
-        return ge;
-    }
-
-
-    private void drawLines(double longitude, double latitude, float accuracy, boolean isFromDB) {
-        mMapView.getController().animateTo(of(latitude, longitude));
-
-        mLocationOverlay.setAccuracy(accuracy);
-        mLocationOverlay.setGeoCoords(of(latitude, longitude));
-        mMapView.invalidate();
-
-        if (longitude > 0 && latitude > 0) {
-            LatLng latLng = new LatLng(latitude, longitude);
-            points.add(latLng);
-        }
-
-        if (points.size() == 2) {
-            // 这里绘制起点
-            PolylineOptions lineOpt = new PolylineOptions();
-            lineOpt.color(0xAAFF0000);
-            for (LatLng point : points) {
-                lineOpt.add(point);
-            }
-            mMapView.getMap().addPolyline(lineOpt);
-            Overlays.add(lineOpt);
-        }
-
-        if (points.size() > 2 && points.size() <= 10) {
-            PolylineOptions lineOpt = new PolylineOptions();
-            lineOpt.color(0xAAFF0000);
-            for (LatLng point : points) {
-                lineOpt.add(point);
-            }
-            mMapView.getMap().addPolyline(lineOpt);
-            Overlays.add(lineOpt);
-        }
-
-        if (points.size() > 10) {
-            // 每次绘制10个点，这样应该不会出现明显的折线吧
-            points_tem = points.subList(points.size() - 10, points.size());
-            // 绘图
-
-            PolylineOptions lineOpt = new PolylineOptions();
-            lineOpt.color(0xAAFF0000);
-            for (LatLng point : points_tem) {
-                lineOpt.add(point);
-            }
-            Polyline line = mMapView.getMap().addPolyline(lineOpt);
-            Overlays.add(line);
-        }
-
-        Log.i(TAG, "douglasPoints.size() = " + points.size());
-
     }
 
     private void updateTextViews(double aveSpeed, double kal, double allDis) {
@@ -493,30 +498,32 @@ public class HisLocationActivity extends Activity {
     }
 
     protected void getBoundary() {
-        leftBoundary = locations.get(0).getWgLat();
-        bottomBoundary = locations.get(0).getWgLon();
+        leftBoundary = listPoints.get(0).getLatitude();
+        bottomBoundary = listPoints.get(0).getLongitude();
 
-        rightBoundary = locations.get(0).getWgLat();
-        topBoundary = locations.get(0).getWgLon();
+        rightBoundary = listPoints.get(0).getLatitude();
+        topBoundary = listPoints.get(0).getLongitude();
 
-        for (Gps location : locations) {
-            if (leftBoundary > location.getWgLat()) {
-                leftBoundary = location.getWgLat();
+        //找到边界点
+        for (DouglasPoint location : listPoints) {
+            if (leftBoundary > location.getLatitude()) {
+                leftBoundary = location.getLatitude();
             }
 
-            if (rightBoundary < location.getWgLat()) {
-                rightBoundary = location.getWgLat();
+            if (rightBoundary < location.getLatitude()) {
+                rightBoundary = location.getLatitude();
             }
 
-            if (topBoundary < location.getWgLon()) {
-                topBoundary = location.getWgLon();
+            if (topBoundary < location.getLongitude()) {
+                topBoundary = location.getLongitude();
             }
 
-            if (bottomBoundary > location.getWgLon()) {
-                bottomBoundary = location.getWgLon();
+            if (bottomBoundary > location.getLongitude()) {
+                bottomBoundary = location.getLongitude();
             }
         }
 
+        //设置边界点
         locationTopLeft = new Location("");
         locationTopLeft.setLongitude(topBoundary);
         locationTopLeft.setLatitude(leftBoundary);
@@ -526,18 +533,18 @@ public class HisLocationActivity extends Activity {
         locationBottomRight.setLatitude(rightBoundary);
 
         maxDistance = locationTopLeft.distanceTo(locationBottomRight);
-        mapCenterPoint = new GeoPoint(
-                (int) ((leftBoundary + (rightBoundary - leftBoundary) / 2) * 1e6),
-                (int) ((bottomBoundary + (topBoundary - bottomBoundary) / 2) * 1e6)
-        );
+
+        mapCenterPoint = new Gps(
+                leftBoundary + (rightBoundary - leftBoundary) / 2,
+                bottomBoundary + (topBoundary - bottomBoundary) / 2);
     }
 
     protected int getFixedZoomLevel() {
         int fixedLatitudeSpan = (int) ((rightBoundary - leftBoundary) * 1e6);
         int fixedLongitudeSpan = (int) ((topBoundary - bottomBoundary) * 1e6);
-//            int j =mMapView.getMap().getZoomLevel();
-        for (int i = mMapView.getMap().getMaxZoomLevel(); i > 0; i--) {
-            mMapView.getMap().setZoom(i);
+//            int j =tencentMap.getZoomLevel();
+        for (int i = tencentMap.getMaxZoomLevel(); i > 0; i--) {
+            tencentMap.setZoom(i);
 //	        	j =mMapView.getMap().getZoomLevel();
             int latSpan = mMapView.getProjection().getLatitudeSpan();
             int longSpan = mMapView.getProjection().getLongitudeSpan();
@@ -547,7 +554,7 @@ public class HisLocationActivity extends Activity {
             }
         }
 
-        return mMapView.getMap().getMaxZoomLevel();
+        return tencentMap.getMaxZoomLevel();
     }
 
     /**
@@ -559,72 +566,17 @@ public class HisLocationActivity extends Activity {
             if (mMapView.getProjection().getLatitudeSpan() == 0 || mMapView.getProjection().getLongitudeSpan() == 360000000)
                 mMapView.postDelayed(this, TIME_TO_WAIT_IN_MS);
             else {
-                mMapView.getMap().setZoom(getFixedZoomLevel());
+                tencentMap.setZoom(getFixedZoomLevel());
             }
         }
     };
 
-    private class PathOverlay extends Overlay {
-        private Paint paint;
-        private Projection projection;
-        private static final int MIN_POINT_SPAN = 5;
-
-        public PathOverlay() {
-            setPaint();
-        }
-
-        private void setPaint() {
-            paint = new Paint();
-            paint.setAntiAlias(true);
-            paint.setDither(true);
-
-            paint.setColor(getResources().getColor(R.color.highlight));
-            paint.setStyle(Paint.Style.STROKE);
-            paint.setStrokeJoin(Paint.Join.ROUND);
-            paint.setStrokeCap(Paint.Cap.ROUND);
-            paint.setStrokeWidth(10);
-            paint.setAlpha(188);
-        }
-
-
-        @Override
-        public void draw(final Canvas canvas, final MapView mapView) {
-            this.projection = mapView.getProjection();
-
-            synchronized (canvas) {
-                final Path path = new Path();
-                final int maxWidth = mapView.getWidth();
-                final int maxHeight = mapView.getHeight();
-
-                Point lastGeoPoint = null;
-                for (Gps location : locations) {
-                    GeoPoint piont = new GeoPoint((int) (location.getWgLat() * 1e6), (int) (location.getWgLon() * 1e6));
-                    Point current = projection.toPixels(piont, null);
-
-                    if (lastGeoPoint != null && (lastGeoPoint.y < maxHeight && lastGeoPoint.x < maxWidth)) {
-    /*                            if (Math.abs(current.x - lastGeoPoint.x) < MIN_POINT_SPAN
-                                    || Math.abs(current.y - lastGeoPoint.y) < MIN_POINT_SPAN) {
-	                                continue;
-	                            } else {*/
-                        path.lineTo(current.x, current.y);
-                                /*                   }*/
-                    } else {
-                        path.moveTo(current.x, current.y);
-                    }
-                    lastGeoPoint = current;
-                }
-
-                canvas.drawPath(path, paint);
-            }
-        }
-    }
-
     private class PointMarkLayout extends Overlay {
-        private Gps location;
+        private DouglasPoint location;
         private int drawable;
         private Projection projection;
 
-        PointMarkLayout(Gps location, int drawable) {
+        PointMarkLayout(DouglasPoint location, int drawable) {
             this.location = location;
             this.drawable = drawable;
         }
@@ -634,7 +586,7 @@ public class HisLocationActivity extends Activity {
             super.draw(canvas, mapView);
 
             this.projection = mapView.getProjection();
-            GeoPoint piont = new GeoPoint((int) (location.getWgLat() * 1e6), (int) (location.getWgLon() * 1e6));
+            GeoPoint piont = new GeoPoint((int) (location.getLatitude() * 1e6), (int) (location.getLongitude() * 1e6));
             Point current = projection.toPixels(piont, null);
 
             Bitmap markerImage = BitmapFactory.decodeResource(getResources(), drawable);
@@ -646,70 +598,5 @@ public class HisLocationActivity extends Activity {
 
             return;
         }
-    }
-
-    public ArrayList<Gps> optimizeGpsPoints(ArrayList<Gps> inPoint) {
-        int size = inPoint.size();
-        ArrayList<Location> outPoint;
-
-        int i;
-        if (size < 5) {
-            return inPoint;
-        } else {
-            // Latitude
-            inPoint.get(0)
-                    .setWgLat((3.0 * inPoint.get(0).getWgLat() + 2.0
-                            * inPoint.get(1).getWgLat() + inPoint.get(2).getWgLat() - inPoint
-                            .get(4).getWgLat()) / 5.0);
-            inPoint.get(1)
-                    .setWgLat((4.0 * inPoint.get(0).getWgLat() + 3.0
-                            * inPoint.get(1).getWgLat() + 2
-                            * inPoint.get(2).getWgLat() + inPoint.get(3).getWgLat()) / 10.0);
-
-            inPoint.get(size - 2).setWgLat(
-                    (4.0 * inPoint.get(size - 1).getWgLat() + 3.0
-                            * inPoint.get(size - 2).getWgLat() + 2
-                            * inPoint.get(size - 3).getWgLat() + inPoint.get(
-                            size - 4).getWgLat()) / 10.0);
-            inPoint.get(size - 1).setWgLat(
-                    (3.0 * inPoint.get(size - 1).getWgLat() + 2.0
-                            * inPoint.get(size - 2).getWgLat()
-                            + inPoint.get(size - 3).getWgLat() - inPoint.get(
-                            size - 5).getWgLat()) / 5.0);
-
-            // Longitude
-            inPoint.get(0)
-                    .setWgLon((3.0 * inPoint.get(0).getWgLon() + 2.0
-                            * inPoint.get(1).getWgLon() + inPoint.get(2).getWgLon() - inPoint
-                            .get(4).getWgLon()) / 5.0);
-            inPoint.get(1)
-                    .setWgLon((4.0 * inPoint.get(0).getWgLon() + 3.0
-                            * inPoint.get(1).getWgLon() + 2
-                            * inPoint.get(2).getWgLon() + inPoint.get(3).getWgLon()) / 10.0);
-
-            inPoint.get(size - 2).setWgLon(
-                    (4.0 * inPoint.get(size - 1).getWgLon() + 3.0
-                            * inPoint.get(size - 2).getWgLon() + 2
-                            * inPoint.get(size - 3).getWgLon() + inPoint.get(
-                            size - 4).getWgLon()) / 10.0);
-            inPoint.get(size - 1).setWgLon(
-                    (3.0 * inPoint.get(size - 1).getWgLon() + 2.0
-                            * inPoint.get(size - 2).getWgLon()
-                            + inPoint.get(size - 3).getWgLon() - inPoint.get(
-                            size - 5).getWgLon()) / 5.0);
-            for (i = 2; i < size - 2; i++) {
-                // Latitude
-                inPoint.get(i)
-                        .setWgLat((4.0 * inPoint.get(i - 1).getWgLat() + 3.0
-                                * inPoint.get(i).getWgLat() + 2
-                                * inPoint.get(i + 1).getWgLat() + inPoint.get(i + 2).getWgLat()) / 10.0);
-                // Longitude
-                inPoint.get(i)
-                        .setWgLon((4.0 * inPoint.get(i - 1).getWgLon() + 3.0
-                                * inPoint.get(i).getWgLon() + 2
-                                * inPoint.get(i + 1).getWgLon() + inPoint.get(i + 2).getWgLon()) / 10.0);
-            }
-        }
-        return inPoint;
     }
 }
