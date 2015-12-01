@@ -3,7 +3,7 @@ package com.tencent.tws.locationtrack.douglas;
 /**
  * 采样点数据类
  */
-public class Point {
+public class DouglasPoint {
 
     /**
      * 点所属的曲线的索引
@@ -51,7 +51,7 @@ public class Point {
      * @param longitude 点的Y坐标
      * @param index     点所属的曲线的索引
      */
-    public Point(double latitude, double longitude, int index) {
+    public DouglasPoint(double latitude, double longitude, int index) {
         this.latitude = latitude;
         this.longitude = longitude;
         this.index = index;

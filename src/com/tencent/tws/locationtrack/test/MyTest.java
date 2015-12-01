@@ -10,7 +10,7 @@ import com.tencent.tws.locationtrack.database.LocationDbHelper;
 import com.tencent.tws.locationtrack.database.MyContentProvider;
 import com.tencent.tws.locationtrack.database.SPUtils;
 import com.tencent.tws.locationtrack.douglas.Douglas;
-import com.tencent.tws.locationtrack.douglas.Point;
+import com.tencent.tws.locationtrack.douglas.DouglasPoint;
 import com.tencent.tws.locationtrack.util.Gps;
 import com.tencent.tws.locationtrack.util.LocationUtil;
 
@@ -136,7 +136,7 @@ public class MyTest extends AndroidTestCase {
     }
 
     private Queue<Gps> resumeLocations = new LinkedList<>();
-    private List<Point> listPoints = new ArrayList<>();
+    private List<DouglasPoint> listDouglasPoints = new ArrayList<>();
     private int myCount = 0;
 
     public void testDDouglas() {
@@ -150,21 +150,21 @@ public class MyTest extends AndroidTestCase {
                     double latitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LATITUDE));
                     double longitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LONGITUDE));
                     int id = cursor.getInt(cursor.getColumnIndex(LocationDbHelper.ID));
-                    Point tmpPoint = new Point(latitude, longitude, index++);
-                    listPoints.add(tmpPoint);
+                    DouglasPoint tmpDouglasPoint = new DouglasPoint(latitude, longitude, index++);
+                    listDouglasPoints.add(tmpDouglasPoint);
                 }
-                Log.i("kermit1", "listPoints.size()=" + listPoints.size());
+                Log.i("kermit1", "listDouglasPoints.size()=" + listDouglasPoints.size());
 
-                Douglas douglas = new Douglas(listPoints);
-                douglas.compress(listPoints.get(0), listPoints.get(listPoints.size() - 1));
+                Douglas douglas = new Douglas(listDouglasPoints);
+                douglas.compress(listDouglasPoints.get(0), listDouglasPoints.get(listDouglasPoints.size() - 1));
 
-                for (int i = 0; i < douglas.points.size(); i++) {
-                    Point p = douglas.points.get(i);
+                for (int i = 0; i < douglas.douglasPoints.size(); i++) {
+                    DouglasPoint p = douglas.douglasPoints.get(i);
                     if (p.getIndex() > -1) {
                         myCount++;
                     }
                 }
-                Log.i("kermit1", "douglas.points.size()=" + myCount);
+                Log.i("kermit1", "douglas.douglasPoints.size()=" + myCount);
             }
         } catch (Exception e) {
             e.printStackTrace();

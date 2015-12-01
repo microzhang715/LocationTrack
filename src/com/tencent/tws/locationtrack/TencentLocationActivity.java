@@ -274,7 +274,7 @@ public class TencentLocationActivity extends Activity {
                     String[] PROJECTION = new String[]{LocationDbHelper.ID, LocationDbHelper.LATITUDE, LocationDbHelper.LONGITUDE, LocationDbHelper.INS_SPEED, LocationDbHelper.BEARING, LocationDbHelper.ALTITUDE, LocationDbHelper.ACCURACY, LocationDbHelper.TIME, LocationDbHelper.DISTANCE, LocationDbHelper.AVG_SPEED, LocationDbHelper.KCAL,};
                     cursor = getApplicationContext().getContentResolver().query(MyContentProvider.CONTENT_URI, PROJECTION, null, null, null);
 
-//                    points.clear();
+//                    douglasPoints.clear();
                     resumeLocations.clear();
 
                     if (cursor != null && cursor.getCount() > 0 && cursor.moveToFirst()) {
@@ -476,7 +476,7 @@ public class TencentLocationActivity extends Activity {
 
     private void drawLines(double longitude, double latitude, float accuracy) {
 
-        Log.i(TAG, "points size = " + points.size());
+        Log.i(TAG, "douglasPoints size = " + points.size());
         mMapView.getController().animateTo(of(latitude, longitude));
 
         mLocationOverlay.setAccuracy(accuracy);
@@ -523,7 +523,7 @@ public class TencentLocationActivity extends Activity {
             Overlays.add(line);
         }
 
-        Log.i(TAG, "points.size() = " + points.size());
+        Log.i(TAG, "douglasPoints.size() = " + points.size());
 
     }
 

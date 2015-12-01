@@ -25,7 +25,7 @@ import com.tencent.tws.locationtrack.database.LocationDbHelper;
 import com.tencent.tws.locationtrack.database.MyContentProvider;
 import com.tencent.tws.locationtrack.database.SPUtils;
 import com.tencent.tws.locationtrack.douglas.Douglas;
-import com.tencent.tws.locationtrack.douglas.Point;
+import com.tencent.tws.locationtrack.douglas.DouglasPoint;
 import com.tencent.tws.locationtrack.util.Gps;
 import com.tencent.tws.locationtrack.util.LocationUtil;
 import com.tencent.tws.locationtrack.util.PositionUtil;
@@ -274,7 +274,7 @@ public class LocationActivity extends Activity {
         sendStatusBroadcast("onResume");
     }
 
-    private List<Point> listPoints = new ArrayList<>();
+    private List<DouglasPoint> listDouglasPoints = new ArrayList<>();
 
     //读取数据库，绘制数据库中所有数据
     private void readDbforDraw() {
@@ -284,7 +284,7 @@ public class LocationActivity extends Activity {
                 Cursor cursor = null;
                 try {
                     resumeLocations.clear();
-                    listPoints.clear();
+                    listDouglasPoints.clear();
                     int index = 0;
 
                     String[] PROJECTION = new String[]{LocationDbHelper.ID, LocationDbHelper.LATITUDE, LocationDbHelper.LONGITUDE, LocationDbHelper.INS_SPEED, LocationDbHelper.BEARING, LocationDbHelper.ALTITUDE, LocationDbHelper.ACCURACY, LocationDbHelper.TIME, LocationDbHelper.DISTANCE, LocationDbHelper.AVG_SPEED, LocationDbHelper.KCAL,};
@@ -294,8 +294,8 @@ public class LocationActivity extends Activity {
                             double latitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LATITUDE));
                             double longitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LONGITUDE));
 
-                            Point tmpPoint = new Point(latitude, longitude, index++);
-                            listPoints.add(tmpPoint);
+                            DouglasPoint tmpDouglasPoint = new DouglasPoint(latitude, longitude, index++);
+                            listDouglasPoints.add(tmpDouglasPoint);
 
 //                            if (cursor.getCount()<500){
 //                                Gps gps = PositionUtil.gps84_To_Gcj02(latitude, longitude);
@@ -306,12 +306,12 @@ public class LocationActivity extends Activity {
 //                            }
                         }
 
-                        Log.i(TAG, "listPoints.size()=" + listPoints.size());
+                        Log.i(TAG, "listDouglasPoints.size()=" + listDouglasPoints.size());
                         //对数据进行压缩处理
-                        Douglas douglas = new Douglas(listPoints);
-                        douglas.compress(listPoints.get(0), listPoints.get(listPoints.size() - 1));
-                        for (int i = 0; i < douglas.points.size(); i++) {
-                            Point p = douglas.points.get(i);
+                        Douglas douglas = new Douglas(listDouglasPoints);
+                        douglas.compress(listDouglasPoints.get(0), listDouglasPoints.get(listDouglasPoints.size() - 1));
+                        for (int i = 0; i < douglas.douglasPoints.size(); i++) {
+                            DouglasPoint p = douglas.douglasPoints.get(i);
                             if (p.getIndex() > -1) {
                                 Gps gps = PositionUtil.gps84_To_Gcj02(p.getLatitude(), p.getLongitude());
                                 if (gps != null) {
@@ -462,7 +462,7 @@ public class LocationActivity extends Activity {
 
     private void drawLines(double longitude, double latitude, float accuracy) {
 
-        //Log.i(TAG, "points size = " + points.size());
+        //Log.i(TAG, "douglasPoints size = " + douglasPoints.size());
         tencentMap.animateTo(new LatLng(latitude, longitude));
         marker.setPosition(new LatLng(latitude, longitude));
 
@@ -488,7 +488,7 @@ public class LocationActivity extends Activity {
             Overlays.add(line);
         }
 
-        //Log.i(TAG, "points.size() = " + points.size());
+        //Log.i(TAG, "douglasPoints.size() = " + douglasPoints.size());
     }
 
     private void drawLinePoints() {

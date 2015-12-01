@@ -467,7 +467,7 @@ public class HisLocationActivity extends Activity {
             Overlays.add(line);
         }
 
-        Log.i(TAG, "points.size() = " + points.size());
+        Log.i(TAG, "douglasPoints.size() = " + points.size());
 
     }
 
