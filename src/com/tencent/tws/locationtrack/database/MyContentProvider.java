@@ -81,7 +81,7 @@ public class MyContentProvider extends ContentProvider {
     public static void createNewDB(Context context, long time) {
         String databaseName = String.valueOf(time) + LAST_DATABASE_NAME;
         dbHelper = new LocationDbHelper(context, databaseName);
-		SPUtils.writeDBName(getContext(), databaseName);
+		SPUtils.writeDBName(context, databaseName);
     }
 
     @Override
