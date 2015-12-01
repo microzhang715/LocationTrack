@@ -21,10 +21,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
-import com.tencent.mapsdk.raster.model.GeoPoint;
-import com.tencent.mapsdk.raster.model.LatLng;
-import com.tencent.mapsdk.raster.model.Polyline;
-import com.tencent.mapsdk.raster.model.PolylineOptions;
+import com.tencent.mapsdk.raster.model.*;
 import com.tencent.tencentmap.mapsdk.map.MapView;
 import com.tencent.tencentmap.mapsdk.map.Overlay;
 import com.tencent.tencentmap.mapsdk.map.Projection;
@@ -33,6 +30,7 @@ import com.tencent.tws.locationtrack.database.LocationDbHelper;
 import com.tencent.tws.locationtrack.database.SPUtils;
 import com.tencent.tws.locationtrack.douglas.Douglas;
 import com.tencent.tws.locationtrack.douglas.DouglasPoint;
+import com.tencent.tws.locationtrack.douglas.SpeedPoint;
 import com.tencent.tws.locationtrack.util.Gps;
 import com.tencent.tws.locationtrack.util.PositionUtil;
 import com.tencent.tws.locationtrack.views.CustomShareBoard;
@@ -57,6 +55,7 @@ public class HisLocationActivity extends Activity {
     private static final String TAG = "HisLocationActivity";
 
     protected Context context;
+    private ExecutorService fixedThreadExecutor = Executors.newFixedThreadPool(2);
 
     private MapView mMapView;
     private TencentMap tencentMap;
@@ -70,7 +69,6 @@ public class HisLocationActivity extends Activity {
     private TextView hisAveSpeed;
     private TextView hisKal;
     private TextView hisDis;
-
     double hisSpeedValue = 0;
     double hisKcalValue = 0;
     double hisDisValue = 0;
@@ -79,37 +77,39 @@ public class HisLocationActivity extends Activity {
     protected double leftBoundary;
     protected double rightBoundary;
     protected double bottomBoundary;
-
     protected Location locationTopLeft;
     protected Location locationBottomRight;
     protected float maxDistance;
     protected Gps mapCenterPoint;
-    private long TIME_TO_WAIT_IN_MS = 3000;//时间设置过短 setZoom不生效，原因待查！
 
-    // 分享初始化控制器
+    // 分享相关
     final UMSocialService mController = UMServiceFactory.getUMSocialService("com.umeng.share");
     UMShakeService mShakeController = UMShakeServiceFactory.getShakeService("com.umeng.share");
     Bitmap shareBitmap = null;
-
     // wx967daebe835fbeac是你在微信开发平台注册应用的AppID, 这里需要替换成你注册的AppID
     private static final String WEIXIN_APP_ID = "wx967daebe835fbeac";
     private static final String WEIXIN_APP_SECRET = "5fa9e68ca3970e87a1f83e563c8dcbce";
 
+    //数据库
     private static LocationDbHelper dbHelper;
+    private SQLiteDatabase sqLiteDatabase;
 
-    private static HashMap<String, String> locationMaps;
-    SQLiteDatabase sqLiteDatabase;
-
-    private ExecutorService fixedThreadExecutor = Executors.newFixedThreadPool(2);
-    private static final int UPDATE_VIEWS = 1;
-
-    //用户记录所有的点的集合
+    //集合
     private List<DouglasPoint> listPoints = new ArrayList<>();
-    //过滤后的点
     private Queue<Gps> resumeLocations = new LinkedList<>();
+    //用于记录所有的点的速度的集合
+    private List<SpeedPoint> speedPointList = new ArrayList<>();
+    private SpeedPoint maxSpeedPoint;
+    private SpeedPoint minSpeedPoint;
+
+    //MSG
+    private static final int UPDATE_VIEWS = 1;
     private static final int DRAW_RESUME = 3;
     //每次绘制的点数
     private static final int RESUME_ONCE_DRAW_POINTS = 500;
+    private static final int LINE_WIDTH = 15;
+
+    private static HashMap<String, String> locationMaps;
 
     static {
         //定义别名
@@ -153,7 +153,6 @@ public class HisLocationActivity extends Activity {
             Log.i(TAG, "get intentDbName=" + intentDbName);
             if (dbName != null && !dbName.equals("") && !dbName.equals("0")) {
                 dbHelper = new LocationDbHelper(getApplicationContext(), dbName);
-                sqLiteDatabase = dbHelper.getWritableDatabase();
             }
         } else {
             Toast.makeText(getApplicationContext(), "数据库文件不存在", Toast.LENGTH_SHORT).show();
@@ -216,7 +215,7 @@ public class HisLocationActivity extends Activity {
             mMapView.addOverlay(new PointMarkLayout(PositionUtil.gps84_To_Gcj02(listPoints.get(0)), R.drawable.point_start));
             mMapView.addOverlay(new PointMarkLayout(PositionUtil.gps84_To_Gcj02(listPoints.get(listPoints.size() - 1)), R.drawable.point_end));
             //移动到屏幕中心点
-            Gps centGps = PositionUtil.gps84_To_Gcj02(mapCenterPoint.getWgLat(), mapCenterPoint.getWgLon());
+            final Gps centGps = PositionUtil.gps84_To_Gcj02(mapCenterPoint.getWgLat(), mapCenterPoint.getWgLon());
             handler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
@@ -224,9 +223,14 @@ public class HisLocationActivity extends Activity {
                     tencentMap.setZoom(getFixedZoomLevel());
                 }
             }, 1000);
-            Log.i(TAG, "getFixedZoomLevel=" + getFixedZoomLevel());
 
-//            mMapView.postDelayed(waitForMapTimeTask, TIME_TO_WAIT_IN_MS);
+            Gps gps = PositionUtil.gps84_To_Gcj02(maxSpeedPoint.getPosition().getWgLat(), maxSpeedPoint.getPosition().getWgLon());
+            addMarker(new LatLng(gps.getWgLat(), gps.getWgLon()), "最大值");
+
+            Gps gpsMin = PositionUtil.gps84_To_Gcj02(minSpeedPoint.getPosition().getWgLat(), minSpeedPoint.getPosition().getWgLon());
+            addMarker(new LatLng(gpsMin.getWgLat(), gpsMin.getWgLon()), "最小值");
+
+            Log.i(TAG, "getFixedZoomLevel=" + getFixedZoomLevel());
         } else {
             Log.i(TAG, "listPoints.size()=" + listPoints.size());
         }
@@ -240,6 +244,7 @@ public class HisLocationActivity extends Activity {
             LatLng tPoints[] = new LatLng[RESUME_ONCE_DRAW_POINTS];
             PolylineOptions lineOpt2 = new PolylineOptions();
             lineOpt2.color(0xAAFF0000);
+            lineOpt2.width(LINE_WIDTH);
 
             int count2 = (resumeLocations.size() % RESUME_ONCE_DRAW_POINTS == 0) ? (resumeLocations.size() % RESUME_ONCE_DRAW_POINTS) : (resumeLocations.size() % RESUME_ONCE_DRAW_POINTS + 1);
             for (int i = 0; i < count2 - 1; i++) {
@@ -266,6 +271,8 @@ public class HisLocationActivity extends Activity {
     private void drawResumePoints(int count) {
         PolylineOptions lineOpt = new PolylineOptions();
         lineOpt.color(0xAAFF0000);
+        lineOpt.width(LINE_WIDTH);
+
         //绘制全部数据
         LatLng latlngPoints[] = new LatLng[count];
         for (int i = 0; i < count; i++) {
@@ -378,12 +385,18 @@ public class HisLocationActivity extends Activity {
 
                         //把所有点记录在集合里面
                         do {
+                            int id = cursor.getInt(cursor.getColumnIndex(LocationDbHelper.ID));
                             double latitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LATITUDE));
                             double longitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LONGITUDE));
+                            double insSpeed = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.INS_SPEED));
                             float dis = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.DISTANCE));
 
                             DouglasPoint tmpPoint = new DouglasPoint(latitude, longitude, index++);
                             listPoints.add(tmpPoint);
+
+                            //记录所有点的数据集合
+                            SpeedPoint speedPoint = new SpeedPoint(new Gps(latitude, longitude), id, insSpeed);
+                            speedPointList.add(speedPoint);
 
                             allDis += dis;
                         } while (cursor.moveToNext());
@@ -429,6 +442,23 @@ public class HisLocationActivity extends Activity {
                         }
                         Log.i(TAG, "压缩后 : resumeLocations.size()=" + resumeLocations.size());
                     }
+
+                    //speedPointList中取出最大值
+                    maxSpeedPoint = speedPointList.get(0);
+                    minSpeedPoint = speedPointList.get(0);
+
+                    for (int i = 0; i < speedPointList.size(); i++) {
+                        if (maxSpeedPoint.getSpeed() < speedPointList.get(i).getSpeed()) {
+                            maxSpeedPoint = speedPointList.get(i);
+                        }
+
+                        if (minSpeedPoint.getSpeed() > speedPointList.get(i).getSpeed()) {
+                            minSpeedPoint = speedPointList.get(i);
+                        }
+                    }
+
+                    Log.i(TAG, "maxSpeedPoint = " + maxSpeedPoint.getId() + "--->" + maxSpeedPoint.getSpeed());
+                    Log.i(TAG, "minSpeedPoint = " + minSpeedPoint.getId() + "--->" + minSpeedPoint.getSpeed());
 
                     handler.sendEmptyMessage(DRAW_RESUME);
                 } catch (Exception e) {
@@ -477,16 +507,25 @@ public class HisLocationActivity extends Activity {
     }
 
     private void updateTextViews(double aveSpeed, double kal, double allDis) {
-
         DecimalFormat myformat = new DecimalFormat("#0.00");
         hisAveSpeed.setText(myformat.format(aveSpeed) + " km/h");
         hisKal.setText(myformat.format(kal) + " kcal");
         hisDis.setText(myformat.format(allDis) + "km");
     }
 
+    private void addMarker(LatLng pos, String title) {
+        Marker markerFix = tencentMap.addMarker(new MarkerOptions()
+                .position(pos)
+                .title(title)
+                .anchor(0.5f, 0.5f)
+                .icon(BitmapDescriptorFactory
+                        .defaultMarker())
+                .draggable(false));
+        markerFix.showInfoWindow();// 设置默认显示一个infowinfow
+    }
 
     public Cursor query(String[] projection, String selection, String[] selectionArgs, String sortOrder) {
-        SQLiteDatabase sqLiteDatabase = dbHelper.getWritableDatabase();
+        sqLiteDatabase = dbHelper.getWritableDatabase();
         SQLiteQueryBuilder sqLiteQueryBuilder = new SQLiteQueryBuilder();
         sqLiteQueryBuilder.setTables(LocationDbHelper.TABLE_NAME);
         sqLiteQueryBuilder.setProjectionMap(locationMaps);
@@ -557,19 +596,6 @@ public class HisLocationActivity extends Activity {
         return tencentMap.getMaxZoomLevel();
     }
 
-    /**
-     * Wait for mapview to become ready.
-     */
-    private Runnable waitForMapTimeTask = new Runnable() {
-        public void run() {
-            // If either is true we must wait.
-            if (mMapView.getProjection().getLatitudeSpan() == 0 || mMapView.getProjection().getLongitudeSpan() == 360000000)
-                mMapView.postDelayed(this, TIME_TO_WAIT_IN_MS);
-            else {
-                tencentMap.setZoom(getFixedZoomLevel());
-            }
-        }
-    };
 
     private class PointMarkLayout extends Overlay {
         private DouglasPoint location;
