@@ -150,8 +150,8 @@ public class MyTest extends AndroidTestCase {
                     double latitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LATITUDE));
                     double longitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LONGITUDE));
                     int id = cursor.getInt(cursor.getColumnIndex(LocationDbHelper.ID));
-                    DouglasPoint tmpDouglasPoint = new DouglasPoint(latitude, longitude, index++);
-                    listDouglasPoints.add(tmpDouglasPoint);
+//                    DouglasPoint tmpDouglasPoint = new DouglasPoint(latitude, longitude, index++);
+//                    listDouglasPoints.add(tmpDouglasPoint);
                 }
                 Log.i("kermit1", "listDouglasPoints.size()=" + listDouglasPoints.size());
 
