@@ -30,7 +30,6 @@ import com.tencent.tws.locationtrack.database.LocationDbHelper;
 import com.tencent.tws.locationtrack.database.SPUtils;
 import com.tencent.tws.locationtrack.douglas.Douglas;
 import com.tencent.tws.locationtrack.douglas.DouglasPoint;
-import com.tencent.tws.locationtrack.douglas.SpeedPoint;
 import com.tencent.tws.locationtrack.util.Gps;
 import com.tencent.tws.locationtrack.util.PositionUtil;
 import com.tencent.tws.locationtrack.views.CustomShareBoard;
@@ -46,7 +45,9 @@ import com.umeng.socialize.sso.UMQQSsoHandler;
 import com.umeng.socialize.weixin.controller.UMWXHandler;
 
 import java.text.DecimalFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -94,22 +95,26 @@ public class HisLocationActivity extends Activity {
     private static LocationDbHelper dbHelper;
     private SQLiteDatabase sqLiteDatabase;
 
-    //集合
+    //所有原始数据
     private List<DouglasPoint> listPoints = new ArrayList<>();
-    private Queue<Gps> resumeLocations = new LinkedList<>();
+    //压缩之后的绘制数据
+    //private Queue<DouglasPoint> resumeLocationsQueue = new LinkedList<>();
+    private List<DouglasPoint> resumeList = new ArrayList<>();
+
     //用于记录所有的点的速度的集合
-    private List<SpeedPoint> speedPointList = new ArrayList<>();
-    private SpeedPoint maxSpeedPoint;
-    private SpeedPoint minSpeedPoint;
+//    private List<SpeedPoint> speedPointList = new ArrayList<>();
+    private DouglasPoint maxSpeedPoint;
+    private DouglasPoint minSpeedPoint;
 
     //MSG
     private static final int UPDATE_VIEWS = 1;
     private static final int DRAW_RESUME = 3;
     //每次绘制的点数
-    private static final int RESUME_ONCE_DRAW_POINTS = 500;
+    private static final int RESUME_ONCE_DRAW_POINTS = 5;
     private static final int LINE_WIDTH = 15;
 
     private static HashMap<String, String> locationMaps;
+    //颜色的数组
 
     static {
         //定义别名
@@ -209,6 +214,7 @@ public class HisLocationActivity extends Activity {
         Log.i(TAG, "onResumeDrawImp");
         getBoundary();
 
+        //计算并添加最大最小值的marker
         if (listPoints != null && listPoints.size() > 0) {
 
             //绘制起点和终点的Marker
@@ -224,70 +230,30 @@ public class HisLocationActivity extends Activity {
                 }
             }, 1000);
 
-            Gps gps = PositionUtil.gps84_To_Gcj02(maxSpeedPoint.getPosition().getWgLat(), maxSpeedPoint.getPosition().getWgLon());
+            Gps gps = PositionUtil.gps84_To_Gcj02(maxSpeedPoint.getLatitude(), maxSpeedPoint.getLongitude());
             addMarker(new LatLng(gps.getWgLat(), gps.getWgLon()), "最大值");
-
-            Gps gpsMin = PositionUtil.gps84_To_Gcj02(minSpeedPoint.getPosition().getWgLat(), minSpeedPoint.getPosition().getWgLon());
+            Gps gpsMin = PositionUtil.gps84_To_Gcj02(minSpeedPoint.getLatitude(), minSpeedPoint.getLongitude());
             addMarker(new LatLng(gpsMin.getWgLat(), gpsMin.getWgLon()), "最小值");
 
             Log.i(TAG, "getFixedZoomLevel=" + getFixedZoomLevel());
-        } else {
-            Log.i(TAG, "listPoints.size()=" + listPoints.size());
         }
 
-        int count = resumeLocations.size();
-
-        if (count < RESUME_ONCE_DRAW_POINTS) {
-            drawResumePoints(count);
-        } else {
-            //每次绘制 RESUME_ONCE_DRAW_POINTS 个点，分多次绘制
-            LatLng tPoints[] = new LatLng[RESUME_ONCE_DRAW_POINTS];
-            PolylineOptions lineOpt2 = new PolylineOptions();
-            lineOpt2.color(0xAAFF0000);
-            lineOpt2.width(LINE_WIDTH);
-
-            int count2 = (resumeLocations.size() % RESUME_ONCE_DRAW_POINTS == 0) ? (resumeLocations.size() % RESUME_ONCE_DRAW_POINTS) : (resumeLocations.size() % RESUME_ONCE_DRAW_POINTS + 1);
-            for (int i = 0; i < count2 - 1; i++) {
-                for (int j = 0; j < RESUME_ONCE_DRAW_POINTS; j++) {
-                    if (resumeLocations.peek() != null) {
-                        Gps gps = resumeLocations.poll();
-                        tPoints[j] = new LatLng(gps.getWgLat(), gps.getWgLon());
-                        if (tPoints[j] != null) {
-                            lineOpt2.add(tPoints[j]);
-                        }
-                    }
-                }
-                Polyline line = tencentMap.addPolyline(lineOpt2);
-                Overlays.add(line);
-            }
-
-            //绘制剩下的 <= 500个点
-            int restCount = resumeLocations.size();
-            drawResumePoints(restCount);
-        }
-    }
-
-    //绘制小于500个点的方法
-    private void drawResumePoints(int count) {
-        PolylineOptions lineOpt = new PolylineOptions();
-        lineOpt.color(0xAAFF0000);
-        lineOpt.width(LINE_WIDTH);
-
-        //绘制全部数据
-        LatLng latlngPoints[] = new LatLng[count];
+        //2个点的方式加入，然后绘制
+        int count = resumeList.size();
+        Log.i(TAG, "count=" + count);
+        PolylineOptions linOptions = new PolylineOptions();
+        linOptions.width(LINE_WIDTH);
+        linOptions.color(0xAAFF0000);
         for (int i = 0; i < count; i++) {
-            if (resumeLocations.peek() != null) {
-                Gps gps = resumeLocations.poll();
-                latlngPoints[i] = new LatLng(gps.getWgLat(), gps.getWgLon());
-                if (latlngPoints[i] != null) {
-                    lineOpt.add(latlngPoints[i]);
-                }
+            DouglasPoint douglasPoint = resumeList.get(i);
+            Gps gps = PositionUtil.gps84_To_Gcj02(douglasPoint.getLatitude(), douglasPoint.getLongitude());
+            if (gps != null) {
+                linOptions.add(new LatLng(gps.getWgLat(), gps.getWgLon()));
             }
         }
-        Polyline line = tencentMap.addPolyline(lineOpt);
+        Polyline line = tencentMap.addPolyline(linOptions);
         Overlays.add(line);
     }
-
 
     private void initSharePlatform() {
         //在相应的地方要注册Handler才可以相应事件
@@ -310,7 +276,6 @@ public class HisLocationActivity extends Activity {
     }
 
     private void postShare() {
-
         //截屏方法
         mShakeController.takeScrShot(HisLocationActivity.this, new UMAppAdapter(HisLocationActivity.this), new UMScrShotController.OnScreenshotListener() {
             @Override
@@ -334,7 +299,6 @@ public class HisLocationActivity extends Activity {
         super.onRestart();
         Log.i(TAG, "onRestart");
     }
-
 
     @Override
     protected void onResume() {
@@ -364,8 +328,8 @@ public class HisLocationActivity extends Activity {
 
                 Cursor cursor = null;
                 try {
-                    resumeLocations.clear();
                     listPoints.clear();
+                    resumeList.clear();
 
                     int index = 0;
 
@@ -390,13 +354,10 @@ public class HisLocationActivity extends Activity {
                             double longitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LONGITUDE));
                             double insSpeed = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.INS_SPEED));
                             float dis = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.DISTANCE));
+                            long time = cursor.getLong(cursor.getColumnIndex(LocationDbHelper.TIME));
 
-                            DouglasPoint tmpPoint = new DouglasPoint(latitude, longitude, index++);
+                            DouglasPoint tmpPoint = new DouglasPoint(latitude, longitude, insSpeed, dis, time, id, index++);
                             listPoints.add(tmpPoint);
-
-                            //记录所有点的数据集合
-                            SpeedPoint speedPoint = new SpeedPoint(new Gps(latitude, longitude), id, insSpeed);
-                            speedPointList.add(speedPoint);
 
                             allDis += dis;
                         } while (cursor.moveToNext());
@@ -433,29 +394,30 @@ public class HisLocationActivity extends Activity {
                         for (int i = 0; i < douglas.douglasPoints.size(); i++) {
                             DouglasPoint p = douglas.douglasPoints.get(i);
                             if (p.getIndex() > -1) {
-                                Gps gps = PositionUtil.gps84_To_Gcj02(p.getLatitude(), p.getLongitude());
-                                if (gps != null) {
+                                //Gps gps = PositionUtil.gps84_To_Gcj02(p.getLatitude(), p.getLongitude());
+                                if (p != null) {
                                     //所有数据进入队列
-                                    resumeLocations.offer(gps);
+                                    resumeList.add(p);
                                 }
                             }
                         }
-                        Log.i(TAG, "压缩后 : resumeLocations.size()=" + resumeLocations.size());
+                        Log.i(TAG, "压缩后 : resumeLocationsQueue.size()=" + resumeList.size());
                     }
 
                     //speedPointList中取出最大值
-                    maxSpeedPoint = speedPointList.get(0);
-                    minSpeedPoint = speedPointList.get(0);
+                    maxSpeedPoint = resumeList.get(0);
+                    minSpeedPoint = resumeList.get(0);
 
-                    for (int i = 0; i < speedPointList.size(); i++) {
-                        if (maxSpeedPoint.getSpeed() < speedPointList.get(i).getSpeed()) {
-                            maxSpeedPoint = speedPointList.get(i);
+                    for (int i = 0; i < resumeList.size(); i++) {
+                        if (maxSpeedPoint.getSpeed() < resumeList.get(i).getSpeed()) {
+                            maxSpeedPoint = resumeList.get(i);
                         }
 
-                        if (minSpeedPoint.getSpeed() > speedPointList.get(i).getSpeed()) {
-                            minSpeedPoint = speedPointList.get(i);
+                        if (minSpeedPoint.getSpeed() > resumeList.get(i).getSpeed()) {
+                            minSpeedPoint = resumeList.get(i);
                         }
                     }
+
 
                     Log.i(TAG, "maxSpeedPoint = " + maxSpeedPoint.getId() + "--->" + maxSpeedPoint.getSpeed());
                     Log.i(TAG, "minSpeedPoint = " + minSpeedPoint.getId() + "--->" + minSpeedPoint.getSpeed());

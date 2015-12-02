@@ -290,21 +290,21 @@ public class LocationActivity extends Activity {
                     String[] PROJECTION = new String[]{LocationDbHelper.ID, LocationDbHelper.LATITUDE, LocationDbHelper.LONGITUDE, LocationDbHelper.INS_SPEED, LocationDbHelper.BEARING, LocationDbHelper.ALTITUDE, LocationDbHelper.ACCURACY, LocationDbHelper.TIME, LocationDbHelper.DISTANCE, LocationDbHelper.AVG_SPEED, LocationDbHelper.KCAL,};
                     cursor = getApplicationContext().getContentResolver().query(MyContentProvider.CONTENT_URI, PROJECTION, null, null, null);
                     if (cursor != null && cursor.getCount() > 0 && cursor.moveToFirst()) {
-                        while (cursor.moveToNext()) {
+
+                        do {
+
+
+                            int id = cursor.getInt(cursor.getColumnIndex(LocationDbHelper.ID));
                             double latitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LATITUDE));
                             double longitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LONGITUDE));
+                            double insSpeed = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.INS_SPEED));
+                            float dis = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.DISTANCE));
+                            long time = cursor.getLong(cursor.getColumnIndex(LocationDbHelper.TIME));
 
-                            DouglasPoint tmpDouglasPoint = new DouglasPoint(latitude, longitude, index++);
-                            listDouglasPoints.add(tmpDouglasPoint);
+                            DouglasPoint tmpPoint = new DouglasPoint(latitude, longitude, insSpeed, dis, time, id, index++);
+                            listDouglasPoints.add(tmpPoint);
 
-//                            if (cursor.getCount()<500){
-//                                Gps gps = PositionUtil.gps84_To_Gcj02(latitude, longitude);
-//                                if (gps != null) {
-//                                    //所有数据进入队列
-//                                    resumeLocations.offer(gps);
-//                                }
-//                            }
-                        }
+                        } while (cursor.moveToNext());
 
                         Log.i(TAG, "listDouglasPoints.size()=" + listDouglasPoints.size());
                         //对数据进行压缩处理

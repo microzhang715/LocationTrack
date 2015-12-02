@@ -1,6 +1,5 @@
 package com.tencent.tws.locationtrack.util;
 
-import com.tencent.mapsdk.raster.model.LatLng;
 import com.tencent.tws.locationtrack.douglas.DouglasPoint;
 
 /**
@@ -66,7 +65,7 @@ public class PositionUtil {
         double mgLat = lat + dLat;
         double mgLon = lon + dLon;
 
-        return new DouglasPoint(mgLat, mgLon, 0);
+        return new DouglasPoint(mgLat, mgLon, 0, 0, 0, 0, 0);
     }
 
     /**
