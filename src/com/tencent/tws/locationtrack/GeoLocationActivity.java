@@ -45,7 +45,7 @@ public class GeoLocationActivity extends Activity implements LocationListener {
     protected boolean gps_enabled, network_enabled;
 
     int mSatelliteNum;
-    private ArrayList<GpsSatellite> numSatelliteList = new ArrayList<>();
+    private ArrayList<GpsSatellite> numSatelliteList = new ArrayList<GpsSatellite>();
 
 
     private MapView mMapView;
@@ -235,7 +235,7 @@ public class GeoLocationActivity extends Activity implements LocationListener {
 //			lineOpt.add(latLng2);
         HashMap<Double, Double> mParamsLocation = LocationUtil.getLocationTrack();
 
-        for (Object key : mParamsLocation.keySet()) {
+        for (Double key : mParamsLocation.keySet()) {
             Gps gcj02Gps = PositionUtil.gps84_To_Gcj02(mParamsLocation.get(key), (double) key);
             final LatLng latLng = new LatLng(gcj02Gps.getWgLat(), gcj02Gps.getWgLon());
             lineOpt.add(latLng);

@@ -58,7 +58,7 @@ public class LocationService extends Service implements LocationListener {
 
     public static Location extLocation = null;
 
-    private ArrayList<GpsSatellite> numSatelliteList = new ArrayList<>();
+    private ArrayList<GpsSatellite> numSatelliteList = new ArrayList<GpsSatellite>();
 
     //广播定义相关
     public static final String UPDATE_SATELLITE_NUM = "com.tencent.locationtrack.update_satellite_num";
@@ -436,24 +436,28 @@ public class LocationService extends Service implements LocationListener {
         public void onReceive(final Context context, final Intent intent) {
             Log.d(TAG, "onReceive");
             String action = intent.getAction();
-
-            switch (action) {
-                case LocationActivity.ACTIVITY_STATUS_CHANGE:
-                    String status = intent.getStringExtra(LocationActivity.STATUS);
-                    if ("onResume".equals(status)) {
-                        if (mLocationManager != null) {
-                            Log.i(TAG, "activity onResume");
-                            mLocationManager.removeUpdates(LocationService.this);
-                            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, INTERVAL_TIME_QUICK, INTERVAL_DISTANCE_QUICK, LocationService.this);
-                        }
-                    } else if ("onStop".equals(status)) {
-                        if (mLocationManager != null) {
-                            Log.i(TAG, "activity onStop");
-                            mLocationManager.removeUpdates(LocationService.this);
-                            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, INTERVAL_TIME_SLOW, INTERVAL_DISTANCE_SLOW, LocationService.this);
-                        }
+            
+            if(action.equals(LocationActivity.ACTIVITY_STATUS_CHANGE)){
+            	String status = intent.getStringExtra(LocationActivity.STATUS);
+                if ("onResume".equals(status)) {
+                    if (mLocationManager != null) {
+                        Log.i(TAG, "activity onResume");
+                        mLocationManager.removeUpdates(LocationService.this);
+                        mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, INTERVAL_TIME_QUICK, INTERVAL_DISTANCE_QUICK, LocationService.this);
                     }
-                    break;
+                    
+                    return ;
+                } 
+                
+                if ("onStop".equals(status)) {
+                    if (mLocationManager != null) {
+                        Log.i(TAG, "activity onStop");
+                        mLocationManager.removeUpdates(LocationService.this);
+                        mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, INTERVAL_TIME_SLOW, INTERVAL_DISTANCE_SLOW, LocationService.this);
+                    }
+                    
+                    return ;
+                }
             }
         }
     };

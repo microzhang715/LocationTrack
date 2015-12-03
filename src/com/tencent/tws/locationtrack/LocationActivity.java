@@ -68,7 +68,7 @@ public class LocationActivity extends Activity {
     private DBContentObserver mDBContentObserver;
 
     //    int mSatelliteNum;
-    protected Queue<Gps> resumeLocations = new LinkedList<>();
+    protected Queue<Gps> resumeLocations = new LinkedList<Gps>();
     //    private ArrayList<GpsSatellite> numSatelliteList = new ArrayList<>();
     private ExecutorService fixedThreadExecutor = Executors.newFixedThreadPool(2);
     Intent locationServiceIntent;
@@ -274,7 +274,7 @@ public class LocationActivity extends Activity {
         sendStatusBroadcast("onResume");
     }
 
-    private List<DouglasPoint> listDouglasPoints = new ArrayList<>();
+    private List<DouglasPoint> listDouglasPoints = new ArrayList<DouglasPoint>();
 
     //读取数据库，绘制数据库中所有数据
     private void readDbforDraw() {
@@ -535,13 +535,12 @@ public class LocationActivity extends Activity {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
-            switch (action) {
-                case LocationService.UPDATE_SATELLITE_NUM://前台更新GPS卫星的数量
-                    int num = intent.getIntExtra(LocationService.STAELLITE_EXTR, 0);
-                    if (satelliteNum != null) {
-                        satelliteNum.setText(num + "");
-                    }
-                    break;
+            
+            if(action.equals(LocationService.UPDATE_SATELLITE_NUM) ){
+            	int num = intent.getIntExtra(LocationService.STAELLITE_EXTR, 0);
+                if (satelliteNum != null) {
+                    satelliteNum.setText(num + "");
+                }
             }
         }
     };

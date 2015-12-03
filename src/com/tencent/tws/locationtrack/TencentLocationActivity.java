@@ -56,7 +56,7 @@ public class TencentLocationActivity extends Activity {
     List<LatLng> points_tem = new ArrayList<LatLng>();
 
     int mSatelliteNum;
-    private ArrayList<GpsSatellite> numSatelliteList = new ArrayList<>();
+    private ArrayList<GpsSatellite> numSatelliteList = new ArrayList<GpsSatellite>();
 
     private final static int ACCURACY = 3;
     private BigDecimal lastLatitude;
@@ -76,7 +76,7 @@ public class TencentLocationActivity extends Activity {
     private DBContentObserver mDBContentObserver;
 
     private boolean isFinishDBDraw = true;
-    protected Queue<LatLng> resumeLocations = new LinkedList<>();
+    protected Queue<LatLng> resumeLocations = new LinkedList<LatLng>();
 
     Intent tencentLocationServiceIntent;
 
