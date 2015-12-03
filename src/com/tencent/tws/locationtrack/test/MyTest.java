@@ -9,6 +9,7 @@ import android.util.Log;
 import com.tencent.tws.locationtrack.database.LocationDbHelper;
 import com.tencent.tws.locationtrack.database.MyContentProvider;
 import com.tencent.tws.locationtrack.database.SPUtils;
+import com.tencent.tws.locationtrack.domain.KmPoint;
 import com.tencent.tws.locationtrack.douglas.DouglasPoint;
 import com.tencent.tws.locationtrack.util.LocationUtil;
 import com.tencent.tws.locationtrack.util.PointsAnalysis;
@@ -141,6 +142,18 @@ public class MyTest extends AndroidTestCase {
         PointsAnalysis analysis = new PointsAnalysis(getContext());
         List<DouglasPoint> list = analysis.getAllPointsFromHelper(dbHelper);
         Log.i("kkermit", "list.size()=" + list.size());
+    }
+
+    public void testGetSpeed() {
+//        String dbName = "1449123211245_location.db";
+        String dbName = "1448449120431_location.db";
+        LocationDbHelper dbHelper = new LocationDbHelper(getContext(), dbName);
+        PointsAnalysis analysis = new PointsAnalysis(getContext());
+        List<DouglasPoint> list = analysis.getAllPointsFromHelper(dbHelper);
+
+        List<KmPoint> kmSpeedList = analysis.getKmSpeed(list);
+        Log.i("kkermit", "kmSpeedList.size()=" + kmSpeedList.size());
+        Log.i("kkermit", "kmSpeedList=" + kmSpeedList.toString());
     }
 }
 

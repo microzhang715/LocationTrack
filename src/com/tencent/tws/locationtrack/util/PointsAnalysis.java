@@ -146,21 +146,18 @@ public class PointsAnalysis {
     }
 
 
+    private static final int KM = 1000;
+
     public List<KmPoint> getKmSpeed(List<DouglasPoint> listPoints) {
         List<KmPoint> kmPointList = new ArrayList<KmPoint>();
         int index = 1;
         float allDis = 0;
         long lastTime = 0, currentTime = 0;
 
-        Log.i("kkermit", "listPoints.size()=" + listPoints.size());
-
         for (int i = 0; i < listPoints.size(); i++) {
-            Log.i("kkermit", "Point dis=" + listPoints.get(i).getDis() + "    id=" + listPoints.get(i).getId());
             allDis += listPoints.get(i).getDis();
-            Log.i("kkermit", "allDis=" + allDis);
 
-            if (allDis > 1000) {
-                Log.i("kkermit", "-----------------------------------------");
+            if (allDis > KM) {
                 currentTime = listPoints.get(i).getTime();
                 long deltTime = currentTime - lastTime;
                 kmPointList.add(new KmPoint(
@@ -170,26 +167,8 @@ public class PointsAnalysis {
                         deltTime,
                         listPoints.get(i).getId()));
 
-                float delt = allDis - 1000;
+                float delt = allDis - KM;
                 allDis = delt;
-
-                if (listPoints.get(i).getId() == 322) {
-                    Log.i("kkermit", "===322=======" + listPoints.get(i).getDis());
-                }
-
-                if (listPoints.get(i).getId() == 323) {
-                    Log.i("kkermit", "===323=======" + listPoints.get(i).getDis());
-                }
-
-                if (listPoints.get(i).getId() == 324) {
-                    Log.i("kkermit", "===324=======" + listPoints.get(i).getDis());
-                }
-
-                if (listPoints.get(i).getId() == 325) {
-                    Log.i("kkermit", "===325=======" + listPoints.get(i).getDis());
-                }
-
-                Log.i("kkermit", "delt=" + delt + " id=" + listPoints.get(i).getId());
                 lastTime = currentTime;
             }
         }
@@ -224,7 +203,6 @@ public class PointsAnalysis {
 //            String orderBy = LocationDbHelper.DEFAULT_ORDERBY;
 //            Cursor cursor = sqLiteQueryBuilder.query(db, PROJECTION, null, null, null, null, orderBy);
 //            Log.i(TAG, "getAllPointsFromHelper cursor.getCount() = " + cursor.getCount());
-
 
             allPointList = getPoints(cursor);
 
