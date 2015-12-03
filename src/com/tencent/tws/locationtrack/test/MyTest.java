@@ -138,8 +138,8 @@ public class MyTest extends AndroidTestCase {
     public void testGetPoint() {
         String dbName = "1448441019396_location.db";
         LocationDbHelper dbHelper = new LocationDbHelper(getContext(), dbName);
-        PointsAnalysis analysis = new PointsAnalysis(dbHelper);
-        List<DouglasPoint> list = analysis.getAllPoints2List();
+        PointsAnalysis analysis = new PointsAnalysis(getContext());
+        List<DouglasPoint> list = analysis.getAllPointsFromHelper(dbHelper);
         Log.i("kkermit", "list.size()=" + list.size());
     }
 }

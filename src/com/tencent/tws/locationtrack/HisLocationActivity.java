@@ -291,13 +291,13 @@ public class HisLocationActivity extends Activity {
                     resumeList.clear();
 
                     //获取所有点
-                    pointsAnalysis = new PointsAnalysis(dbHelper);
-                    listPoints = pointsAnalysis.getAllPoints2List();
+                    pointsAnalysis = new PointsAnalysis(getApplicationContext());
+                    listPoints = pointsAnalysis.getAllPointsFromHelper(dbHelper);
 
                     //获取显示的值
-                    hisDisValue = pointsAnalysis.getAllDis();
-                    hisSpeedValue = pointsAnalysis.getAvgSpeed();
-                    hisKcalValue = pointsAnalysis.getKcal();
+                    hisDisValue = pointsAnalysis.getAllDis(listPoints);
+                    hisSpeedValue = pointsAnalysis.getAvgSpeed(listPoints);
+                    hisKcalValue = pointsAnalysis.getKcal(listPoints);
                     //更新UI
                     Message msg = Message.obtain();
                     msg.what = UPDATE_VIEWS;
@@ -309,11 +309,11 @@ public class HisLocationActivity extends Activity {
                     handler.sendMessage(msg);
 
                     //获取压缩后的数据值
-                    resumeList = pointsAnalysis.getResumeList();
+                    resumeList = pointsAnalysis.getResumeList(listPoints);
 
                     //获取最大最小速度点
-                    maxSpeedPoint = pointsAnalysis.getMaxInsSpeedPoint();
-                    minSpeedPoint = pointsAnalysis.getMinInsSpeedPoint();
+                    maxSpeedPoint = pointsAnalysis.getMaxInsSpeedPoint(listPoints);
+                    minSpeedPoint = pointsAnalysis.getMinInsSpeedPoint(listPoints);
                     Log.i(TAG, "maxSpeedPoint = " + maxSpeedPoint.getId() + "--->" + maxSpeedPoint.getInsSpeed());
                     Log.i(TAG, "minSpeedPoint = " + minSpeedPoint.getId() + "--->" + minSpeedPoint.getInsSpeed());
                     handler.sendEmptyMessage(DRAW_RESUME);

@@ -87,25 +87,28 @@ public class ColorPathOverlay extends Overlay {
             double allSpeed = 0;
             int size = resumeList.size();
             int rest = size % ONCE_DRAW_POINT_COUNT;
-            int count = (rest == 0 ? (size / ONCE_DRAW_POINT_COUNT) : (size / ONCE_DRAW_POINT_COUNT + 1));
-            //绘制点数
-            for (int i = 0; i < size / ONCE_DRAW_POINT_COUNT; i++) {
+            int count = size / ONCE_DRAW_POINT_COUNT;
 
+            //绘制点数
+            for (int i = 0; i < count; i++) {
                 Path path = new Path();
+
+                //移动到下条线段的绘制点
                 DouglasPoint tpoint;
                 if (i > 0) {
                     tpoint = resumeList.get(i * ONCE_DRAW_POINT_COUNT - 1);
                 } else {
-                    tpoint = resumeList.get(i * ONCE_DRAW_POINT_COUNT);
+                    tpoint = resumeList.get(0);
                 }
-                Point tCurrentPoint = projection.toScreenLocation(douglasPoint2Point(tpoint));
+                Point tCurrentPoint = projection.toScreenLocation(douglasPoint2LatLng(tpoint));
                 path.moveTo(tCurrentPoint.x, tCurrentPoint.y);
 
+                //绘制每条线段的逻辑
                 for (int j = 0; j < ONCE_DRAW_POINT_COUNT; j++) {
                     DouglasPoint currentDouglasPoint = resumeList.get(i * ONCE_DRAW_POINT_COUNT + j);
                     allSpeed += currentDouglasPoint.getInsSpeed();
 
-                    Point currentPoint = projection.toScreenLocation(douglasPoint2Point(currentDouglasPoint));
+                    Point currentPoint = projection.toScreenLocation(douglasPoint2LatLng(currentDouglasPoint));
                     if (lastPoint != null && lastPoint.x < maxWidth && lastPoint.y < maxHeight) {
                         path.lineTo(currentPoint.x, currentPoint.y);
                     } else {
@@ -115,34 +118,61 @@ public class ColorPathOverlay extends Overlay {
                     lastPoint = currentPoint;
                 }
 
-                Log.i(TAG, "color1=" + Integer.toHexString(getColor(allSpeed / ONCE_DRAW_POINT_COUNT)));
                 paint.setColor(getColor(allSpeed / ONCE_DRAW_POINT_COUNT));
                 canvas.drawPath(path, paint);
                 allSpeed = 0;
             }
 
+            Log.i(TAG, "draw Count=" + ONCE_DRAW_POINT_COUNT * count);
+            Log.i(TAG, "resumeList.size()=" + resumeList.size());
+            Log.i(TAG, "rest=" + rest);
 
-            //剩余点的绘制
-            if (rest != 0) {
+            //有余数的点
+            if (rest != 0 && count > 0) {
                 Path path = new Path();
-                DouglasPoint tpoint = resumeList.get((size / ONCE_DRAW_POINT_COUNT - 1) * ONCE_DRAW_POINT_COUNT - 1);
-                Point tCurrentPoint = projection.toScreenLocation(douglasPoint2Point(tpoint));
-                path.moveTo(tCurrentPoint.x, tCurrentPoint.y);
-                for (int i = 0; i < rest; i++) {
-                    DouglasPoint currentDouglasPoint = resumeList.get((size / ONCE_DRAW_POINT_COUNT - 1) * ONCE_DRAW_POINT_COUNT + i);
-                    allSpeed += currentDouglasPoint.getInsSpeed();
+                allSpeed = 0;
+                //移动到上一个点的最后一个点
+                DouglasPoint tpoint = resumeList.get(count * ONCE_DRAW_POINT_COUNT - 1);
+                allSpeed += tpoint.getInsSpeed();
 
-                    Point currentPoint = projection.toScreenLocation(douglasPoint2Point(currentDouglasPoint));
+                Point tCurrentPoint = projection.toScreenLocation(douglasPoint2LatLng(tpoint));
+                path.moveTo(tCurrentPoint.x, tCurrentPoint.y);
+
+                for (int i = 0; i < rest; i++) {
+                    DouglasPoint currentDouglasPoint = resumeList.get(count * ONCE_DRAW_POINT_COUNT + i);
+                    Point currentPoint = projection.toScreenLocation(douglasPoint2LatLng(currentDouglasPoint));
                     if (lastPoint != null && (lastPoint.y < maxHeight && lastPoint.x < maxWidth)) {
                         path.lineTo(currentPoint.x, currentPoint.y);
                     } else {
                         path.moveTo(currentPoint.x, currentPoint.y);
                     }
-
                     lastPoint = currentPoint;
                 }
-                Log.i(TAG, "color2=" + Integer.toHexString(getColor(allSpeed / ONCE_DRAW_POINT_COUNT)));
-                paint.setColor(getColor(allSpeed / ONCE_DRAW_POINT_COUNT));
+
+                paint.setColor(getColor(allSpeed / rest));
+                canvas.drawPath(path, paint);
+
+            } else if (count == 0 && rest != 0) {//数目少于ONCE_DRAW_POINT_COUNT个的特殊情况处理
+                allSpeed = 0;
+                Path path = new Path();
+
+                DouglasPoint tpoint = resumeList.get(0);
+                allSpeed += tpoint.getInsSpeed();
+                Point tCurrentPoint = projection.toScreenLocation(douglasPoint2LatLng(tpoint));
+                path.moveTo(tCurrentPoint.x, tCurrentPoint.y);
+
+                for (int i = 0; i < rest; i++) {
+                    DouglasPoint currentDouglasPoint = resumeList.get(i);
+                    Point currentPoint = projection.toScreenLocation(douglasPoint2LatLng(currentDouglasPoint));
+                    if (lastPoint != null && (lastPoint.y < maxHeight && lastPoint.x < maxWidth)) {
+                        path.lineTo(currentPoint.x, currentPoint.y);
+                    } else {
+                        path.moveTo(currentPoint.x, currentPoint.y);
+                    }
+                    lastPoint = currentPoint;
+                }
+
+                paint.setColor(getColor(allSpeed / rest));
                 canvas.drawPath(path, paint);
             }
         }
@@ -180,7 +210,7 @@ public class ColorPathOverlay extends Overlay {
         }
     }
 
-    private LatLng douglasPoint2Point(DouglasPoint douglasPoint) {
+    private LatLng douglasPoint2LatLng(DouglasPoint douglasPoint) {
         if (douglasPoint != null) {
             Gps gps = PositionUtil.gps84_To_Gcj02(douglasPoint.getLatitude(), douglasPoint.getLongitude());
             return new LatLng(gps.getWgLat(), gps.getWgLon());
