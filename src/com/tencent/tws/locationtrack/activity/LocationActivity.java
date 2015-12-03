@@ -1,4 +1,4 @@
-package com.tencent.tws.locationtrack;
+package com.tencent.tws.locationtrack.activity;
 
 import android.app.Activity;
 import android.content.BroadcastReceiver;
@@ -21,6 +21,7 @@ import android.widget.Toast;
 import com.tencent.mapsdk.raster.model.*;
 import com.tencent.tencentmap.mapsdk.map.MapView;
 import com.tencent.tencentmap.mapsdk.map.TencentMap;
+import com.tencent.tws.locationtrack.R;
 import com.tencent.tws.locationtrack.database.LocationDbHelper;
 import com.tencent.tws.locationtrack.database.MyContentProvider;
 import com.tencent.tws.locationtrack.database.SPUtils;

@@ -95,7 +95,7 @@
 				android:name=".LocationActivity"
 				android:label="LocationActivity">
 			<intent-filter>
-				<action android:name="com.tencent.tws.locationtrack.LocationActivity"/>
+				<action android:name="com.tencent.tws.locationtrack.activity.LocationActivity"/>
 				<category android:name="android.intent.category.DEFAULT"/>
 			</intent-filter>
 		</activity>

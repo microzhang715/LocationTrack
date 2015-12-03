@@ -1,4 +1,4 @@
-package com.tencent.tws.locationtrack;
+package com.tencent.tws.locationtrack.activity;
 
 import android.app.Activity;
 import android.content.Context;
@@ -24,6 +24,7 @@ import com.tencent.tencentmap.mapsdk.map.MapView;
 import com.tencent.tencentmap.mapsdk.map.Overlay;
 import com.tencent.tencentmap.mapsdk.map.Projection;
 import com.tencent.tencentmap.mapsdk.map.TencentMap;
+import com.tencent.tws.locationtrack.R;
 import com.tencent.tws.locationtrack.database.LocationDbHelper;
 import com.tencent.tws.locationtrack.database.SPUtils;
 import com.tencent.tws.locationtrack.douglas.DouglasPoint;
@@ -64,6 +65,7 @@ public class HisLocationActivity extends Activity {
 
     private Button exitButton;
     private Button shareButton;
+    private Button speedButton;
 
     private TextView hisAveSpeed;
     private TextView hisKal;
@@ -102,6 +104,7 @@ public class HisLocationActivity extends Activity {
 
     DouglasPoint maxSpeedPoint;
     DouglasPoint minSpeedPoint;
+
     //MSG
     private static final int UPDATE_VIEWS = 1;
     private static final int DRAW_RESUME = 3;
@@ -154,6 +157,15 @@ public class HisLocationActivity extends Activity {
             public void onClick(View v) {
                 //mController.openShare(LocationActivity.this, false);
                 postShare();
+            }
+        });
+
+        //配速显示
+        speedButton = (Button) findViewById(R.id.speed_btn);
+        speedButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
             }
         });
     }

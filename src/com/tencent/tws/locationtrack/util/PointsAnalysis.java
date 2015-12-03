@@ -121,10 +121,6 @@ public class PointsAnalysis {
         if (!resumeList.contains(listPoints.get(listPoints.size() - 1))) {
             resumeList.add(listPoints.get(listPoints.size() - 1));
         }
-        //第一个最后一个点不能被过滤掉
-//        if (!resumeList.contains(listPoints.get(0))) {
-//            resumeList.add(listPoints.get(0));
-//        }
 
         Log.i(TAG, "resumeList.size()=" + resumeList.size());
         return resumeList;
@@ -147,6 +143,25 @@ public class PointsAnalysis {
 
         Log.i(TAG, "allPointList.size()=" + allPointList.size());
         return allPointList;
+    }
+
+
+    public List<DouglasPoint> getKmSpeed(List<DouglasPoint> listPoints) {
+        List<DouglasPoint> kmSpeedList = new ArrayList<DouglasPoint>();
+        double allDis = 0;
+
+        for (int i = 0; i < listPoints.size(); i++) {
+            allDis += listPoints.get(i).getDis();
+
+            if (allDis > 1000) {
+                kmSpeedList.add(listPoints.get(i));
+
+                allDis = 0;
+            }
+        }
+
+
+        return kmSpeedList;
     }
 
 

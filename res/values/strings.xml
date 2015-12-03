@@ -4,46 +4,46 @@
     <string name="app_name">LocationTrack</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
-	<string name="my_location">My location</string>
-	<string name="location_track">Location Track</string>
-	<string name="delete_location_track">Delete Track</string>
-	
-	<string name="satellite_num">卫星数 : </string>
-	<string name="show_track">显示轨迹</string>
-	<string name="delete_track">删除轨迹</string>
-	
-	<string name="start_sport">开始运动</string>
-	<string name="stop_sport">结束运动</string>
-	<string name="sport_record">历史记录</string>
+    <string name="my_location">My location</string>
+    <string name="location_track">Location Track</string>
+    <string name="delete_location_track">Delete Track</string>
+
+    <string name="satellite_num">卫星数 : </string>
+    <string name="show_track">显示轨迹</string>
+    <string name="delete_track">删除轨迹</string>
+
+    <string name="start_sport">开始运动</string>
+    <string name="stop_sport">结束运动</string>
+    <string name="sport_record">历史记录</string>
     <string name="no_description">描述为空</string>
-	<string name="km">公里</string>
-	<string name="records_formatter">%02.1f</string>
-    
-	<string name="stopdraw">结束绘制</string>
-	<string name="findcar">开始找车</string>
-	<string name="endSearch">结束找车，目标在周围10米范围内</string>
-	<string name="share">分享</string>
-	<string name="share_exit">退出</string>
-	
-	
+    <string name="km">公里</string>
+    <string name="records_formatter">%02.1f</string>
 
-	<string name="ble_not_supported">BLE is not supported</string>
-	<string name="label_data">Data:</string>
-	<string name="label_device_address">Device address:</string>
-	<string name="label_state">State:</string>
-	<string name="no_data">No data</string>
-	<string name="connected">Connected</string>
-	<string name="disconnected">Disconnected</string>
-	<string name="title_devices">BLE Device Scan</string>
-	<string name="error_bluetooth_not_supported">Bluetooth not supported.</string>
+    <string name="stopdraw">结束绘制</string>
+    <string name="findcar">开始找车</string>
+    <string name="endSearch">结束找车，目标在周围10米范围内</string>
+    <string name="share">分享</string>
+    <string name="share_exit">退出</string>
+    <string name="speed">配速</string>
 
-	<string name="unknown_device">Unknown device</string>
-	<string name="unknown_characteristic">Unknown characteristic</string>
-	<string name="unknown_service">Unknown service</string>
 
-	<!-- Menu items -->
-	<string name="menu_connect">Connect</string>
-	<string name="menu_disconnect">Disconnect</string>
-	<string name="menu_scan">Scan</string>
-	<string name="menu_stop">Stop</string>
+    <string name="ble_not_supported">BLE is not supported</string>
+    <string name="label_data">Data:</string>
+    <string name="label_device_address">Device address:</string>
+    <string name="label_state">State:</string>
+    <string name="no_data">No data</string>
+    <string name="connected">Connected</string>
+    <string name="disconnected">Disconnected</string>
+    <string name="title_devices">BLE Device Scan</string>
+    <string name="error_bluetooth_not_supported">Bluetooth not supported.</string>
+
+    <string name="unknown_device">Unknown device</string>
+    <string name="unknown_characteristic">Unknown characteristic</string>
+    <string name="unknown_service">Unknown service</string>
+
+    <!-- Menu items -->
+    <string name="menu_connect">Connect</string>
+    <string name="menu_disconnect">Disconnect</string>
+    <string name="menu_scan">Scan</string>
+    <string name="menu_stop">Stop</string>
 </resources>

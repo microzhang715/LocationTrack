@@ -1,4 +1,4 @@
-package com.tencent.tws.locationtrack;
+package com.tencent.tws.locationtrack.activity;
 
 import android.app.Service;
 import android.content.*;

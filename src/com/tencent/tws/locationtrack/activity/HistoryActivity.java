@@ -1,4 +1,4 @@
-package com.tencent.tws.locationtrack;
+package com.tencent.tws.locationtrack.activity;
 
 
 import android.app.Activity;
@@ -16,6 +16,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.*;
+import com.tencent.tws.locationtrack.R;
+import com.tencent.tws.locationtrack.activity.HisLocationActivity;
 import com.tencent.tws.locationtrack.database.DbNameUtils;
 import com.tencent.tws.locationtrack.database.LocationDbHelper;
 import com.tencent.tws.locationtrack.util.LocationUtil;
