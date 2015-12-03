@@ -85,7 +85,6 @@ public class LocationActivity extends Activity {
     private static final int DRAW_RESUME = 3;
 
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -158,29 +157,12 @@ public class LocationActivity extends Activity {
                 SPUtils.writeExitFlag(getApplicationContext(), true);
                 //退出当前Activity
                 finish();
-
-                //结束掉当前进程
-//                Intent intent = new Intent(Intent.ACTION_MAIN);
-//                intent.addCategory(Intent.CATEGORY_HOME);
-//                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-//                startActivity(intent);
-//                android.os.Process.killProcess(android.os.Process.myPid());
-//                System.exit(0);
             }
         });
 
         //注册GPS状态监听广播
         registerGpsStatusReceiver();
 
-        //判断GPS是否打开
-//        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-//        if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-//            tvGPSStatus.setText("GPS已打开");
-//        } else {
-//            tvGPSStatus.setText("GPS已关闭");
-//        }
-        //注册GPS监听回调
-//        locationManager.addGpsStatusListener(statusListener);
     }
 
     private void registerGpsStatusReceiver() {
@@ -211,12 +193,6 @@ public class LocationActivity extends Activity {
                     //locations 中包含了所有需要绘制的点信息
                     onResumeDrawImp();
                     break;
-
-//                case UPDATE_SATELLITE_NUM:
-//                    int num = msg.arg1;
-//                    if (satelliteNum != null) {
-//                        satelliteNum.setText(num + "");
-//                    }
                 default:
             }
         }
@@ -397,70 +373,19 @@ public class LocationActivity extends Activity {
     private void onResumeDrawImp() {
         Log.i(TAG, "onResumeDrawImp");
         int count = resumeLocations.size();
-
-        if (count < RESUME_ONCE_DRAW_POINTS) {
-            drawResumePoints(count);
-        } else {
-            //每次绘制 RESUME_ONCE_DRAW_POINTS 个点，分多次绘制
-            LatLng tPoints[] = new LatLng[RESUME_ONCE_DRAW_POINTS];
             PolylineOptions lineOpt2 = new PolylineOptions();
             lineOpt2.color(0xAAFF0000);
-
-            int count2 = (resumeLocations.size() % RESUME_ONCE_DRAW_POINTS == 0) ? (resumeLocations.size() % RESUME_ONCE_DRAW_POINTS) : (resumeLocations.size() % RESUME_ONCE_DRAW_POINTS + 1);
-            for (int i = 0; i < count2 - 1; i++) {
-                for (int j = 0; j < RESUME_ONCE_DRAW_POINTS; j++) {
-                    if (resumeLocations.peek() != null) {
-                        Gps gps = resumeLocations.poll();
-
-                        //绘制最后一个点的时候移动到对应的位置
-                        if (i == (count2 - 2)) {
-                            tencentMap.animateTo(new LatLng(gps.getWgLat(), gps.getWgLon()));
-                            marker.setPosition(new LatLng(gps.getWgLat(), gps.getWgLon()));
-                        }
-
-                        tPoints[j] = new LatLng(gps.getWgLat(), gps.getWgLon());
-                        if (tPoints[j] != null) {
-                            lineOpt2.add(tPoints[j]);
-                        }
-                    }
-                }
-                Polyline line = tencentMap.addPolyline(lineOpt2);
-                Overlays.add(line);
-            }
-
-            //绘制剩下的 <= 500个点
-            int restCount = resumeLocations.size();
-            drawResumePoints(restCount);
-        }
-
-        isFinishDBDraw = true;
-    }
-
-    //绘制小于500个点的方法
-    private void drawResumePoints(int count) {
-        PolylineOptions lineOpt = new PolylineOptions();
-        lineOpt.color(0xAAFF0000);
-        //绘制全部数据
-        LatLng latlngPoints[] = new LatLng[count];
         for (int i = 0; i < count; i++) {
             if (resumeLocations.peek() != null) {
                 Gps gps = resumeLocations.poll();
-                latlngPoints[i] = new LatLng(gps.getWgLat(), gps.getWgLon());
-                if (latlngPoints[i] != null) {
-                    lineOpt.add(latlngPoints[i]);
-                }
-
-                if (i == (count - 1)) {
-                    tencentMap.animateTo(new LatLng(gps.getWgLat(), gps.getWgLon()));
-                    marker.setPosition(new LatLng(gps.getWgLat(), gps.getWgLon()));
-                }
+                lineOpt2.add(new LatLng(gps.getWgLat(), gps.getWgLon()));
             }
         }
-
-        Polyline line = tencentMap.addPolyline(lineOpt);
+        Polyline line = tencentMap.addPolyline(lineOpt2);
         Overlays.add(line);
-    }
 
+        isFinishDBDraw = true;
+    }
 
     private void drawLines(double longitude, double latitude, float accuracy) {
 
@@ -537,9 +462,9 @@ public class LocationActivity extends Activity {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
-            
-            if(action.equals(LocationService.UPDATE_SATELLITE_NUM) ){
-            	int num = intent.getIntExtra(LocationService.STAELLITE_EXTR, 0);
+
+            if (action.equals(LocationService.UPDATE_SATELLITE_NUM)) {
+                int num = intent.getIntExtra(LocationService.STAELLITE_EXTR, 0);
                 if (satelliteNum != null) {
                     satelliteNum.setText(num + "");
                 }
