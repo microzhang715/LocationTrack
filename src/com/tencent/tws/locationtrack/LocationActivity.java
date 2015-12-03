@@ -292,16 +292,18 @@ public class LocationActivity extends Activity {
                     if (cursor != null && cursor.getCount() > 0 && cursor.moveToFirst()) {
 
                         do {
-
-
-                            int id = cursor.getInt(cursor.getColumnIndex(LocationDbHelper.ID));
                             double latitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LATITUDE));
                             double longitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LONGITUDE));
                             double insSpeed = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.INS_SPEED));
-                            float dis = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.DISTANCE));
+                            int id = cursor.getInt(cursor.getColumnIndex(LocationDbHelper.ID));
+                            double dis = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.DISTANCE));
                             long time = cursor.getLong(cursor.getColumnIndex(LocationDbHelper.TIME));
+                            float bearing = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.BEARING));
+                            float accuracy = cursor.getFloat(cursor.getColumnIndex(LocationDbHelper.ACCURACY));
+                            double avgSpeed = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.AVG_SPEED));
+                            double kcal = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.KCAL));
 
-                            DouglasPoint tmpPoint = new DouglasPoint(latitude, longitude, insSpeed, dis, time, id, index++);
+                            DouglasPoint tmpPoint = new DouglasPoint(latitude, longitude, insSpeed, id, dis, time, bearing, accuracy, avgSpeed, kcal, index++);
                             listDouglasPoints.add(tmpPoint);
 
                         } while (cursor.moveToNext());

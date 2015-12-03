@@ -1,6 +1,6 @@
 package com.tencent.tws.locationtrack.util;
 
-import com.tencent.tws.locationtrack.douglas.DouglasPoint;
+import com.tencent.mapsdk.raster.model.LatLng;
 
 /**
  * 各地图API坐标系统比较与转换;
@@ -42,18 +42,10 @@ public class PositionUtil {
         return new Gps(mgLat, mgLon);
     }
 
-    public static DouglasPoint gps84_To_Gcj02(DouglasPoint point) {
-        if (point == null) {
-            return null;
-        }
-
-        double lon = point.getLongitude();
-        double lat = point.getLatitude();
-
+    public static LatLng gps84ToGcj02(double lat, double lon) {
         if (outOfChina(lat, lon)) {
             return null;
         }
-
         double dLat = transformLat(lon - 105.0, lat - 35.0);
         double dLon = transformLon(lon - 105.0, lat - 35.0);
         double radLat = lat / 180.0 * pi;
@@ -64,9 +56,9 @@ public class PositionUtil {
         dLon = (dLon * 180.0) / (a / sqrtMagic * Math.cos(radLat) * pi);
         double mgLat = lat + dLat;
         double mgLon = lon + dLon;
-
-        return new DouglasPoint(mgLat, mgLon, 0, 0, 0, 0, 0);
+        return new LatLng(mgLat, mgLon);
     }
+
 
     /**
      * * 火星坐标系 (GCJ-02) to 84 * * @param lon * @param lat * @return

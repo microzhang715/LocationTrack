@@ -5,26 +5,65 @@ package com.tencent.tws.locationtrack.douglas;
  */
 public class DouglasPoint {
 
-    /**
-     * 点所属的曲线的索引
-     */
     private int index = 0;
-    /**
-     * 点的X坐标
-     */
+
     private double latitude = 0;
-
-    /**
-     * 点的Y坐标
-     */
     private double longitude = 0;
-
-    private double speed = 0;
-
+    private double insSpeed = 0;
     private int id = 0;
-
     private double dis = 0;
-    private long time;
+    private long time = 0;
+    private float bearing = 0;
+    private float accuracy = 0;
+    private double avgSpeed = 0;
+    private double kcal = 0;
+
+    //数据库中一个点的描述
+    public DouglasPoint(double latitude, double longitude, double insSpeed, int id, double dis, long time, float bearing, float accuracy, double avgSpeed, double kcal, int index) {
+        this.index = index;
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.insSpeed = insSpeed;
+        this.id = id;
+        this.dis = dis;
+        this.time = time;
+        this.bearing = bearing;
+        this.accuracy = accuracy;
+        this.avgSpeed = avgSpeed;
+        this.kcal = kcal;
+    }
+
+    public float getBearing() {
+        return bearing;
+    }
+
+    public void setBearing(float bearing) {
+        this.bearing = bearing;
+    }
+
+    public float getAccuracy() {
+        return accuracy;
+    }
+
+    public void setAccuracy(float accuracy) {
+        this.accuracy = accuracy;
+    }
+
+    public double getAvgSpeed() {
+        return avgSpeed;
+    }
+
+    public void setAvgSpeed(double avgSpeed) {
+        this.avgSpeed = avgSpeed;
+    }
+
+    public double getKcal() {
+        return kcal;
+    }
+
+    public void setKcal(double kcal) {
+        this.kcal = kcal;
+    }
 
     public double getDis() {
         return dis;
@@ -42,24 +81,12 @@ public class DouglasPoint {
         this.time = time;
     }
 
-    public DouglasPoint(double latitude, double longitude, double speed, double dis, long time, int id, int index) {
-        this.index = index;
-        this.latitude = latitude;
-        this.longitude = longitude;
-        this.speed = speed;
-        this.id = id;
-        this.dis = dis;
-        this.time = time;
-
+    public double getInsSpeed() {
+        return insSpeed;
     }
 
-    public double getSpeed() {
-
-        return speed;
-    }
-
-    public void setSpeed(double speed) {
-        this.speed = speed;
+    public void setInsSpeed(double insSpeed) {
+        this.insSpeed = insSpeed;
     }
 
     public int getId() {
@@ -93,18 +120,4 @@ public class DouglasPoint {
     public void setIndex(int index) {
         this.index = index;
     }
-
-//    /**
-//     * 点数据的构造方法
-//     *
-//     * @param latitude  点的X坐标
-//     * @param longitude 点的Y坐标
-//     * @param index     点所属的曲线的索引
-//     */
-//    public DouglasPoint(double latitude, double longitude, int index) {
-//        this.latitude = latitude;
-//        this.longitude = longitude;
-//        this.index = index;
-//    }
-
 }

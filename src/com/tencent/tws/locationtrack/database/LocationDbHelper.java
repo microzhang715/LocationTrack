@@ -31,6 +31,7 @@ public class LocationDbHelper extends SQLiteOpenHelper {
 
 	public static final String DEFAULT_ORDERBY = "id ASC";
 
+	//ins_speed bearing accuracy
 	protected static final String SQL_CREATE_LOCATION_TABLE =
 			"create table " + TABLE_NAME + " ("
 					+ "id integer primary key autoincrement, "

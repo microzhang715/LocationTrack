@@ -58,15 +58,15 @@ public class ColorPathOverlay extends Overlay {
         fixedThreadExecutor.execute(new Runnable() {
             @Override
             public void run() {
-                maxSpeed = resumeList.get(0).getSpeed();
-                minSpeed = resumeList.get(0).getSpeed();
+                maxSpeed = resumeList.get(0).getInsSpeed();
+                minSpeed = resumeList.get(0).getInsSpeed();
                 for (int i = 0; i < resumeList.size(); i++) {
-                    if (maxSpeed < resumeList.get(i).getSpeed()) {
-                        maxSpeed = resumeList.get(i).getSpeed();
+                    if (maxSpeed < resumeList.get(i).getInsSpeed()) {
+                        maxSpeed = resumeList.get(i).getInsSpeed();
                     }
 
-                    if (minSpeed > resumeList.get(i).getSpeed()) {
-                        minSpeed = resumeList.get(i).getSpeed();
+                    if (minSpeed > resumeList.get(i).getInsSpeed()) {
+                        minSpeed = resumeList.get(i).getInsSpeed();
                     }
                 }
             }
@@ -103,7 +103,7 @@ public class ColorPathOverlay extends Overlay {
 
                 for (int j = 0; j < ONCE_DRAW_POINT_COUNT; j++) {
                     DouglasPoint currentDouglasPoint = resumeList.get(i * ONCE_DRAW_POINT_COUNT + j);
-                    allSpeed += currentDouglasPoint.getSpeed();
+                    allSpeed += currentDouglasPoint.getInsSpeed();
 
                     Point currentPoint = projection.toScreenLocation(douglasPoint2Point(currentDouglasPoint));
                     if (lastPoint != null && lastPoint.x < maxWidth && lastPoint.y < maxHeight) {
@@ -130,7 +130,7 @@ public class ColorPathOverlay extends Overlay {
                 path.moveTo(tCurrentPoint.x, tCurrentPoint.y);
                 for (int i = 0; i < rest; i++) {
                     DouglasPoint currentDouglasPoint = resumeList.get((size / ONCE_DRAW_POINT_COUNT - 1) * ONCE_DRAW_POINT_COUNT + i);
-                    allSpeed += currentDouglasPoint.getSpeed();
+                    allSpeed += currentDouglasPoint.getInsSpeed();
 
                     Point currentPoint = projection.toScreenLocation(douglasPoint2Point(currentDouglasPoint));
                     if (lastPoint != null && (lastPoint.y < maxHeight && lastPoint.x < maxWidth)) {

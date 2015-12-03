@@ -9,14 +9,14 @@ import android.util.Log;
 import com.tencent.tws.locationtrack.database.LocationDbHelper;
 import com.tencent.tws.locationtrack.database.MyContentProvider;
 import com.tencent.tws.locationtrack.database.SPUtils;
-import com.tencent.tws.locationtrack.douglas.Douglas;
 import com.tencent.tws.locationtrack.douglas.DouglasPoint;
-import com.tencent.tws.locationtrack.util.Gps;
 import com.tencent.tws.locationtrack.util.LocationUtil;
+import com.tencent.tws.locationtrack.util.PointsAnalysis;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Date;
+import java.util.List;
 
 /**
  * Created by microzhang on 2015/11/1.
@@ -135,45 +135,13 @@ public class MyTest extends AndroidTestCase {
         getContext().getContentResolver().bulkInsert(MyContentProvider.CONTENT_URI, values);
     }
 
-    private Queue<Gps> resumeLocations = new LinkedList<Gps>();
-    private List<DouglasPoint> listDouglasPoints = new ArrayList<DouglasPoint>();
-    private int myCount = 0;
-
-//    public void testDDouglas() {
-//        Cursor cursor = null;
-//        try {
-//            String[] PROJECTION = new String[]{LocationDbHelper.ID, LocationDbHelper.LATITUDE, LocationDbHelper.LONGITUDE, LocationDbHelper.INS_SPEED, LocationDbHelper.BEARING, LocationDbHelper.ALTITUDE, LocationDbHelper.ACCURACY, LocationDbHelper.TIME, LocationDbHelper.DISTANCE, LocationDbHelper.AVG_SPEED, LocationDbHelper.KCAL,};
-//            cursor = getContext().getContentResolver().query(MyContentProvider.CONTENT_URI, PROJECTION, null, null, null);
-//            if (cursor != null && cursor.getCount() > 0 && cursor.moveToFirst()) {
-//                int index = 0;
-//                while (cursor.moveToNext()) {
-//                    double latitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LATITUDE));
-//                    double longitude = cursor.getDouble(cursor.getColumnIndex(LocationDbHelper.LONGITUDE));
-//                    int id = cursor.getInt(cursor.getColumnIndex(LocationDbHelper.ID));
-//                    DouglasPoint tmpDouglasPoint = new DouglasPoint(latitude, longitude, index++);
-//                    listDouglasPoints.add(tmpDouglasPoint);
-//                }
-//                Log.i("kermit1", "listDouglasPoints.size()=" + listDouglasPoints.size());
-//
-//                Douglas douglas = new Douglas(listDouglasPoints);
-//                douglas.compress(listDouglasPoints.get(0), listDouglasPoints.get(listDouglasPoints.size() - 1));
-//
-//                for (int i = 0; i < douglas.douglasPoints.size(); i++) {
-//                    DouglasPoint p = douglas.douglasPoints.get(i);
-//                    if (p.getIndex() > -1) {
-//                        myCount++;
-//                    }
-//                }
-//                Log.i("kermit1", "douglas.douglasPoints.size()=" + myCount);
-//            }
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//
-//        if (cursor != null) {
-//            cursor.close();
-//        }
-//    }
+    public void testGetPoint() {
+        String dbName = "1448441019396_location.db";
+        LocationDbHelper dbHelper = new LocationDbHelper(getContext(), dbName);
+        PointsAnalysis analysis = new PointsAnalysis(dbHelper);
+        List<DouglasPoint> list = analysis.getAllPoints2List();
+        Log.i("kkermit", "list.size()=" + list.size());
+    }
 }
 
 
