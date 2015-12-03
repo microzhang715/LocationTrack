@@ -97,10 +97,10 @@ public class HisLocationActivity extends Activity {
     private SQLiteDatabase sqLiteDatabase;
 
     //所有原始数据
-    private List<DouglasPoint> listPoints = new ArrayList<>();
+    private List<DouglasPoint> listPoints = new ArrayList<DouglasPoint>();
     //压缩之后的绘制数据
     //private Queue<DouglasPoint> resumeLocationsQueue = new LinkedList<>();
-    private List<DouglasPoint> resumeList = new ArrayList<>();
+    private List<DouglasPoint> resumeList = new ArrayList<DouglasPoint>();
 
     //用于记录所有的点的速度的集合
 //    private List<SpeedPoint> speedPointList = new ArrayList<>();
