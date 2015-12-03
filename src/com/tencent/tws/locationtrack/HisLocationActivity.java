@@ -32,6 +32,7 @@ import com.tencent.tws.locationtrack.douglas.Douglas;
 import com.tencent.tws.locationtrack.douglas.DouglasPoint;
 import com.tencent.tws.locationtrack.util.Gps;
 import com.tencent.tws.locationtrack.util.PositionUtil;
+import com.tencent.tws.locationtrack.views.ColorPathOverlay;
 import com.tencent.tws.locationtrack.views.CustomShareBoard;
 import com.umeng.scrshot.UMScrShotController;
 import com.umeng.scrshot.adapter.UMAppAdapter;
@@ -238,21 +239,25 @@ public class HisLocationActivity extends Activity {
             Log.i(TAG, "getFixedZoomLevel=" + getFixedZoomLevel());
         }
 
-        //2个点的方式加入，然后绘制
-        int count = resumeList.size();
-        Log.i(TAG, "count=" + count);
-        PolylineOptions linOptions = new PolylineOptions();
-        linOptions.width(LINE_WIDTH);
-        linOptions.color(0xAAFF0000);
-        for (int i = 0; i < count; i++) {
-            DouglasPoint douglasPoint = resumeList.get(i);
-            Gps gps = PositionUtil.gps84_To_Gcj02(douglasPoint.getLatitude(), douglasPoint.getLongitude());
-            if (gps != null) {
-                linOptions.add(new LatLng(gps.getWgLat(), gps.getWgLon()));
-            }
-        }
-        Polyline line = tencentMap.addPolyline(linOptions);
-        Overlays.add(line);
+//        //2个点的方式加入，然后绘制
+//        int count = resumeList.size();
+//        Log.i(TAG, "count=" + count);
+//        PolylineOptions linOptions = new PolylineOptions();
+//        linOptions.width(LINE_WIDTH);
+//        linOptions.color(0xAAFF0000);
+//        for (int i = 0; i < count; i++) {
+//            DouglasPoint douglasPoint = resumeList.get(i);
+//            Gps gps = PositionUtil.gps84_To_Gcj02(douglasPoint.getLatitude(), douglasPoint.getLongitude());
+//            if (gps != null) {
+//                linOptions.add(new LatLng(gps.getWgLat(), gps.getWgLon()));
+//            }
+//        }
+//        Polyline line = tencentMap.addPolyline(linOptions);
+//        Overlays.add(line);
+
+        //overlay绘制流程
+        ColorPathOverlay overlay = new ColorPathOverlay(mMapView,resumeList);
+        mMapView.addOverlay(overlay);
     }
 
     private void initSharePlatform() {
