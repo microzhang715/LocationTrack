@@ -164,4 +164,9 @@
 			android:name="android.test.InstrumentationTestRunner"
 			android:targetPackage="com.tencent.tws.locationtrack"
 			android:label="Tests for My App"/>
+	
+	<meta-data
+            android:name="UMENG_APPKEY"
+            android:value="565fb0d5e0f55a6737001daa" >
+        </meta-data>
 </manifest>
