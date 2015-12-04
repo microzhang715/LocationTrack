@@ -5,9 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
-import android.graphics.Point;
 import android.location.Location;
 import android.os.Bundle;
 import android.os.Handler;
@@ -20,10 +17,11 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
-import com.tencent.mapsdk.raster.model.*;
+import com.tencent.mapsdk.raster.model.BitmapDescriptorFactory;
+import com.tencent.mapsdk.raster.model.LatLng;
+import com.tencent.mapsdk.raster.model.Marker;
+import com.tencent.mapsdk.raster.model.MarkerOptions;
 import com.tencent.tencentmap.mapsdk.map.MapView;
-import com.tencent.tencentmap.mapsdk.map.Overlay;
-import com.tencent.tencentmap.mapsdk.map.Projection;
 import com.tencent.tencentmap.mapsdk.map.TencentMap;
 import com.tencent.tws.locationtrack.R;
 import com.tencent.tws.locationtrack.database.LocationDbHelper;
@@ -34,6 +32,7 @@ import com.tencent.tws.locationtrack.util.PointsAnalysis;
 import com.tencent.tws.locationtrack.util.PositionUtil;
 import com.tencent.tws.locationtrack.views.ColorPathOverlay;
 import com.tencent.tws.locationtrack.views.CustomShareBoard;
+import com.tencent.tws.locationtrack.views.MarkerOverlay;
 import com.umeng.scrshot.UMScrShotController;
 import com.umeng.scrshot.adapter.UMAppAdapter;
 import com.umeng.socialize.controller.UMServiceFactory;
@@ -210,8 +209,8 @@ public class HisLocationActivity extends Activity {
         if (listPoints != null && listPoints.size() > 0) {
 
             //绘制起点和终点的Marker
-            mMapView.addOverlay(new PointMarkLayout(PositionUtil.gps84ToGcj02(listPoints.get(0).getLatitude(), listPoints.get(0).getLongitude()), R.drawable.point_start));
-            mMapView.addOverlay(new PointMarkLayout(PositionUtil.gps84ToGcj02(listPoints.get(listPoints.size() - 1).getLatitude(), listPoints.get(listPoints.size() - 1).getLongitude()), R.drawable.point_end));
+            mMapView.addOverlay(new MarkerOverlay(getApplicationContext(), PositionUtil.gps84ToGcj02(listPoints.get(0).getLatitude(), listPoints.get(0).getLongitude()), R.drawable.point_start));
+            mMapView.addOverlay(new MarkerOverlay(getApplicationContext(), PositionUtil.gps84ToGcj02(listPoints.get(listPoints.size() - 1).getLatitude(), listPoints.get(listPoints.size() - 1).getLongitude()), R.drawable.point_end));
             //移动到屏幕中心
             final Gps centGps = PositionUtil.gps84_To_Gcj02(mapCenterPoint.getWgLat(), mapCenterPoint.getWgLon());
             handler.postDelayed(new Runnable() {
@@ -455,32 +454,32 @@ public class HisLocationActivity extends Activity {
     }
 
 
-    private class PointMarkLayout extends Overlay {
-        private LatLng location;
-        private int drawable;
-        private Projection projection;
-
-        PointMarkLayout(LatLng location, int drawable) {
-            this.location = location;
-            this.drawable = drawable;
-        }
-
-        @Override
-        public void draw(final Canvas canvas, final MapView mapView) {
-            super.draw(canvas, mapView);
-
-            this.projection = mapView.getProjection();
-            GeoPoint piont = new GeoPoint((int) (location.getLatitude() * 1e6), (int) (location.getLongitude() * 1e6));
-            Point current = projection.toPixels(piont, null);
-
-            Bitmap markerImage = BitmapFactory.decodeResource(getResources(), drawable);
-
-            // 根据实际的条目而定偏移位置
-            canvas.drawBitmap(markerImage,
-                    current.x - Math.round(markerImage.getWidth() * 0.4),
-                    current.y - Math.round(markerImage.getHeight() * 0.9), null);
-
-            return;
-        }
-    }
+//    private class PointMarkLayout extends Overlay {
+//        private LatLng location;
+//        private int drawable;
+//        private Projection projection;
+//
+//        PointMarkLayout(LatLng location, int drawable) {
+//            this.location = location;
+//            this.drawable = drawable;
+//        }
+//
+//        @Override
+//        public void draw(final Canvas canvas, final MapView mapView) {
+//            super.draw(canvas, mapView);
+//
+//            this.projection = mapView.getProjection();
+//            GeoPoint piont = new GeoPoint((int) (location.getLatitude() * 1e6), (int) (location.getLongitude() * 1e6));
+//            Point current = projection.toPixels(piont, null);
+//
+//            Bitmap markerImage = BitmapFactory.decodeResource(getResources(), drawable);
+//
+//            // 根据实际的条目而定偏移位置
+//            canvas.drawBitmap(markerImage,
+//                    current.x - Math.round(markerImage.getWidth() * 0.4),
+//                    current.y - Math.round(markerImage.getHeight() * 0.9), null);
+//
+//            return;
+//        }
+//    }
 }
