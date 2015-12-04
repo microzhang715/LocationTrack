@@ -201,6 +201,7 @@
 
         <activity android:name=".activity.HistoryActivity"/>
         <activity android:name=".activity.HisLocationActivity"/>
+        <activity android:name=".activity.KmSpeedActivity"/>
     </application>
     <instrumentation
             android:label="Tests for My App"

@@ -2,6 +2,7 @@ package com.tencent.tws.locationtrack.activity;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -108,6 +109,7 @@ public class HisLocationActivity extends Activity {
     //MSG
     private static final int UPDATE_VIEWS = 1;
     private static final int DRAW_RESUME = 3;
+    String dbName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -131,7 +133,7 @@ public class HisLocationActivity extends Activity {
 
         String intentDbName = getIntent().getStringExtra("fulldbName");
         if (intentDbName != null && !intentDbName.equals("")) {
-            String dbName = getIntent().getStringExtra("fulldbName");
+            dbName = getIntent().getStringExtra("fulldbName");
             Log.i(TAG, "get intentDbName=" + intentDbName);
             if (dbName != null && !dbName.equals("") && !dbName.equals("0")) {
                 dbHelper = new LocationDbHelper(getApplicationContext(), dbName);
@@ -165,7 +167,11 @@ public class HisLocationActivity extends Activity {
         speedButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
+                if (dbName != null && !dbName.equals("")) {
+                    Intent intent = new Intent(getApplicationContext(), KmSpeedActivity.class);
+                    intent.putExtra("fulldbName", dbName);
+                    startActivity(intent);
+                }
             }
         });
     }

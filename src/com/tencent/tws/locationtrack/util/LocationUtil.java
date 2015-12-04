@@ -202,8 +202,8 @@ public class LocationUtil {
                 mBreadCrumbs.removeFirst();
 
             mBreadCrumbs.addLast(new DoublePoint(
-                            mLocation.getX(),
-                            mLocation.getY())
+                    mLocation.getX(),
+                    mLocation.getY())
             );
 
             Listlocation.add(mLocation.getX() + "," + mLocation.getY());
@@ -441,4 +441,19 @@ public class LocationUtil {
         }
         return strs;
     }
+
+    //这个是时长
+    public static String convertHM(long mill) {
+        Date date = new Date(mill);
+        String strs = "";
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
+            strs = sdf.format(date);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return strs;
+    }
+
+
 }

@@ -155,6 +155,12 @@ public class MyTest extends AndroidTestCase {
         Log.i("kkermit", "kmSpeedList.size()=" + kmSpeedList.size());
         Log.i("kkermit", "kmSpeedList=" + kmSpeedList.toString());
     }
+
+    public void testDD() {
+        Log.i("kkermit", "curretn=" + System.currentTimeMillis());
+        String dd = LocationUtil.convertHM(48235);
+        Log.i("kkermit", "dd=" + dd);
+    }
 }
 
 

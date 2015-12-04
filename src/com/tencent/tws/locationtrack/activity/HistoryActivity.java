@@ -206,7 +206,7 @@ public class HistoryActivity extends Activity implements AdapterView.OnItemClick
         private ArrayList<String> dbNames;
 
         public DatebaseAdapter(ArrayList<String> dbNames) {
-            super(context, R.layout.record_row, dbNames);
+            super(context, R.layout.db_names, dbNames);
             this.dbNames = dbNames;
         }
 

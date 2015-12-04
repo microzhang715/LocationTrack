@@ -10,6 +10,7 @@ import com.tencent.tws.locationtrack.domain.KmPoint;
 import com.tencent.tws.locationtrack.douglas.Douglas;
 import com.tencent.tws.locationtrack.douglas.DouglasPoint;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -148,11 +149,22 @@ public class PointsAnalysis {
 
     private static final int KM = 1000;
 
+    //公里数
+    private int disKm = 0;
+    //总共时长,每公里耗时相加的时间长读
+    private long allTime = 0;
+    //每公里的平均速度
+    private double avgSpeed = 0;
+    //单公里耗时
+    private long timePreKm = 0;
+
+
     public List<KmPoint> getKmSpeed(List<DouglasPoint> listPoints) {
         List<KmPoint> kmPointList = new ArrayList<KmPoint>();
         int index = 1;
         float allDis = 0;
-        long lastTime = 0, currentTime = 0;
+        long lastTime = 0, currentTime = 0, allTime = 0;
+        double speedPreKm;
 
         for (int i = 0; i < listPoints.size(); i++) {
             allDis += listPoints.get(i).getDis();
@@ -160,10 +172,13 @@ public class PointsAnalysis {
             if (allDis > KM) {
                 currentTime = listPoints.get(i).getTime();
                 long deltTime = currentTime - lastTime;
+                allTime += deltTime;
+                speedPreKm = 1 / (deltTime / 3600000f);
+
                 kmPointList.add(new KmPoint(
                         index++,
-                        listPoints.get(i).getTime(),
-                        listPoints.get(i).getAvgSpeed(),
+                        allTime,
+                        speedPreKm,
                         deltTime,
                         listPoints.get(i).getId()));
 
