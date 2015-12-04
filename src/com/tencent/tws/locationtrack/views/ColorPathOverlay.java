@@ -1,9 +1,6 @@
 package com.tencent.tws.locationtrack.views;
 
-import android.graphics.Canvas;
-import android.graphics.Paint;
-import android.graphics.Path;
-import android.graphics.Point;
+import android.graphics.*;
 import android.util.Log;
 import com.tencent.mapsdk.raster.model.LatLng;
 import com.tencent.tencentmap.mapsdk.map.MapView;
@@ -88,7 +85,8 @@ public class ColorPathOverlay extends Overlay {
             int size = resumeList.size();
             int rest = size % ONCE_DRAW_POINT_COUNT;
             int count = size / ONCE_DRAW_POINT_COUNT;
-
+            int lastColor = 0, currentColor = 0;
+            DouglasPoint startPoint = null, endPoint = null;
             //绘制点数
             for (int i = 0; i < count; i++) {
                 Path path = new Path();
@@ -105,6 +103,15 @@ public class ColorPathOverlay extends Overlay {
 
                 //绘制每条线段的逻辑
                 for (int j = 0; j < ONCE_DRAW_POINT_COUNT; j++) {
+
+                    if (j == 0) {
+                        startPoint = resumeList.get(i * ONCE_DRAW_POINT_COUNT + j);
+                    }
+
+                    if (j == ONCE_DRAW_POINT_COUNT - 1) {
+                        endPoint = resumeList.get(i * ONCE_DRAW_POINT_COUNT + ONCE_DRAW_POINT_COUNT - 1);
+                    }
+
                     DouglasPoint currentDouglasPoint = resumeList.get(i * ONCE_DRAW_POINT_COUNT + j);
                     allSpeed += currentDouglasPoint.getInsSpeed();
 
@@ -118,8 +125,23 @@ public class ColorPathOverlay extends Overlay {
                     lastPoint = currentPoint;
                 }
 
-                paint.setColor(getColor(allSpeed / ONCE_DRAW_POINT_COUNT));
+                currentColor = getColor(allSpeed / ONCE_DRAW_POINT_COUNT);
+                LinearGradient gradient = null;
+                if (lastColor != 0) {
+                    Point startP = projection.toScreenLocation(douglasPoint2LatLng(startPoint));
+                    Point endP = projection.toScreenLocation(douglasPoint2LatLng(endPoint));
+                    gradient = new LinearGradient(startP.x, startP.y, endP.x, endP.y, lastColor, currentColor, Shader.TileMode.CLAMP);
+                }
+
+//                paint.setColor(currentColor);
+                if (gradient == null) {
+                    paint.setColor(currentColor);
+                } else {
+                    paint.setShader(gradient);
+                }
+
                 canvas.drawPath(path, paint);
+                lastColor = currentColor;
                 allSpeed = 0;
             }
 
